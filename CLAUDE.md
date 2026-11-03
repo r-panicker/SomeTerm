@@ -1,32 +1,52 @@
 # Working in this repo
 
+SuperSerial: a cross-platform serial terminal with RealTerm's serial feature parity, Arduino-style plotting, and a noticeably better UI/UX. TypeScript throughout. Runs in a browser (Web Serial) and as an Electron desktop app (Node `serialport`). Audience is academic: students and lab users, not industrial protocol work. Implemented from scratch; never copy or translate RealTerm source.
+
 ## Workflow
-- Sole contributor, single branch. Commit straight to `main` — no feature branches, no PRs.
+- Sole contributor. Commit to `main` unless a session is explicitly assigned another branch. No PRs unless asked.
 - Only commit/push when explicitly asked. Multiple small, honestly-scoped commits are preferred over one large one.
 - Before any risky git operation, check `git status` first; investigate unexpected working-tree state (e.g. files missing without a matching commit) rather than assuming it was intentional.
 - Keep `Prompts/claude_main_prompts.md` current with every prompt the user types, as it happens, not only when asked. It's git-ignored, session-local.
-- Update `riscv_simulator_specs.md`'s changelog *and* `riscv_simulator.md`'s user guide as changes are made, not only the specs doc. Same standard either way: the specs entry is free to narrate what changed and why; the user guide only gets a change if it affects what a user should actually do.
-- When a prompt surfaces a durable, generalizable preference (not a one-off), save it to the relevant memory/`.md` file so it survives past this conversation — but keep it lean: a general principle plus why, not a growing pile of every incident that prompted it.
+- Update `docs/specs.md`'s changelog *and* `docs/user-guide.md` as changes are made, not only the specs doc. Same standard either way: the specs entry is free to narrate what changed and why; the user guide only gets a change if it affects what a user should actually do.
+- When a prompt surfaces a durable, generalizable preference (not a one-off), save it to the relevant memory/`.md` file so it survives past this conversation, but keep it lean: a general principle plus why, not a growing pile of every incident that prompted it.
+
+## Architecture (decided)
+- Monorepo, strict boundaries: `core` (pure TS, no DOM, no Node APIs), `transport-webserial`, `transport-node`, `ui` (shared components), `app-web`, `app-electron`.
+- All serial I/O goes through a `SerialTransport` interface. The core never knows which driver is underneath. Features a transport can't support (Web Serial has no XON/XOFF, mark/space parity, or VID/PID metadata) are shown as unavailable on that transport, never silently ignored.
+- Incoming data path: transport, ring buffer, Web Worker (timestamp, split, parse), views. The main thread never parses or formats bulk data. Design for sustained 921600 baud and up.
+- Terminal and hex views are virtualized/canvas-based; no DOM node per line.
+- Plotting uses a canvas/WebGL library (uPlot or equivalent), fed from the same stream as the terminal.
+- UI framework: Svelte 5 + Vite. Electron is dev builds only for now; `electron-builder` packaging comes later.
+- Out of scope for now: protocol decoders (Modbus, SLIP, COBS, frame descriptors), I2C and other non-serial RealTerm features, mobile/Android.
 
 ## Testing
-- These are hand-built HTML/JS pages with their own test suites (see `riscv_simulator_tests/`). Run the test files actually relevant to what changed, not the whole battery reflexively: a pure layout/CSS change doesn't need the instruction-semantics or execution-program suites, and a pure functional/logic change with no UI-visible effect doesn't need the panel-grid or mobile-keyboard suites. When unsure whether a change's blast radius reaches further than it looks (touches shared state, a widely-used function), run the fuller set rather than guess.
-- Treat any new failure as a regression to root-cause, not a magic-number to update blindly.
-- A test that only checks "did it compile / how many instructions" is not enough — verify the actual rendered/simulated output (pixel counts, UART text, register values) matches what a human would call correct.
-- For UI changes, actually drive the page (a live browser check, not just unit tests) before calling it done.
+- Core logic is unit-tested with a mock transport and a loopback transport; no test should need real hardware.
+- Run the test files actually relevant to what changed, not the whole battery reflexively: a pure layout/CSS change doesn't need the parser or transport suites, and a pure core change with no UI-visible effect doesn't need the UI suites. When unsure whether a change's blast radius reaches further than it looks (shared state, the ring buffer, a widely-used function), run the fuller set rather than guess.
+- Treat any new failure as a regression to root-cause, not a magic number to update blindly.
+- A test that only checks "did it run / how many bytes" is not enough: verify the actual received, rendered, or plotted output (byte sequences, displayed text, series values) matches what a human would call correct.
+- For UI changes, actually drive the page (a live browser check, not just unit tests) before calling it done. Include throughput: a UI change that looks fine at 9600 baud can fall over at 1 Mbaud.
 
 ## UI
-- Don't spend screen space on what a user knows by common sense or after one try: idle status ("ready · 9 phases"), usage hints ("Press ▶ to step"). Show state only when it carries information.
-- A label never costs a row. Fit it into a line that already exists, shrinking type or dropping secondary detail (an address) before letting a header wrap; this matters most on a phone.
-- Keep the thing being studied next to what identifies it: nothing goes between an instruction and its drawing. Explanatory text is secondary; keep it short, and put it after the picture, never above it.
+- The bar is "clearly better than RealTerm": modern, uncluttered, keyboard-friendly, dark and light themes, sensible defaults. RealTerm's tab-heavy dense layout is the thing to move away from, not copy.
+- Don't spend screen space on what a user knows by common sense or after one try: idle status, usage hints. Show state only when it carries information.
+- A label never costs a row. Fit it into a line that already exists, shrinking type or dropping secondary detail before letting a header wrap.
+- Keep the thing being studied next to what identifies it. Explanatory text is secondary; keep it short, and put it after the data, never above it.
+- Reuse the closest existing pattern for a new control instead of inventing a bespoke widget.
+- Show a value in more than one form when its format is ambiguous (hex alongside decimal, signed alongside unsigned), toggleable rather than picking one.
+- Never show a value before it's meaningful: a disconnected port shows a clear not-connected state, not zeros.
+- A control irrelevant to the current mode or transport disappears (or is clearly disabled with a tooltip reason if hiding would hide a capability); it doesn't stay up apologizing.
+- Prevent an invalid state instead of handling it elsewhere. Disable the combination, don't tolerate it.
+- Debuggability is a feature: surfacing what the link is actually doing (line signals, byte/error counters, rates, timestamps, raw bytes behind a plotted point) is wanted, not clutter.
 
 ## Writing (code comments, docs, commit messages)
-- Comments explain non-obvious *current* behavior — a hidden constraint, why the less-obvious approach was chosen. They are never a changelog: don't narrate what a bug used to do or why a line was removed. That history belongs in the commit message and, for this project, `riscv_simulator_specs.md`'s version-history table.
+- Comments explain non-obvious *current* behavior: a hidden constraint, why the less-obvious approach was chosen. They are never a changelog; that history belongs in the commit message and `docs/specs.md`'s version-history table.
 - Don't add comments to justify a change that's simple enough to read on its own.
-- `riscv_simulator.md` (the user guide) is written for a reasonably competent user, e.g. a 3rd-year CG3207 student: what to do, not a description of the UI or a log of what changed. Don't explain things that are obvious once seen, and don't re-explain the same fact in more than one place.
-- Avoid AI-tell prose in user-facing writing: keep em-dashes rare, vary sentence rhythm, use plain punctuation (periods, commas, colons, semicolons) over uniform dash constructions.
-- In-UI copy is not documentation, and unlike documentation it costs vertical space every time the panel is open. A control's label plus its `title` tooltip is usually the whole budget; a paragraph of explanation beside a button belongs in `riscv_simulator.md` or the tooltip instead. Prefer adding a button to an existing row over giving it a row of its own.
-- When editing a document that already exists, write in *its* register, not your own. Match its sentence length, its use of bullets vs prose, and how much it explains. A reference page of terse declaratives should not acquire flowing paragraphs with rhetorical framing ("How much time is sufficient is a fixed number", "that is the whole budget you have") just because a new section was added to it.
+- `docs/user-guide.md` is written for a reasonably competent user, e.g. a 3rd-year engineering student: what to do, not a description of the UI or a log of what changed. Don't explain things that are obvious once seen, and don't re-explain the same fact in more than one place. State a cross-cutting fact once and point back to it.
+- Avoid AI-tell prose in user-facing writing: keep em-dashes rare, vary sentence rhythm, use plain punctuation over uniform dash constructions.
+- In-UI copy is not documentation, and unlike documentation it costs vertical space every time it's shown. A control's label plus its `title` tooltip is usually the whole budget. Prefer adding a button to an existing row over giving it a row of its own.
+- When editing a document that already exists, write in *its* register: match its sentence length, bullets vs prose, and how much it explains.
+- Prefer tables over paragraphs when they convey the same facts more densely.
 
 ## Scope
 - Ideate before implementing anything structural or UX-shaped: present options and a recommendation, wait for direction, rather than building first.
-- When a fix reveals the same latent pattern elsewhere, flag it and ask before touching more files than asked — the user is often already tracking it and will confirm scope explicitly.
+- When a fix reveals the same latent pattern elsewhere, flag it and ask before touching more files than asked.
