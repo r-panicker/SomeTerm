@@ -35,3 +35,9 @@ button.toggle.on { background: var(--fg); color: var(--bg); border-color: var(--
   header { gap: 4px; padding: 4px 6px; }
   header select, header button { padding: 1px 5px; font-size: 12px; }
 }
+/* Pane toolbars tighten with the pane's own width, which the split handle can make narrow on any window. */
+.pane { container-type: inline-size; }
+@container (max-width: 520px) {
+  .toolbar { gap: 3px; padding: 3px 4px; }
+  .toolbar select, .toolbar button { padding: 1px 4px; font-size: 11px; }
+}

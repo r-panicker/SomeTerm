@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { FindIndex, NUM_TYPES, decodeNumbers, formatNumber, numInfo, toAscii, toBinary, toHex, type NewlineMode, type NumType } from '@superserial/core';
+  import { FindIndex, type StyleRun, NUM_TYPES, decodeNumbers, formatNumber, numInfo, toAscii, toBinary, toHex, type NewlineMode, type NumType } from '@superserial/core';
   import { untrack } from 'svelte';
   import CanvasView, { type Span } from './CanvasView.svelte';
+  import { ansiColor } from '../lib/ansi-colors';
   import type { Session } from '../lib/session.svelte';
 
   let { session }: { session: Session } = $props();
@@ -32,6 +33,24 @@
   });
   const dump = $derived(format === 'num' ? numDump : format === 'ascii' ? DUMP.hex : DUMP[format]);
   let stamps = $state(false);
+  let ansi = $state(true);
+
+  // Theme-dependent colours for the ANSI palette and for inverse video.
+  let dark = $state(false);
+  let fgColor = '#000';
+  let panelColor = '#fff';
+  $effect(() => {
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    const read = () => {
+      dark = mq.matches;
+      const cs = getComputedStyle(document.documentElement);
+      fgColor = cs.getPropertyValue('--fg').trim();
+      panelColor = cs.getPropertyValue('--panel').trim();
+    };
+    read();
+    mq.addEventListener('change', read);
+    return () => mq.removeEventListener('change', read);
+  });
 
   let findOpen = $state(false);
   let query = $state('');
@@ -45,9 +64,9 @@
   const index = new FindIndex();
 
   $effect(() => {
-    const q = query, o = { caseSensitive, regex };
+    const q = query, o = { caseSensitive, regex }, showAnsi = ansi;
     const t = setTimeout(() => {
-      index.set(q, o, untrack(() => session.log));
+      index.set(q, o, untrack(() => session.log), (l) => (showAnsi ? l.text : (l.raw ?? l.text)));
       cur = null;
       untrack(() => findRev++);
     }, 120);
@@ -117,21 +136,37 @@
     else if (e.key === 'Escape') { e.stopPropagation(); closeFind(); }
   }
 
-  /** Splits text into spans, marking match ranges; `shift` accounts for a prefix such as the tx arrow. */
-  function marked(text: string, tone: Span['tone'], abs: number, shift: number): Span[] {
-    if (!index.active) return [{ text, tone }];
-    const hi = index.find(abs);
-    if (hi < 0) return [{ text, tone }];
+  /**
+   * Splits a line into spans at every ANSI style edge and find-match edge.
+   * `shift` is the length of a prefix (the tx arrow) that the ranges do not include.
+   */
+  function segments(text: string, tone: Span['tone'], abs: number, shift: number, runs: StyleRun[]): Span[] {
+    const hi = index.active ? index.find(abs) : -1;
+    const ranges = hi >= 0 ? index.hits[hi]!.ranges : [];
+    if (!runs.length && !ranges.length) return [{ text, tone }];
+    const cuts = new Set([0, text.length]);
+    for (const r of runs) { cuts.add(r.from + shift); cuts.add(r.to + shift); }
+    for (const [a, b] of ranges) { cuts.add(a + shift); cuts.add(b + shift); }
+    const edges = [...cuts].filter((c) => c >= 0 && c <= text.length).sort((x, y) => x - y);
     const out: Span[] = [];
-    let at = 0;
-    index.hits[hi]!.ranges.forEach(([a, b], k) => {
-      a += shift; b += shift;
-      if (a > at) out.push({ text: text.slice(at, a), tone });
-      out.push({ text: text.slice(a, b), tone, mark: cur && cur.abs === abs && cur.k === k ? 'current' : 'match' });
-      at = b;
-    });
-    if (at < text.length) out.push({ text: text.slice(at), tone });
+    for (let e = 0; e < edges.length - 1; e++) {
+      const a = edges[e]!;
+      const span: Span = { text: text.slice(a, edges[e + 1]), tone };
+      const run = runs.find((r) => a - shift >= r.from && a - shift < r.to);
+      if (run) Object.assign(span, styleOf(run));
+      const k = ranges.findIndex(([x, y]) => a - shift >= x && a - shift < y);
+      if (k >= 0) span.mark = cur && cur.abs === abs && cur.k === k ? 'current' : 'match';
+      out.push(span);
+    }
     return out;
+  }
+
+  function styleOf(r: StyleRun): Partial<Span> {
+    const fg = r.fg !== undefined ? ansiColor(r.fg, dark) : undefined;
+    const bg = r.bg !== undefined ? ansiColor(r.bg, dark) : undefined;
+    const style = { bold: r.bold, italic: r.italic, underline: r.underline, dim: r.dim };
+    // Inverse swaps the effective colours, so unset ones fall back to the theme's.
+    return r.inverse ? { ...style, color: bg ?? panelColor, bg: fg ?? fgColor } : { ...style, color: fg, bg };
   }
   let follow = $state(true);
   let view: CanvasView;
@@ -164,8 +199,9 @@
       const abs = li < session.log.length ? session.log.dropped + li : -1;
       const spans: Span[] = [];
       if (stamps) spans.push({ text: stamp(l.time), tone: 'muted' });
-      if (l.dir === 'tx') spans.push(...marked('→ ' + l.text, 'tx', abs, 2));
-      else spans.push(...marked(l.text, 'fg', abs, 0));
+      if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, []));
+      else if (ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? []));
+      else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, []));
       return spans;
     }
     const d = dump;
@@ -179,7 +215,7 @@
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
-  const revision = $derived(`${session.version}|${format}|${numType}|${littleEndian}|${align}|${stamps}|${findRev}|${filtering}|${cur?.abs}:${cur?.k}`);
+  const revision = $derived(`${session.version}|${format}|${numType}|${littleEndian}|${align}|${stamps}|${findRev}|${filtering}|${ansi}|${dark}|${cur?.abs}:${cur?.k}`);
 
   const rowText = (i: number) => row(i).map((s) => s.text).join('');
 
@@ -240,6 +276,7 @@
         <option value="auto">CR/LF auto</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CRLF</option>
       </select>
       <button class="toggle" class:on={stamps} onclick={() => (stamps = !stamps)} title="Timestamps">⏱</button>
+      <button class="toggle" class:on={ansi} onclick={() => (ansi = !ansi)} title="Interpret ANSI colour codes (off: show them as ␛[…)">ANSI</button>
       <button class="toggle" class:on={session.echo} onclick={() => (session.echo = !session.echo)} title="Show sent data (local echo)">⇄</button>
       <button onclick={openFind} title="Find (Ctrl+F)">Find</button>
     {/if}

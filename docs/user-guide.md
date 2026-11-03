@@ -61,6 +61,8 @@ ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCI
 
 **Find** (Ctrl+F) searches the ASCII view, sent and received lines alike. Enter and Shift+Enter step through matches; **Aa** matches case, **.\*** takes a regular expression, and **Filter** hides lines without a match. New data is searched as it arrives. Esc closes find.
 
+ANSI colour codes are shown as colour; other escape sequences (cursor movement, clear screen, titles) are removed rather than acted on, since this is a scrolling log, not a screen. Turn **ANSI** off to see the raw codes as `␛[31m`. Coloured numeric lines still plot.
+
 ⏱ adds arrival timestamps. Drag to select lines, Ctrl+A for all, then Ctrl+C. Scrolling up pauses following; **↓ Live** resumes.
 
 ## Plotting

@@ -1,7 +1,18 @@
 <script lang="ts" module>
   export type Tone = 'fg' | 'muted' | 'tx' | 'accent';
   export type Mark = 'match' | 'current';
-  export type Span = { text: string; tone: Tone; mark?: Mark };
+  export type Span = {
+    text: string;
+    tone: Tone;
+    mark?: Mark;
+    /** Explicit colours (ANSI) override the tone. */
+    color?: string;
+    bg?: string;
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    dim?: boolean;
+  };
 </script>
 
 <script lang="ts">
@@ -87,13 +98,24 @@
       let x = x0;
       let chars = 0;
       for (const s of row(i)) {
+        const w = s.text.length * charW;
+        if (s.bg) {
+          ctx.fillStyle = s.bg;
+          ctx.fillRect(x, y, w, LINE);
+        }
         if (s.mark) {
           ctx.fillStyle = colors[s.mark];
-          ctx.fillRect(x, y + 1, s.text.length * charW, LINE - 2);
+          ctx.fillRect(x, y + 1, w, LINE - 2);
         }
-        ctx.fillStyle = colors[s.tone];
+        const styled = s.bold || s.italic;
+        if (styled) ctx.font = `${s.italic ? 'italic ' : ''}${s.bold ? 'bold ' : ''}${FONT}`;
+        if (s.dim) ctx.globalAlpha = 0.6;
+        ctx.fillStyle = s.color ?? colors[s.tone];
+        if (s.underline) ctx.fillRect(x, y + LINE - 3, w, 1);
         ctx.fillText(s.text, x, y + LINE / 2);
-        x += s.text.length * charW;
+        if (styled) ctx.font = FONT;
+        if (s.dim) ctx.globalAlpha = 1;
+        x += w;
         chars += s.text.length;
       }
       if (chars > widest) widest = chars;

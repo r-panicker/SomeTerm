@@ -126,17 +126,15 @@ export class Session {
   private timers: ReturnType<typeof setInterval>[] = [];
   private scheduled = false;
   private viewChosen = false;
-  private partialText = '';
-  private partialTime = 0;
-  private partialOffset = 0;
+  private partialLine: RxBatch['partial'] = null;
 
   get capabilities(): TransportCapabilities {
     if (this.choice.kind === 'loopback') return FULL_CAPABILITIES;
     return this.choice.kind === 'native' && native ? native.capabilities : WEB_SERIAL_CAPABILITIES;
   }
 
-  get partial(): { text: string; time: number; offset: number } | null {
-    return this.partialText ? { text: this.partialText, time: this.partialTime, offset: this.partialOffset } : null;
+  get partial(): RxBatch['partial'] {
+    return this.partialLine && (this.partialLine.raw ?? this.partialLine.text) ? this.partialLine : null;
   }
 
   portLabel(c: PortChoice = this.choice): string {
@@ -320,7 +318,7 @@ export class Session {
   setNewline(mode: NewlineMode): void {
     this.newline = mode;
     this.pipeline.reset(mode, this.ring.end);
-    this.partialText = '';
+    this.partialLine = null;
     this.changed();
   }
 
@@ -328,7 +326,7 @@ export class Session {
     this.log.clear();
     this.series.clear();
     this.hexStart = this.ring.end;
-    this.partialText = '';
+    this.partialLine = null;
     this.errors = 0;
     this.lastError = '';
     this.t0 = now();
@@ -410,14 +408,13 @@ export class Session {
 
   private onBatch(b: RxBatch): void {
     for (const l of b.lines) {
-      this.log.pushRx({ dir: 'rx', text: l.text, time: l.time, offset: l.offset });
+      this.log.pushRx({ dir: 'rx', text: l.text, runs: l.runs, raw: l.raw, time: l.time, offset: l.offset });
       if (l.samples) {
         this.series.push((l.time - this.t0) / 1000, l.offset, l.samples);
         if (!this.viewChosen && this.view === 'terminal') this.view = 'split';
       }
     }
-    this.partialText = b.partial?.text ?? '';
-    if (b.partial) { this.partialTime = b.partial.time; this.partialOffset = b.partial.offset; }
+    this.partialLine = b.partial;
     this.changed();
   }
 
