@@ -81,7 +81,7 @@ Serial only. "Better" notes where the UX should deliberately depart from RealTer
 ### Capture and logging
 | Feature | Notes | Status |
 |---|---|---|
-| Capture to file: append / overwrite | Browser: File System Access API | todo |
+| Capture to file: append / overwrite | File System Access API streams to disk; otherwise in-memory with View/Download | todo |
 | Start/stop/pause, capture-after-N-bytes, auto-stop | | todo |
 | Raw vs formatted vs timestamped output | | todo |
 | Rx only, Tx only, or both | | todo |
@@ -104,12 +104,13 @@ Serial only. "Better" notes where the UX should deliberately depart from RealTer
 - Dark/light theme, saved profiles per device.
 - Status bar for line signals and counters; nothing shown when idle.
 
-## Open questions
-1. Half-duplex: RealTerm's "half duplex" mode semantics should be confirmed against its docs before specifying; I'll treat it as local echo of Tx plus optional RTS direction control until you say otherwise.
-2. Browser capture to file needs the File System Access API (Chromium). Fall back to download-on-stop elsewhere?
-3. Package manager: pnpm assumed.
+## Decisions
+- Half-duplex: local echo of Tx plus optional RTS direction control.
+- Capture without the File System Access API: data is held in memory and the capture stays open. View and Download become available on the capture control; nothing downloads automatically on stop. Chromium with the API streams straight to the chosen file.
+- Package manager: pnpm.
 
 ## Changelog
 | Date | Change |
 |---|---|
 | 2026-11-03 | Initial layout and parity checklist drafted. |
+| 2026-11-03 | Resolved half-duplex, capture fallback and pnpm decisions. |
