@@ -59,6 +59,8 @@ ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCI
 | LE / BE | Byte order of the sender (most microcontrollers are LE) |
 | +0 … +7 | Skip bytes until values line up with the sender's framing |
 
+**Find** (Ctrl+F) searches the ASCII view, sent and received lines alike. Enter and Shift+Enter step through matches; **Aa** matches case, **.\*** takes a regular expression, and **Filter** hides lines without a match. New data is searched as it arrives. Esc closes find.
+
 ⏱ adds arrival timestamps. Drag to select lines, Ctrl+A for all, then Ctrl+C. Scrolling up pauses following; **↓ Live** resumes.
 
 ## Plotting
@@ -88,5 +90,6 @@ Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as dat
 
 | Key | Action |
 |---|---|
+| Ctrl+F | Find in terminal |
 | Ctrl+L | Clear terminal, plot and error count |
 | Esc | Close the capture panel, else focus the send box |

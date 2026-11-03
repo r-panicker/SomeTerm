@@ -41,6 +41,10 @@
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
       e.preventDefault();
       session.clear();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+      e.preventDefault();
+      if (session.view === 'plot') session.chooseView('split');
+      queueMicrotask(() => terminal?.openFind());
     } else if (e.key === 'Escape' && !(e.target instanceof HTMLSelectElement)) {
       if (drawer) drawer = null;
       else sendBar.focus();

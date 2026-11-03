@@ -1,6 +1,7 @@
 <script lang="ts" module>
   export type Tone = 'fg' | 'muted' | 'tx' | 'accent';
-  export type Span = { text: string; tone: Tone };
+  export type Mark = 'match' | 'current';
+  export type Span = { text: string; tone: Tone; mark?: Mark };
 </script>
 
 <script lang="ts">
@@ -29,12 +30,12 @@
   let sel: { a: number; b: number } | null = $state(null);
   let flash = $state(-1);
   let dragging = false;
-  let colors: Record<Tone | 'bg' | 'sel' | 'flash', string> = { fg: '#000', muted: '#888', tx: '#06c', accent: '#06c', bg: '#fff', sel: '#cde', flash: '#ff0' };
+  let colors: Record<Tone | Mark | 'bg' | 'sel' | 'flash', string> = { fg: '#000', muted: '#888', tx: '#06c', accent: '#06c', bg: '#fff', sel: '#cde', flash: '#ff0', match: '#fe8', current: '#f90' };
 
   function readColors() {
     const cs = getComputedStyle(scroller);
     const v = (n: string) => cs.getPropertyValue(n).trim();
-    colors = { fg: v('--fg'), muted: v('--muted'), tx: v('--tx'), accent: v('--accent'), bg: v('--panel'), sel: v('--sel'), flash: v('--flash') };
+    colors = { fg: v('--fg'), muted: v('--muted'), tx: v('--tx'), accent: v('--accent'), bg: v('--panel'), sel: v('--sel'), flash: v('--flash'), match: v('--match'), current: v('--match-current') };
   }
 
   onMount(() => {
@@ -86,6 +87,10 @@
       let x = x0;
       let chars = 0;
       for (const s of row(i)) {
+        if (s.mark) {
+          ctx.fillStyle = colors[s.mark];
+          ctx.fillRect(x, y + 1, s.text.length * charW, LINE - 2);
+        }
         ctx.fillStyle = colors[s.tone];
         ctx.fillText(s.text, x, y + LINE / 2);
         x += s.text.length * charW;
@@ -134,6 +139,10 @@
       sel = { a: 0, b: count - 1 };
       e.preventDefault();
     } else if (e.key === 'Escape') sel = null;
+  }
+
+  export function topRow(): number {
+    return Math.max(0, Math.floor((scroller.scrollTop - PAD) / LINE));
   }
 
   export function scrollToRow(i: number) {

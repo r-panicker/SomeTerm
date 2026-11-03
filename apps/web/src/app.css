@@ -1,14 +1,14 @@
 :root {
   --bg: #f4f4f6; --panel: #ffffff; --fg: #1d1d1f; --muted: #6b6b73; --line: #dcdce0;
   --accent: #2563eb; --accent-fg: #fff; --tx: #7048e8; --ok: #16a34a; --err: #b42318;
-  --sel: #dbe6fd; --flash: #fff3bf;
+  --sel: #dbe6fd; --flash: #fff3bf; --match: #ffe066; --match-current: #ff922b;
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #111214; --panel: #18191c; --fg: #e6e6e9; --muted: #8b8b94; --line: #2c2d31;
-    --accent: #3b82f6; --tx: #a78bfa; --ok: #22c55e; --err: #f97066; --sel: #1e3a8a; --flash: #4a3f12;
+    --accent: #3b82f6; --tx: #a78bfa; --ok: #22c55e; --err: #f97066; --sel: #1e3a8a; --flash: #4a3f12; --match: #6b5a12; --match-current: #b8560f;
   }
 }
 * { box-sizing: border-box; }
