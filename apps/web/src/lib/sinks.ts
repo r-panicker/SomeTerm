@@ -5,6 +5,22 @@ type SaveFilePicker = (opts: {
   types?: { description: string; accept: Record<string, string[]> }[];
 }) => Promise<FileSystemFileHandle>;
 
+type DirectoryPicker = (opts: { mode: 'readwrite' }) => Promise<FileSystemDirectoryHandle>;
+
+export function canPickFolder(): boolean {
+  return typeof (window as unknown as { showDirectoryPicker?: unknown }).showDirectoryPicker === 'function';
+}
+
+/** Opens the folder picker; must run from a user gesture. Resolves null if the user cancels. */
+export async function pickFolder(): Promise<FileSystemDirectoryHandle | null> {
+  try {
+    return await (window as unknown as { showDirectoryPicker: DirectoryPicker }).showDirectoryPicker({ mode: 'readwrite' });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') return null;
+    throw e;
+  }
+}
+
 export function canSaveToFile(): boolean {
   return typeof (window as unknown as { showSaveFilePicker?: unknown }).showSaveFilePicker === 'function';
 }

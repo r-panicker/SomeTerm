@@ -109,6 +109,8 @@ The first such line switches to Split view. Click a point to jump to its line in
 | Raw bytes | byte, exactly as received | binary data, replay |
 | Hex, timestamped chunks | chunk as it arrived | timing and framing questions |
 
+**Split every** N MB and/or N min writes a numbered series (`…-001.txt`, `…-002.txt`) into a folder you choose, for long unattended logs. A line or hex chunk is never split across two files, and an idle link does not create empty files.
+
 Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as data arrives (Chrome and Edge); **Memory** keeps it until you View, Download or Discard. Leave a limit empty for no limit.
 
 ## Shortcuts

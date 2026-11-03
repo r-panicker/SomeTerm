@@ -1,9 +1,11 @@
-import { Capture, type CaptureOptions } from '@superserial/core';
-import { FileSink, MemorySink } from './sinks';
+import { Capture, RotatingSink, rotatedName, type CaptureOptions, type CaptureSink, type RotateOptions } from '@superserial/core';
+import { FileSink, MemorySink, pickFolder } from './sinks';
 
 export interface CaptureInfo {
   name: string;
-  kind: 'file' | 'memory';
+  kind: 'file' | 'memory' | 'folder';
+  /** Files written so far, for a capture split across a folder. */
+  files?: number;
   state: 'running' | 'paused' | 'stopped';
   captured: number;
   written: number;
@@ -15,7 +17,10 @@ export interface CaptureInfo {
 export class CaptureController {
   info = $state<CaptureInfo | null>(null);
   private cap: Capture | null = null;
-  private sink: FileSink | MemorySink | null = null;
+  private sink: CaptureSink | null = null;
+  private kind: CaptureInfo['kind'] = 'file';
+  private name = '';
+  private rotating: RotatingSink | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
 
   constructor(private readonly report: (message: string) => void) {}
@@ -28,14 +33,38 @@ export class CaptureController {
    * For a file this opens the save dialog, so call it from a user gesture.
    * Resolves false if the user cancelled.
    */
-  async start(options: CaptureOptions, dest: 'file' | 'memory', append: boolean): Promise<boolean> {
+  async start(options: CaptureOptions, dest: 'file' | 'memory', append: boolean, rotate?: RotateOptions): Promise<boolean> {
     if (this.active) return false;
-    const name = `superserial-${stampForName(new Date())}.txt`;
-    let sink: FileSink | MemorySink;
+    const base = `superserial-${stampForName(new Date())}`;
+    const ext = options.format === 'raw' ? '.bin' : '.txt';
+    let sink: CaptureSink;
+    this.rotating = null;
     try {
-      const f = dest === 'file' ? await FileSink.pick(name, append) : new MemorySink(name);
-      if (!f) return false;
-      sink = f;
+      if (dest === 'file' && rotate && (rotate.bytes || rotate.seconds)) {
+        // A split capture needs a folder: the browser can only write the one file a save dialog returns.
+        const dir = await pickFolder();
+        if (!dir) return false;
+        this.kind = 'folder';
+        this.name = `${dir.name}/${rotatedName(base, 1, ext)}`;
+        const r = new RotatingSink(
+          async (i) => FileSink.open(await dir.getFileHandle(rotatedName(base, i, ext), { create: true }), false),
+          rotate,
+          Date.now,
+          (i) => { this.name = `${dir.name}/${rotatedName(base, i, ext)}`; },
+        );
+        this.rotating = r;
+        sink = r;
+      } else if (dest === 'file') {
+        const f = await FileSink.pick(base + ext, append);
+        if (!f) return false;
+        this.kind = 'file';
+        this.name = f.name;
+        sink = f;
+      } else {
+        this.kind = 'memory';
+        this.name = base + ext;
+        sink = new MemorySink(this.name);
+      }
     } catch (e) {
       this.report(`Capture: ${(e as Error).message}`);
       return false;
@@ -82,8 +111,9 @@ export class CaptureController {
     if (!c || !this.sink) return;
     if (c.state === 'stopped' && this.timer) { clearInterval(this.timer); this.timer = null; }
     this.info = {
-      name: this.sink.name,
-      kind: this.sink instanceof FileSink ? 'file' : 'memory',
+      name: this.name,
+      kind: this.kind,
+      ...(this.rotating && { files: this.rotating.count }),
       state: c.state,
       captured: c.captured,
       written: c.written,
