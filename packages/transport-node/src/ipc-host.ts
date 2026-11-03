@@ -4,7 +4,8 @@ import { NodeSerialTransport, listNodePorts } from './node';
 
 /** The parts of Electron's ipcMain the host needs; also lets tests run without Electron. */
 export interface IpcMainLike {
-  handle(channel: string, fn: (event: unknown, ...args: never[]) => unknown): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches Electron's own signature
+  handle(channel: string, fn: (event: unknown, ...args: any[]) => unknown): void;
   removeHandler(channel: string): void;
 }
 

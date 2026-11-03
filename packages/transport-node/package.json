@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./bridge": "./src/bridge.ts",
+    "./capabilities": "./src/capabilities.ts",
     "./ipc-client": "./src/ipc-client.ts"
   },
   "scripts": {
