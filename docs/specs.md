@@ -114,3 +114,4 @@ Serial only. "Better" notes where the UX should deliberately depart from RealTer
 |---|---|
 | 2026-11-03 | Initial layout and parity checklist drafted. |
 | 2026-11-03 | Resolved half-duplex, capture fallback and pnpm decisions. |
+| 2026-11-03 | Scaffolded pnpm workspace and `packages/core`: `SerialTransport` interface, capability flags and option checking, `LoopbackTransport` mock (RTS→CTS, DTR→DSR) with tests. |
