@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SerialOptions } from '@superserial/core';
-import { WebSerialTransport } from './webserial';
+import { WebSerialTransport, describePort } from './webserial';
 import { FakeSerialPort } from './fake-port';
 
 const opts: SerialOptions = { baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' };
@@ -110,5 +110,15 @@ describe('WebSerialTransport', () => {
     await t.sendBreak(30);
     expect(Date.now() - start).toBeGreaterThanOrEqual(25);
     expect(port.signalLog).toEqual([{ break: true }, { break: false }]);
+  });
+});
+
+describe('describePort', () => {
+  const port = (usbVendorId?: number, usbProductId?: number) =>
+    ({ getInfo: () => ({ usbVendorId, usbProductId }) }) as unknown as SerialPort;
+  it('names known vendors and formats IDs', () => {
+    expect(describePort(port(0x2341, 0x43))).toBe('Arduino 2341:0043');
+    expect(describePort(port(0xabcd, 0x1))).toBe('USB ABCD:0001');
+    expect(describePort(port())).toBe('Serial port');
   });
 });

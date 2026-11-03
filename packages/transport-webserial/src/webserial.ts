@@ -24,6 +24,26 @@ export function isWebSerialAvailable(): boolean {
   return typeof navigator !== 'undefined' && 'serial' in navigator;
 }
 
+/** Ports the user has already granted to this origin; no prompt needed. */
+export async function grantedWebSerialPorts(): Promise<SerialPort[]> {
+  return isWebSerialAvailable() ? navigator.serial.getPorts() : [];
+}
+
+const USB_VENDORS: Record<number, string> = {
+  0x2341: 'Arduino', 0x2a03: 'Arduino', 0x0403: 'FTDI', 0x10c4: 'Silicon Labs', 0x1a86: 'CH34x',
+  0x303a: 'Espressif', 0x0483: 'STMicro', 0x2e8a: 'Raspberry Pi', 0x04d8: 'Microchip',
+  0x239a: 'Adafruit', 0x1366: 'SEGGER', 0x0d28: 'DAPLink', 0x067b: 'Prolific',
+};
+
+/** Short human label for a port; Web Serial exposes only USB IDs, not names. */
+export function describePort(port: SerialPort): string {
+  const { usbVendorId: v, usbProductId: p } = port.getInfo();
+  if (v === undefined) return 'Serial port';
+  const hex = (n: number) => n.toString(16).padStart(4, '0').toUpperCase();
+  const id = p === undefined ? hex(v) : `${hex(v)}:${hex(p)}`;
+  return USB_VENDORS[v] ? `${USB_VENDORS[v]} ${id}` : `USB ${id}`;
+}
+
 /** The port picker needs a user gesture, so call this from a click handler. */
 export async function requestWebSerialPort(filters?: SerialPortFilter[]): Promise<WebSerialTransport> {
   const port = await navigator.serial.requestPort(filters ? { filters } : {});
