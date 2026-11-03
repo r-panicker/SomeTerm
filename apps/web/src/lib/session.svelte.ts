@@ -58,6 +58,12 @@ export interface SendOptions {
   eol: string;
 }
 
+export interface PlotTransform {
+  /** Expression in `x`, e.g. `x*3.3/4095`; empty means none. */
+  expr: string;
+  unit: string;
+}
+
 export interface SendJob {
   kind: 'paced' | 'repeat' | 'file';
   label: string;
@@ -113,6 +119,8 @@ export class Session implements TermSource {
   display = $state<DisplaySettings>(defaultDisplay());
   /** Plot time window in seconds; 0 shows everything. */
   plotWindow = $state(30);
+  /** Per-series display transform, keyed by series name; raw values are kept unchanged. */
+  plotTransforms = $state<Record<string, PlotTransform>>({});
   /** The profile last applied or saved here; settings may have changed since. */
   profileId = $state<string | null>(null);
   readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });

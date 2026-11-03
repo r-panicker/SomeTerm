@@ -1,5 +1,6 @@
 import type { SerialOptions } from '@superserial/core';
 import { Monitor } from './monitor.svelte';
+import { sanitizeTransforms } from './profiles.svelte';
 import { Session, native, type PortChoice, type SendOptions, type View } from './session.svelte';
 
 const STORAGE_KEY = 'superserial.workspace.v1';
@@ -16,6 +17,7 @@ interface SavedTab {
   profileId?: string | null;
   display?: Session['display'];
   plotWindow?: number;
+  plotTransforms?: Session['plotTransforms'];
   dtr?: boolean;
   rts?: boolean;
 }
@@ -88,6 +90,7 @@ export class Workspace {
       profileId: s.profileId,
       display: $state.snapshot(s.display),
       plotWindow: s.plotWindow,
+      plotTransforms: $state.snapshot(s.plotTransforms),
       dtr: s.dtr,
       rts: s.rts,
     }));
@@ -128,6 +131,7 @@ export class Workspace {
       s.echo = t.echo;
       if (t.display) Object.assign(s.display, t.display);
       if (t.plotWindow !== undefined) s.plotWindow = t.plotWindow;
+      if (t.plotTransforms) s.plotTransforms = sanitizeTransforms(t.plotTransforms);
       if (t.dtr !== undefined) s.dtr = t.dtr;
       if (t.rts !== undefined) s.rts = t.rts;
       if (t.newline !== s.newline) s.setNewline(t.newline);

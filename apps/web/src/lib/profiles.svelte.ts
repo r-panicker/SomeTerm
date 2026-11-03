@@ -8,9 +8,10 @@ import {
   type NewlineMode,
   type Profile,
   type SerialOptions,
+  compileExpr,
 } from '@superserial/core';
 import type { DisplaySettings } from './source';
-import type { SendOptions, Session, View } from './session.svelte';
+import type { PlotTransform, SendOptions, Session, View } from './session.svelte';
 
 /** What a profile carries. Repeat count and interval are left out: they describe one job, not a device. */
 export interface ProfileSettings {
@@ -23,6 +24,7 @@ export interface ProfileSettings {
   send: Pick<SendOptions, 'eol' | 'checksum' | 'byteDelayMs' | 'lineDelayMs' | 'rtsWhileSending'>;
   view: View;
   plotWindow: number;
+  plotTransforms: Record<string, PlotTransform>;
 }
 
 export function settingsOf(s: Session): ProfileSettings {
@@ -37,6 +39,7 @@ export function settingsOf(s: Session): ProfileSettings {
     send: { eol: o.eol, checksum: o.checksum, byteDelayMs: o.byteDelayMs, lineDelayMs: o.lineDelayMs, rtsWhileSending: o.rtsWhileSending },
     view: s.view,
     plotWindow: s.plotWindow,
+    plotTransforms: $state.snapshot(s.plotTransforms),
   };
 }
 
@@ -50,6 +53,23 @@ export function applySettings(s: Session, p: ProfileSettings): void {
   Object.assign(s.sendOptions, p.send);
   s.chooseView(p.view);
   s.plotWindow = p.plotWindow;
+  s.plotTransforms = { ...p.plotTransforms };
+}
+
+/** Keeps only transforms whose expression compiles; an imported file cannot smuggle in anything else. */
+export function sanitizeTransforms(raw: unknown): Record<string, PlotTransform> {
+  const out: Record<string, PlotTransform> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const [name, t] of Object.entries(raw as Record<string, { expr?: unknown; unit?: unknown }>)) {
+    const expr = typeof t?.expr === 'string' ? t.expr.slice(0, 200) : '';
+    const unit = typeof t?.unit === 'string' ? t.unit.slice(0, 16) : '';
+    if (name.length > 64 || (!expr && !unit)) continue;
+    if (expr) {
+      try { compileExpr(expr); } catch { continue; }
+    }
+    out[name] = { expr, unit };
+  }
+  return out;
 }
 
 const pick = <T>(v: unknown, allowed: readonly T[], fallback: T): T => (allowed.includes(v as T) ? (v as T) : fallback);
@@ -99,6 +119,7 @@ export function sanitizeSettings(raw: unknown): ProfileSettings | null {
     },
     view: pick(r.view, ['terminal', 'split', 'plot'] as const, 'terminal'),
     plotWindow: int(r.plotWindow, 0, 86_400, 30),
+    plotTransforms: sanitizeTransforms(r.plotTransforms),
   };
 }
 

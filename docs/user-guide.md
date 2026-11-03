@@ -97,7 +97,9 @@ Any received line made only of numbers is plotted, Arduino style:
 | `12,34,56` or `12 34 56` | 1, 2, 3 |
 | `temp:23.1,hum:41` or `temp=23.1 hum=41` | temp, hum |
 
-The first such line switches to Split view. Click a point to jump to its line in the terminal. Drag across the plot to zoom, double-click to reset. Click a legend entry to hide that series. CSV exports everything plotted since the last Clear.
+The first such line switches to Split view. Click a point to jump to its line in the terminal. Drag across the plot to zoom, double-click to reset. Click a legend entry to hide that series. **ƒx** converts a series for display: an expression in `x` (the received value) and a unit, e.g. `x*3.3/4095` in `V` for a 12-bit ADC, or `(x-500)/10` in `°C`. Available: `+ - * / ^`, `pi`, `e`, `abs sqrt exp ln log sin cos tan min max pow round floor ceil`. The terminal still shows the raw numbers. Conversions are saved with the tab and in profiles.
+
+CSV exports everything plotted since the last Clear, converted, with units in the header.
 
 ## Capture
 

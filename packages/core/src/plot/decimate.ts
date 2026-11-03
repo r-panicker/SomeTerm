@@ -17,7 +17,7 @@ export function decimateMinMax(
   to: number,
   buckets: number,
   /** Per-column transform, applied before min/max so non-monotonic ones (abs, sin) keep the true envelope. */
-  maps: readonly ((x: number) => number)[] | null[] = [],
+  maps: readonly (((x: number) => number) | null | undefined)[] = [],
 ): Decimated {
   const n = to - from;
   const mapped = (k: number) => {
