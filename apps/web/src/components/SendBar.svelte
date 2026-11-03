@@ -140,7 +140,7 @@
         </label>
         <label>Half duplex
           <span class="pair">
-            <input type="checkbox" bind:checked={session.sendOptions.rtsWhileSending} disabled={!session.capabilities.lineSignals} />
+            <input type="checkbox" bind:checked={session.sendOptions.rtsWhileSending} disabled={!session.capabilities.lineSignals || !session.lineControl} title={session.lineControl ? '' : 'This port has no modem control lines'} />
             raise RTS while sending
           </span>
         </label>

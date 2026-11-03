@@ -1,14 +1,14 @@
 <script lang="ts">
   import { unsupportedOptions, type SerialOptions } from '@superserial/core';
   import { isWebSerialAvailable } from '@superserial/transport-webserial';
-  import type { PortChoice, Session, View } from '../lib/session.svelte';
+  import { native, type PortChoice, type Session, type View } from '../lib/session.svelte';
 
   let { session, drawer = $bindable(null) }: { session: Session; drawer?: 'capture' | null } = $props();
 
   const BAUDS = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 250000, 460800, 500000, 921600, 1000000, 2000000];
   const PARITY = { none: 'N', even: 'E', odd: 'O', mark: 'M', space: 'S' } as const;
   const FLOW = { none: '', rtscts: 'RTS/CTS', dsrdtr: 'DSR/DTR', xonxoff: 'XON/XOFF' } as const;
-  const hasWebSerial = isWebSerialAvailable();
+  const hasWebSerial = !native && isWebSerialAvailable();
 
   let settingsOpen = $state(false);
   let popover: HTMLDivElement | undefined = $state();
@@ -28,16 +28,21 @@
   });
 
   const choices = $derived<{ key: string; c: PortChoice }[]>([
+    ...session.nativePorts.map((p) => ({ key: `n:${p.path}`, c: { kind: 'native', ...p } as PortChoice })),
     ...session.granted.map((port, i) => ({ key: `p${i}`, c: { kind: 'webserial', port } as PortChoice })),
     ...(hasWebSerial ? [{ key: 'add', c: { kind: 'add' } as PortChoice }] : []),
     { key: 'loop', c: { kind: 'loopback' } as PortChoice },
   ]);
   const selectedKey = $derived(
-    choices.find((x) => x.c.kind === session.choice.kind && (x.c.kind !== 'webserial' || (session.choice.kind === 'webserial' && x.c.port === session.choice.port)))?.key ?? 'add',
+    choices.find((x) => keyOf(x.c) === keyOf(session.choice))?.key ?? choices[0]?.key ?? 'loop',
   );
 
+  function keyOf(c: PortChoice): unknown {
+    return c.kind === 'native' ? `n:${c.path}` : c.kind === 'webserial' ? c.port : c.kind;
+  }
+
   function pick(key: string) {
-    session.choice = choices.find((x) => x.key === key)!.c;
+    session.choosePort(choices.find((x) => x.key === key)!.c);
   }
 
   function outside(e: MouseEvent) {
@@ -53,7 +58,7 @@
 <svelte:window onmousedown={outside} onkeydown={(e) => e.key === 'Escape' && (settingsOpen = false)} />
 
 <header>
-  <select value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} disabled={session.open || session.busy} title="Port">
+  <select value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={session.open || session.busy} title="Port">
     {#each choices as x (x.key)}<option value={x.key}>{session.portLabel(x.c)}</option>{/each}
   </select>
   <div class="anchor">
@@ -91,8 +96,9 @@
     {session.open ? 'Disconnect' : 'Connect'}
   </button>
   {#if session.open}
-    <button class="line" class:on={session.dtr} onclick={() => session.setLine('dtr', !session.dtr)} title="DTR output">DTR</button>
-    <button class="line" class:on={session.rts} onclick={() => session.setLine('rts', !session.rts)} title="RTS output">RTS</button>
+    {@const noLines = session.lineControl ? '' : 'This port has no modem control lines'}
+    <button class="line" class:on={session.dtr && session.lineControl} onclick={() => session.setLine('dtr', !session.dtr)} disabled={!!noLines} title={noLines || 'DTR output'}>DTR</button>
+    <button class="line" class:on={session.rts && session.lineControl} onclick={() => session.setLine('rts', !session.rts)} disabled={!!noLines} title={noLines || 'RTS output'}>RTS</button>
     {#if session.capabilities.sendBreak}<button onclick={() => session.sendBreak()} title="Send a 250 ms break">Break</button>{/if}
   {/if}
   <span class="spacer"></span>

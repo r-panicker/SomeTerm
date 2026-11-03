@@ -28,9 +28,18 @@ import {
   isWebSerialAvailable,
   requestWebSerialPort,
 } from '@superserial/transport-webserial';
+import type { NativePortSummary, NativeSerialBridge } from '@superserial/transport-node/bridge';
+import { IpcSerialTransport } from '@superserial/transport-node/ipc-client';
 import { FileSink, MemorySink } from './sinks';
 
-export type PortChoice = { kind: 'loopback' } | { kind: 'webserial'; port: SerialPort } | { kind: 'add' };
+/** Present when running inside the Electron app; serial I/O then goes through Node, not Web Serial. */
+export const native = (globalThis as { superserialNative?: NativeSerialBridge }).superserialNative;
+
+export type PortChoice =
+  | { kind: 'loopback' }
+  | { kind: 'webserial'; port: SerialPort }
+  | { kind: 'add' }
+  | { kind: 'native'; path: string; label: string };
 export type View = 'terminal' | 'split' | 'plot';
 
 export interface SendOptions {
@@ -75,8 +84,10 @@ const now = () => performance.now();
  */
 export class Session {
   options = $state<SerialOptions>({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
-  choice = $state<PortChoice>(isWebSerialAvailable() ? { kind: 'add' } : { kind: 'loopback' });
+  choice = $state<PortChoice>(!native && isWebSerialAvailable() ? { kind: 'add' } : { kind: 'loopback' });
   granted = $state<SerialPort[]>([]);
+  nativePorts = $state<NativePortSummary[]>([]);
+  private portChosen = false;
   open = $state(false);
   busy = $state(false);
   version = $state(0);
@@ -87,6 +98,8 @@ export class Session {
   lastError = $state('');
   dtr = $state(true);
   rts = $state(true);
+  /** False when the open port has no modem control lines (ptys, many virtual ports). */
+  lineControl = $state(true);
   signals = $state<InputSignals | null>(null);
   view = $state<View>('terminal');
   echo = $state(true);
@@ -118,7 +131,8 @@ export class Session {
   private partialOffset = 0;
 
   get capabilities(): TransportCapabilities {
-    return this.choice.kind === 'loopback' ? FULL_CAPABILITIES : WEB_SERIAL_CAPABILITIES;
+    if (this.choice.kind === 'loopback') return FULL_CAPABILITIES;
+    return this.choice.kind === 'native' && native ? native.capabilities : WEB_SERIAL_CAPABILITIES;
   }
 
   get partial(): { text: string; time: number; offset: number } | null {
@@ -126,11 +140,26 @@ export class Session {
   }
 
   portLabel(c: PortChoice = this.choice): string {
+    if (c.kind === 'native') return c.label;
     return c.kind === 'loopback' ? 'Loopback' : c.kind === 'add' ? 'Add port…' : describePort(c.port);
   }
 
   async refreshPorts(): Promise<void> {
-    this.granted = await grantedWebSerialPorts();
+    if (!native) {
+      this.granted = await grantedWebSerialPorts();
+      return;
+    }
+    const ports = await native.list().catch(() => this.nativePorts);
+    if (JSON.stringify(ports) !== JSON.stringify(this.nativePorts)) this.nativePorts = ports;
+    // Until the user picks, default to the first real port rather than Loopback.
+    if (!this.portChosen && !this.open && this.choice.kind === 'loopback' && ports[0]) {
+      this.choice = { kind: 'native', ...ports[0] };
+    }
+  }
+
+  choosePort(c: PortChoice): void {
+    this.choice = c;
+    this.portChosen = true;
   }
 
   chooseView(v: View): void {
@@ -143,6 +172,7 @@ export class Session {
     try {
       let t: SerialTransport;
       if (this.choice.kind === 'loopback') t = new LoopbackTransport({}, now);
+      else if (this.choice.kind === 'native' && native) t = new IpcSerialTransport(native, this.choice.path, now);
       else if (this.choice.kind === 'webserial') t = new WebSerialTransport(this.choice.port, now);
       else {
         const w = await requestWebSerialPort();
@@ -158,7 +188,7 @@ export class Session {
       try {
         await t.open($state.snapshot(this.options));
         // Make the shown DTR/RTS state the real one rather than the driver's default.
-        await t.setSignals({ dtr: this.dtr, rts: this.rts });
+        this.lineControl = await t.setSignals({ dtr: this.dtr, rts: this.rts }).then(() => true, () => false);
       } catch (e) {
         this.offs.forEach((f) => f());
         this.offs = [];

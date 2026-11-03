@@ -6,18 +6,28 @@ Needs Node 22 and pnpm.
 
 ```bash
 pnpm install
-pnpm dev
+pnpm dev            # browser: open the printed URL in Chrome or Edge
+pnpm dev:electron   # desktop app
 ```
 
-Open the printed URL in Chrome or Edge. Other browsers have no Web Serial and offer only Loopback.
+The browser version uses Web Serial, so other browsers offer only Loopback. The desktop app talks to the OS serial driver directly and supports more settings:
+
+| Setting | Browser | Desktop |
+|---|---|---|
+| 5 and 6 data bits, XON/XOFF | no | yes |
+| Mark/space parity, 1.5 stop bits | no | Windows only |
+| DSR/DTR flow control | no | no |
+| RI input | yes | no |
+
+To use a port the OS does not list (socat, other virtual ports), start the desktop app with `SUPERSERIAL_EXTRA_PORTS=/dev/pts/5` (several separated by `:`, or `;` on Windows).
 
 ## Connecting
 
-Pick a port, check the settings chip (`115200 8N1`), then Connect. **Add port…** opens the browser's port picker; ports you have granted before are listed by vendor and USB ID. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
+Pick a port, check the settings chip (`115200 8N1`), then Connect. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
 
 Settings a port cannot do are greyed out; hover for the reason. Disconnect to change settings.
 
-DTR and RTS toggle the output lines (green is asserted). Input lines CTS, DSR, DCD and RI are shown in the status bar.
+DTR and RTS toggle the output lines (green is asserted). Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
 
 ## Sending
 

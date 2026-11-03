@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Session } from './lib/session.svelte';
+  import { Session, native } from './lib/session.svelte';
   import TopBar from './components/TopBar.svelte';
   import Terminal from './components/Terminal.svelte';
   import Plot from './components/Plot.svelte';
@@ -23,6 +23,8 @@
     const refresh = () => session.refreshPorts();
     serial?.addEventListener('connect', refresh);
     serial?.addEventListener('disconnect', refresh);
+    // Node has no hot-plug event, so poll the port list while idle in the desktop app.
+    const poll = native ? setInterval(() => { if (!session.open) session.refreshPorts(); }, 2000) : undefined;
     const mq = matchMedia('(max-width: 700px)');
     const onMq = () => (narrow = mq.matches);
     onMq();
@@ -31,6 +33,7 @@
       serial?.removeEventListener('connect', refresh);
       serial?.removeEventListener('disconnect', refresh);
       mq.removeEventListener('change', onMq);
+      clearInterval(poll);
     };
   });
 
