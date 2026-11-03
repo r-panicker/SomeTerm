@@ -2,8 +2,16 @@
   import { unsupportedOptions, type SerialOptions } from '@superserial/core';
   import { isWebSerialAvailable } from '@superserial/transport-webserial';
   import { native, type PortChoice, type Session, type View } from '../lib/session.svelte';
+  import type { Workspace } from '../lib/workspace.svelte';
 
-  let { session, drawer = $bindable(null) }: { session: Session; drawer?: 'capture' | null } = $props();
+  let { session, workspace, drawer = $bindable(null) }: { session: Session; workspace: Workspace; drawer?: 'capture' | null } = $props();
+
+  const others = $derived(workspace.sessions.filter((o) => o !== session));
+  /** Tooltip naming the tab that already has this port open, or ''. */
+  const heldBy = (c: PortChoice) => {
+    const h = workspace.holder(c, session);
+    return h ? `Open in tab ${h.letter}` : '';
+  };
 
   const BAUDS = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 250000, 460800, 500000, 921600, 1000000, 2000000];
   const PARITY = { none: 'N', even: 'E', odd: 'O', mark: 'M', space: 'S' } as const;
@@ -59,7 +67,7 @@
 
 <header>
   <select value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={session.open || session.busy} title="Port">
-    {#each choices as x (x.key)}<option value={x.key}>{session.portLabel(x.c)}</option>{/each}
+    {#each choices as x (x.key)}<option value={x.key} disabled={!!heldBy(x.c)} title={heldBy(x.c)}>{session.portLabel(x.c)}</option>{/each}
   </select>
   <div class="anchor">
     <button bind:this={chip} class="chip" onclick={() => (settingsOpen = !settingsOpen)} disabled={session.open} title={session.open ? 'Disconnect to change port settings' : 'Port settings'}>{summary}</button>
@@ -92,7 +100,7 @@
       </div>
     {/if}
   </div>
-  <button class="primary" onclick={() => (session.open ? session.disconnect() : session.connect())} disabled={session.busy}>
+  <button class="primary" onclick={() => (session.open ? session.disconnect() : session.connect())} disabled={session.busy || (!session.open && !!heldBy(session.choice))} title={session.open ? '' : heldBy(session.choice)}>
     {session.open ? 'Disconnect' : 'Connect'}
   </button>
   {#if session.open}
@@ -101,6 +109,17 @@
     <button class="line" class:on={session.rts && session.lineControl} onclick={() => session.setLine('rts', !session.rts)} disabled={!!noLines} title={noLines || 'RTS output'}>RTS</button>
     {#if session.capabilities.sendBreak}<button onclick={() => session.sendBreak()} title="Send a 250 ms break">Break</button>{/if}
   {/if}
+  {#if others.length}
+    <select
+      class="fwd"
+      value={session.forwardTo?.letter ?? ''}
+      onchange={(e) => (session.forwardTo = others.find((o) => o.letter === e.currentTarget.value) ?? null)}
+      title="Write everything received on this port out of another port"
+    >
+      <option value="">→ none</option>
+      {#each others as o (o.id)}<option value={o.letter}>→ {o.letter}</option>{/each}
+    </select>
+  {/if}
   <span class="spacer"></span>
   <button class="toggle" class:on={drawer === 'capture'} class:rec={session.capture.info?.state === 'running'} onclick={() => (drawer = drawer === 'capture' ? null : 'capture')} title="Capture to file">Capture</button>
   <div class="seg" role="group" aria-label="View">
@@ -108,6 +127,7 @@
       <button class:on={session.view === v} onclick={() => session.chooseView(v as View)}>{l}</button>
     {/each}
   </div>
+  {#if !others.length}<button onclick={() => workspace.add()} title="Open another port in a new tab">+</button>{/if}
 </header>
 
 <style>

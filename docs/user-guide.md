@@ -29,6 +29,19 @@ Settings a port cannot do are greyed out; hover for the reason. Disconnect to ch
 
 DTR and RTS toggle the output lines (green is asserted). Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
 
+## Several ports
+
+**+** opens another port in a new tab. Tabs are lettered A, B, …; a port open in one tab is greyed out in the others.
+
+| Tab | Use |
+|---|---|
+| Port tabs | Each is a full terminal, plot, send bar and capture for one port |
+| **Monitor** | Every port's sent and received lines on one timeline, tagged `A›`, `B›`. For spying on a link with two adapters, connect one to each wire. Its Capture writes the merged timeline as text |
+
+**→ B** in a port's top bar forwards everything that port receives out of port B, to sit between two devices (set it on both tabs for both directions). Forwarded bytes count as sent on B but are not echoed there, and the Monitor shows them once, as received on the source port. Do not forward through a loopback plug in both directions: the data circulates forever.
+
+Tabs, port choices and settings are restored on the next launch, but ports are not reopened: opening a port toggles DTR, which resets many boards. In the browser a port is only restored if exactly one granted port has its USB IDs.
+
 ## Sending
 
 | Mode | Input | Example |
@@ -93,5 +106,6 @@ Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as dat
 | Key | Action |
 |---|---|
 | Ctrl+F | Find in terminal |
+| Ctrl+Tab | Next tab (desktop app; browsers keep this key) |
 | Ctrl+L | Clear terminal, plot and error count |
 | Esc | Close the capture panel, else focus the send box |

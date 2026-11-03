@@ -16,6 +16,7 @@ import {
   type SerialOptions,
   type SerialTransport,
   type TransportCapabilities,
+  type TermLine,
 } from '@superserial/core';
 import {
   WEB_SERIAL_CAPABILITIES,
@@ -28,6 +29,7 @@ import {
 import type { NativePortSummary, NativeSerialBridge } from '@superserial/transport-node/bridge';
 import { IpcSerialTransport } from '@superserial/transport-node/ipc-client';
 import { CaptureController } from './capture.svelte';
+import type { TermSource } from './source';
 import { PipelineClient } from './pipeline';
 
 /** Present when running inside the Electron app; serial I/O then goes through Node, not Web Serial. */
@@ -70,7 +72,18 @@ const now = () => performance.now();
  * series) is plain, not reactive; `version` ticks at most once per frame so views
  * redraw per frame rather than per chunk.
  */
-export class Session {
+export class Session implements TermSource {
+  /** Received data is also written to this port when set (RealTerm's echo port). */
+  forwardTo = $state<Session | null>(null);
+  /** Every rx line and every send, for merged views; not affected by the echo toggle. */
+  onLine: ((line: TermLine) => void) | null = null;
+
+  constructor(
+    /** Stable for the session's life; used to tag its lines in merged views. */
+    readonly id = 0,
+    readonly letter = 'A',
+  ) {}
+
   options = $state<SerialOptions>({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
   choice = $state<PortChoice>(!native && isWebSerialAvailable() ? { kind: 'add' } : { kind: 'loopback' });
   granted = $state<SerialPort[]>([]);
@@ -254,9 +267,13 @@ export class Session {
     const t = this.transport;
     if (!t) return;
     // Echo happens before the write so it precedes any reply it provokes.
-    if (this.echo) {
-      this.log.push({ dir: 'tx', text: echoText ?? echoLine(bytes), time: now(), offset: -1 });
-      this.changed();
+    if (this.echo || this.onLine) {
+      const line: TermLine = { dir: 'tx', text: echoText ?? echoLine(bytes), time: now(), offset: -1 };
+      this.onLine?.(line);
+      if (this.echo) {
+        this.log.push(line);
+        this.changed();
+      }
     }
     const o = this.sendOptions;
     const rts = o.rtsWhileSending;
@@ -328,11 +345,42 @@ export class Session {
     this.ring.push(chunk);
     this.capture.rx(chunk, performance.timeOrigin + ts);
     this.pipeline.data(chunk, ts);
+    const to = this.forwardTo;
+    if (to?.open) {
+      to.forward(chunk).catch((e: Error) => { to.errors++; to.lastError = `Forward from ${this.letter}: ${e.message}`; });
+    }
+  }
+
+  /**
+   * Writes bytes forwarded from another port. Counted and captured as sent, but
+   * not echoed or passed to merged views: those already show them as the source's rx.
+   */
+  async forward(chunk: Uint8Array): Promise<void> {
+    const t = this.transport;
+    if (!t) return;
+    this.capture.tx(chunk, Date.now());
+    await t.write(chunk);
+    this.tx += chunk.length;
+  }
+
+  /** Identifies the physical port, so two tabs cannot open the same one. Null for Loopback. */
+  portKey(c: PortChoice = this.choice): unknown {
+    if (c.kind === 'native') return `native:${c.path}`;
+    if (c.kind === 'webserial') return c.port;
+    return null;
+  }
+
+  async dispose(): Promise<void> {
+    await this.capture.stop();
+    if (this.open) await this.disconnect();
+    this.pipeline.dispose();
   }
 
   private onBatch(b: RxBatch): void {
     for (const l of b.lines) {
-      this.log.pushRx({ dir: 'rx', text: l.text, runs: l.runs, raw: l.raw, time: l.time, offset: l.offset });
+      const line: TermLine = { dir: 'rx', text: l.text, runs: l.runs, raw: l.raw, time: l.time, offset: l.offset };
+      this.log.pushRx(line);
+      this.onLine?.(line);
       if (l.samples) {
         this.series.push((l.time - this.t0) / 1000, l.offset, l.samples);
         if (!this.viewChosen && this.view === 'terminal') this.view = 'split';
