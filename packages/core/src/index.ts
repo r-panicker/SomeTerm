@@ -15,3 +15,4 @@ export { RxPipeline, type RxLine, type RxBatch, type RxCommand } from './pipelin
 export { decodeNumbers, formatNumber, numInfo, NUM_TYPES, type NumType } from './format/numbers';
 export { buildMatcher, type Matcher, type SearchOptions } from './terminal/search';
 export { FindIndex, type Hit } from './terminal/find-index';
+export { AnsiParser, applySgr, RGB_FLAG, type AnsiStyle, type AnsiColor, type StyleRun } from './pipeline/ansi';

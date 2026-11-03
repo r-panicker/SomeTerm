@@ -63,6 +63,16 @@ describe('FindIndex', () => {
     expect(f.total).toBe(0);
   });
 
+  it('searches the text chosen by textOf', () => {
+    const log = new TerminalLog();
+    log.push({ ...rx('red'), raw: '␛[31mred' });
+    const f = new FindIndex();
+    f.set('[31', { caseSensitive: false, regex: false }, log);
+    expect(f.total).toBe(0);
+    f.set('[31', { caseSensitive: false, regex: false }, log, (l) => l.raw ?? l.text);
+    expect(f.hits).toEqual([{ abs: 0, ranges: [[1, 4]] }]);
+  });
+
   it('invalid regex sets an error and no hits', () => {
     const log = new TerminalLog();
     log.push(rx('a'));

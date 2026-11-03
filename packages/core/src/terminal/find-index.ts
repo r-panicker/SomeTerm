@@ -1,5 +1,5 @@
 import { buildMatcher, type Matcher, type SearchOptions } from './search';
-import type { TerminalLog } from './log';
+import type { TermLine, TerminalLog } from './log';
 
 export interface Hit {
   /** Absolute line number (log.dropped + index). */
@@ -17,12 +17,15 @@ export class FindIndex {
   error = '';
   private matcher: Matcher | null = null;
   private scanned = 0;
+  private textOf: (l: TermLine) => string = (l) => l.text;
 
   get active(): boolean {
     return !!this.matcher;
   }
 
-  set(query: string, opts: SearchOptions, log: TerminalLog): void {
+  /** `textOf` picks the text that is on screen, so match positions line up with what is drawn. */
+  set(query: string, opts: SearchOptions, log: TerminalLog, textOf: (l: TermLine) => string = (l) => l.text): void {
+    this.textOf = textOf;
     const m = buildMatcher(query, opts);
     this.error = typeof m === 'string' ? m : '';
     this.matcher = typeof m === 'function' ? m : null;
@@ -39,7 +42,7 @@ export class FindIndex {
     this.dropBefore(log.dropped);
     while (this.hits.length && this.hits[this.hits.length - 1]!.abs >= from) this.total -= this.hits.pop()!.ranges.length;
     for (let abs = from; abs < end; abs++) {
-      const ranges = this.matcher(log.get(abs - log.dropped)!.text);
+      const ranges = this.matcher(this.textOf(log.get(abs - log.dropped)!));
       if (ranges.length) {
         this.hits.push({ abs, ranges });
         this.total += ranges.length;

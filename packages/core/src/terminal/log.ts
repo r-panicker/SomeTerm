@@ -1,8 +1,14 @@
+import type { StyleRun } from '../pipeline/ansi';
+
 export type Direction = 'rx' | 'tx';
 
 export interface TermLine {
   dir: Direction;
   text: string;
+  /** ANSI styling over `text`. */
+  runs?: StyleRun[];
+  /** Text with escapes visible, when it had any. */
+  raw?: string;
   time: number;
   /** Stream offset of the first byte for rx lines; -1 for tx. */
   offset: number;
