@@ -30,6 +30,13 @@ describe('TerminalLog', () => {
     expect(Array.from({ length: log.length }, (_, i) => log.get(i)!.text)).toEqual(['a', 'T1', 'b', 'T2', 'c']);
   });
 
+  it('pushByTime merges lines from several sources into time order', () => {
+    const log = new TerminalLog();
+    const at = (time: number, src: number) => ({ dir: 'rx' as const, text: `${src}@${time}`, time, offset: 0, src });
+    [at(1, 0), at(4, 0), at(2, 1), at(3, 1), at(5, 1), at(4, 1)].forEach((l) => log.pushByTime(l));
+    expect(Array.from({ length: log.length }, (_, i) => log.get(i)!.text)).toEqual(['0@1', '1@2', '1@3', '0@4', '1@4', '1@5']);
+  });
+
   it('trims from the front past capacity', () => {
     const log = new TerminalLog(10);
     for (let i = 0; i < 12; i++) log.push(rx(i));

@@ -12,6 +12,8 @@ export interface TermLine {
   time: number;
   /** Stream offset of the first byte for rx lines; -1 for tx. */
   offset: number;
+  /** Which port the line came from, in views that merge several. */
+  src?: number;
 }
 
 /** Bounded list of terminal lines; trims from the front in batches. */
@@ -51,6 +53,19 @@ export class TerminalLog {
       if (prev.dir !== 'tx' || prev.time <= line.time) break;
       i--;
     }
+    if (i === this.lines.length) this.push(line);
+    else this.lines.splice(i, 0, line);
+  }
+
+  /**
+   * Inserts by time, for merging several ports' lines that reach the log out of
+   * order by a few milliseconds. Only the newest `window` lines are searched, so
+   * a line far older than that lands at that boundary rather than costing a full scan.
+   */
+  pushByTime(line: TermLine, window = 256): void {
+    let i = this.lines.length;
+    const stop = Math.max(0, i - window);
+    while (i > stop && this.lines[i - 1]!.time > line.time) i--;
     if (i === this.lines.length) this.push(line);
     else this.lines.splice(i, 0, line);
   }
