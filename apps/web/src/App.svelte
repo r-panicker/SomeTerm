@@ -85,7 +85,7 @@
   {#if drawer === 'capture'}
     <aside>
       <div class="head"><strong>Capture</strong><button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button></div>
-      <CapturePanel {session} />
+      <CapturePanel ctl={session.capture} newline={session.newline} />
     </aside>
   {/if}
 </main>

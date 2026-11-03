@@ -5,7 +5,7 @@
   let { session, onCapture }: { session: Session; onCapture: () => void } = $props();
 
   const SIGNALS = [['cts', 'CTS'], ['dsr', 'DSR'], ['dcd', 'DCD'], ['ri', 'RI']] as const;
-  const show = $derived(session.open || session.rx > 0 || session.tx > 0 || session.errors > 0 || !!session.capture);
+  const show = $derived(session.open || session.rx > 0 || session.tx > 0 || session.errors > 0 || !!session.capture.info);
 </script>
 
 {#if show}
@@ -19,8 +19,8 @@
     {#if session.errors}
       <button class="errs" onclick={() => { session.errors = 0; session.lastError = ''; }} title="{session.lastError} (click to reset)">⚠ {session.errors} {session.lastError}</button>
     {/if}
-    {#if session.capture}
-      {@const c = session.capture}
+    {#if session.capture.info}
+      {@const c = session.capture.info}
       <button class="cap" class:rec={c.state === 'running'} onclick={onCapture} title="Capture: {c.name}">
         {c.state === 'running' ? '● REC' : c.state === 'paused' ? '❚❚ REC' : c.kind === 'memory' ? 'Capture' : 'Saved'} {bytes(c.captured)}
       </button>

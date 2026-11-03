@@ -102,7 +102,7 @@
     {#if session.capabilities.sendBreak}<button onclick={() => session.sendBreak()} title="Send a 250 ms break">Break</button>{/if}
   {/if}
   <span class="spacer"></span>
-  <button class="toggle" class:on={drawer === 'capture'} class:rec={session.capture?.state === 'running'} onclick={() => (drawer = drawer === 'capture' ? null : 'capture')} title="Capture to file">Capture</button>
+  <button class="toggle" class:on={drawer === 'capture'} class:rec={session.capture.info?.state === 'running'} onclick={() => (drawer = drawer === 'capture' ? null : 'capture')} title="Capture to file">Capture</button>
   <div class="seg" role="group" aria-label="View">
     {#each [['terminal', 'Terminal'], ['split', 'Split'], ['plot', 'Plot']] as [v, l]}
       <button class:on={session.view === v} onclick={() => session.chooseView(v as View)}>{l}</button>

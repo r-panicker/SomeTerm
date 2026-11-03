@@ -1,12 +1,10 @@
 import {
   ByteRing,
-  Capture,
   frame,
   repeatSend,
   sendPaced,
   type CancelToken,
   type ChecksumKind,
-  type CaptureOptions,
   FULL_CAPABILITIES,
   LoopbackTransport,
   SeriesStore,
@@ -29,7 +27,7 @@ import {
 } from '@superserial/transport-webserial';
 import type { NativePortSummary, NativeSerialBridge } from '@superserial/transport-node/bridge';
 import { IpcSerialTransport } from '@superserial/transport-node/ipc-client';
-import { FileSink, MemorySink } from './sinks';
+import { CaptureController } from './capture.svelte';
 import { PipelineClient } from './pipeline';
 
 /** Present when running inside the Electron app; serial I/O then goes through Node, not Web Serial. */
@@ -61,16 +59,6 @@ export interface SendJob {
 }
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-export interface CaptureInfo {
-  name: string;
-  kind: 'file' | 'memory';
-  state: 'running' | 'paused' | 'stopped';
-  captured: number;
-  written: number;
-  startedAt: number;
-  reason: string;
-}
 
 const RING_BYTES = 4 << 20;
 const SIGNAL_POLL_MS = 100;
@@ -104,13 +92,10 @@ export class Session {
   view = $state<View>('terminal');
   echo = $state(true);
   newline = $state<NewlineMode>('auto');
-  capture = $state<CaptureInfo | null>(null);
+  readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });
   sendOptions = $state<SendOptions>({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false });
   job = $state<SendJob | null>(null);
   private token: CancelToken | null = null;
-  private cap: Capture | null = null;
-  private capSink: FileSink | MemorySink | null = null;
-  private capTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly log = new TerminalLog();
   readonly ring = new ByteRing(RING_BYTES);
@@ -280,7 +265,7 @@ export class Session {
     let sent = 0;
     try {
       sent = await sendPaced(bytes, o, async (piece) => {
-        this.cap?.tx(piece, Date.now());
+        this.capture.tx(piece, Date.now());
         await t.write(piece);
         this.tx += piece.length;
       }, sleep, token, onProgress);
@@ -333,67 +318,6 @@ export class Session {
     this.changed();
   }
 
-  /**
-   * Starts a capture. For a file, opens the save dialog, so call from a user gesture.
-   * Returns false if the user cancelled the dialog.
-   */
-  async startCapture(options: CaptureOptions, dest: 'file' | 'memory', append: boolean): Promise<boolean> {
-    if (this.cap && this.cap.state !== 'stopped') return false;
-    const name = `superserial-${stampForName(new Date())}.txt`;
-    let sink: FileSink | MemorySink;
-    try {
-      const f = dest === 'file' ? await FileSink.pick(name, append) : new MemorySink(name);
-      if (!f) return false;
-      sink = f;
-    } catch (e) {
-      this.errors++;
-      this.lastError = `Capture: ${(e as Error).message}`;
-      return false;
-    }
-    this.capSink = sink;
-    const cap = new Capture(sink, { ...options, newline: this.newline }, Date.now(), () => this.syncCapture());
-    this.cap = cap;
-    this.syncCapture();
-    this.capTimer = setInterval(() => { cap.tick(Date.now()); this.syncCapture(); }, 250);
-    return true;
-  }
-
-  pauseCapture(): void { this.cap?.pause(); this.syncCapture(); }
-  resumeCapture(): void { this.cap?.resume(); this.syncCapture(); }
-
-  async stopCapture(): Promise<void> {
-    await this.cap?.stop();
-  }
-
-  /** The finished in-memory capture, if any. */
-  captureBlob(): Blob | null {
-    return this.capSink instanceof MemorySink && this.cap?.state === 'stopped'
-      ? this.capSink.blob(this.cap.options.format === 'raw' ? 'application/octet-stream' : 'text/plain;charset=utf-8')
-      : null;
-  }
-
-  discardCapture(): void {
-    if (this.cap && this.cap.state !== 'stopped') return;
-    this.cap = null;
-    this.capSink = null;
-    this.capture = null;
-  }
-
-  private syncCapture(): void {
-    const c = this.cap;
-    if (!c || !this.capSink) return;
-    if (c.state === 'stopped' && this.capTimer) { clearInterval(this.capTimer); this.capTimer = null; }
-    this.capture = {
-      name: this.capSink.name,
-      kind: this.capSink instanceof FileSink ? 'file' : 'memory',
-      state: c.state,
-      captured: c.captured,
-      written: c.written,
-      startedAt: c.startedAt,
-      reason: c.stopReason,
-    };
-  }
-
   /** Wall-clock time for a stream timestamp. */
   wallClock(t: number): Date {
     return new Date(performance.timeOrigin + t);
@@ -402,7 +326,7 @@ export class Session {
   private receive(chunk: Uint8Array, ts: number): void {
     this.rx += chunk.length;
     this.ring.push(chunk);
-    this.cap?.rx(chunk, performance.timeOrigin + ts);
+    this.capture.rx(chunk, performance.timeOrigin + ts);
     this.pipeline.data(chunk, ts);
   }
 
@@ -457,11 +381,6 @@ export class Session {
       this.version++;
     });
   }
-}
-
-function stampForName(d: Date): string {
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 }
 
 /** Sent lines are shown without their terminator, like received ones. */

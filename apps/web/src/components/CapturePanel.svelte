@@ -1,10 +1,11 @@
 <script lang="ts">
-  import type { CaptureFormat, CaptureSource } from '@superserial/core';
-  import type { Session } from '../lib/session.svelte';
+  import type { CaptureFormat, CaptureSource, NewlineMode } from '@superserial/core';
+  import type { CaptureController } from '../lib/capture.svelte';
   import { canSaveToFile } from '../lib/sinks';
   import { formatBytes } from '../lib/format';
 
-  let { session }: { session: Session } = $props();
+  /** `fixed` hides Data and Format for sources that decide them, such as the Monitor. */
+  let { ctl, newline = 'auto', fixed = false }: { ctl: CaptureController; newline?: NewlineMode; fixed?: boolean } = $props();
 
   const fileOk = canSaveToFile();
   let dest = $state<'file' | 'memory'>(fileOk ? 'file' : 'memory');
@@ -15,7 +16,7 @@
   let maxSeconds = $state('');
   let now = $state(Date.now());
 
-  const c = $derived(session.capture);
+  const c = $derived(ctl.info);
   const active = $derived(!!c && c.state !== 'stopped');
 
   $effect(() => {
@@ -36,12 +37,13 @@
   }
 
   function start() {
-    session.discardCapture();
-    session.startCapture({ source, format, maxBytes: positive(maxBytes), maxSeconds: positive(maxSeconds) }, dest, append);
+    ctl.discard();
+    const o = fixed ? { source: 'rx' as const, format: 'raw' as const } : { source, format, newline };
+    ctl.start({ ...o, maxBytes: positive(maxBytes), maxSeconds: positive(maxSeconds) }, dest, append);
   }
 
   function open(download: boolean) {
-    const blob = session.captureBlob();
+    const blob = ctl.blob();
     if (!blob || !c) return;
     const url = URL.createObjectURL(blob);
     if (download) {
@@ -67,6 +69,7 @@
       <button class:on={append} onclick={() => (append = true)} disabled={active}>Append</button>
     </div>
   {/if}
+  {#if !fixed}
   <span>Data</span>
   <div class="seg">
     {#each [['rx', 'Received'], ['tx', 'Sent'], ['both', 'Both']] as [v, l]}
@@ -79,6 +82,7 @@
     <option value="raw">Raw bytes</option>
     <option value="hex">Hex, timestamped chunks</option>
   </select>
+  {/if}
   <span>Stop after</span>
   <div class="limits">
     <input bind:value={maxBytes} inputmode="numeric" placeholder="∞" disabled={active} title="Stop after this many data bytes" /> bytes
@@ -88,8 +92,8 @@
 
 <div class="actions">
   {#if active && c}
-    <button onclick={() => (c.state === 'paused' ? session.resumeCapture() : session.pauseCapture())}>{c.state === 'paused' ? 'Resume' : 'Pause'}</button>
-    <button class="primary" onclick={() => session.stopCapture()}>Stop</button>
+    <button onclick={() => (c.state === 'paused' ? ctl.resume() : ctl.pause())}>{c.state === 'paused' ? 'Resume' : 'Pause'}</button>
+    <button class="primary" onclick={() => ctl.stop()}>Stop</button>
   {:else}
     <button class="primary" onclick={start}>Start capture</button>
   {/if}
@@ -106,7 +110,7 @@
       <div class="actions">
         <button onclick={() => open(false)}>View</button>
         <button onclick={() => open(true)}>Download</button>
-        <button onclick={() => session.discardCapture()}>Discard</button>
+        <button onclick={() => ctl.discard()}>Discard</button>
       </div>
     {/if}
   </div>
