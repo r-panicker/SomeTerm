@@ -7,3 +7,4 @@ export { parseEscapes, parseHexBytes } from './send/escapes';
 export { parseNumericLine, type Sample } from './plot/parse';
 export { SeriesStore } from './plot/series';
 export { TerminalLog, type TermLine, type Direction } from './terminal/log';
+export { decimateMinMax, type Decimated } from './plot/decimate';
