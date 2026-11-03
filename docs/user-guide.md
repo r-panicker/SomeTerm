@@ -51,7 +51,13 @@ The ⋯ button holds send options; once any is set, the button shows it instead 
 
 ## Terminal
 
-ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCII bytes as `.`. Pick the receive line ending to match the device; `CR/LF auto` treats CR, LF and CRLF each as one line break. Hex, Dec and Bin show the raw received stream with offsets.
+ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCII bytes as `.`. Pick the receive line ending to match the device; `CR/LF auto` treats CR, LF and CRLF each as one line break. Hex, Dec and Bin show the raw received stream with offsets. Num decodes it as 8, 16 or 32-bit integers or 32/64-bit floats, with the raw bytes alongside:
+
+| Control | Use |
+|---|---|
+| Type | `int16`, `float32`, … signed and unsigned |
+| LE / BE | Byte order of the sender (most microcontrollers are LE) |
+| +0 … +7 | Skip bytes until values line up with the sender's framing |
 
 ⏱ adds arrival timestamps. Drag to select lines, Ctrl+A for all, then Ctrl+C. Scrolling up pauses following; **↓ Live** resumes.
 

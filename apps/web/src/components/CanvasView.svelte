@@ -8,7 +8,8 @@
 
   interface Props {
     count: number;
-    version: number;
+    /** Changes whenever the rows' content may have changed. */
+    version: unknown;
     row: (i: number) => Span[];
     rowText: (i: number) => string;
     follow?: boolean;
