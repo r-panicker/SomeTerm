@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import uPlot from 'uplot';
-  import { compileExpr, decimateMinMax, type Fn } from '@superserial/core';
+  import { compileExpr, decimateMinMax, estimateRate, largestPow2, peakFrequency, spectrum, type Fn } from '@superserial/core';
   import 'uplot/dist/uPlot.min.css';
   import type { Session } from '../lib/session.svelte';
 
@@ -22,9 +22,15 @@
   let shownXY: { col: number; rows: number[] }[] = [];
   const XY_MAX_POINTS = 20_000;
 
-  const xIndex = () => (session.plotX ? session.series.names.indexOf(session.plotX) : -1);
+  const xIndex = () => (!session.plotFft && session.plotX ? session.series.names.indexOf(session.plotX) : -1);
   /** Changes whenever the plot must be rebuilt rather than just redrawn. */
-  const layoutKey = () => `${xIndex() >= 0 ? `xy:${session.plotX}` : 't'}|${session.series.names.map(label).join('\u0000')}`;
+  const layoutKey = () => `${session.plotFft ? 'fft' : xIndex() >= 0 ? `xy:${session.plotX}` : 't'}|${session.series.names.map(label).join('\u0000')}`;
+
+  const FFT_MAX = 16_384;
+  const FFT_MIN = 32;
+  /** Spectrum readouts for the toolbar; reactive so they update as data arrives. */
+  let fftInfo = $state<{ fs: number; n: number; peaks: { name: string; hz: number; color: string }[] } | null>(null);
+  const hz = (f: number) => (f >= 1000 ? `${(f / 1000).toPrecision(4)} kHz` : `${f.toPrecision(4)} Hz`);
   let fxOpen = $state(false);
   let fxPopover: HTMLDivElement | undefined = $state();
   let fxButton: HTMLButtonElement | undefined = $state();
@@ -61,6 +67,26 @@
     const s = session.series;
     names = layoutKey();
     const axis = { stroke: css('--muted'), grid: { stroke: css('--line'), width: 1 }, ticks: { stroke: css('--line') } };
+    if (session.plotFft) {
+      plot = new uPlot(
+        {
+          width: host.clientWidth,
+          height: Math.max(80, host.clientHeight - legendHeight()),
+          scales: { x: { time: false } },
+          axes: [{ ...axis, label: 'Hz', labelSize: 14, size: 34 }, { ...axis, label: 'dB', labelSize: 14, size: 56 }],
+          series: [
+            { label: 'f', value: (_u, v) => (v == null ? '' : hz(v)) },
+            ...s.names.map((n, i) => ({ label: label(n), stroke: PALETTE[i % PALETTE.length], width: 1.25, points: { show: false }, value: (_u: uPlot, v: number | null) => (v == null ? '' : `${v.toFixed(1)} dB`) })),
+          ],
+          cursor: { drag: { x: true, y: false }, points: { size: 5 } },
+          legend: { live: true },
+        },
+        [[]],
+        host,
+      );
+      update(true);
+      return;
+    }
     const xi = xIndex();
     if (xi >= 0) {
       const facets = [{ scale: 'x', auto: true }, { scale: 'y', auto: true }];
@@ -102,6 +128,7 @@
       host,
     );
     plot.over.addEventListener('click', () => {
+      if (session.plotFft) return;
       const idx = plot?.cursor.idx;
       const row = idx == null ? undefined : shownRows[idx];
       if (row !== undefined) onpick(session.series.offsets[row]!);
@@ -129,6 +156,10 @@
     if (!s.length) { plot.setData([[]] as unknown as uPlot.AlignedData); return; }
     const last = s.times[s.length - 1]!;
     const from = session.plotWindow ? s.lowerBound(last - session.plotWindow) : 0;
+    if (session.plotFft) {
+      plot.setData(fftData(from) as unknown as uPlot.AlignedData);
+      return;
+    }
     const xi = xIndex();
     if (xi >= 0) {
       plot.setData(xyData(from, xi) as unknown as uPlot.AlignedData);
@@ -165,6 +196,47 @@
     return data;
   }
 
+  /**
+   * Spectrum of the newest power-of-two block of rows in the window. Rows where a
+   * series has no value repeat its previous one, so every series uses the same
+   * rows and one frequency axis.
+   */
+  function fftData(from: number) {
+    const s = session.series;
+    const n = largestPow2(Math.min(s.length - from, FFT_MAX));
+    if (n < FFT_MIN) {
+      fftInfo = null;
+      return [[]];
+    }
+    const start = s.length - n;
+    const fs = session.plotFs ?? estimateRate(s.times.slice(start));
+    if (!(fs > 0)) {
+      fftInfo = null;
+      return [[]];
+    }
+    const fns = maps();
+    let freqs: number[] = [];
+    const dbs: (number | null)[][] = [];
+    const peaks: { name: string; hz: number; color: string }[] = [];
+    s.columns.forEach((col, k) => {
+      const first = col.slice(start).find((v) => v != null);
+      if (first == null) { dbs.push([]); return; }
+      let held: number = first;
+      const xs = new Array<number>(n);
+      for (let i = 0; i < n; i++) {
+        const v = col[start + i];
+        if (v != null) held = v;
+        xs[i] = fns[k] ? fns[k]!(held) : held;
+      }
+      const sp = spectrum(xs, fs);
+      freqs = sp.freqs;
+      dbs.push(sp.db);
+      peaks.push({ name: s.names[k]!, hz: peakFrequency(sp), color: PALETTE[k % PALETTE.length]! });
+    });
+    fftInfo = { fs, n, peaks };
+    return [freqs, ...dbs.map((d) => (d.length ? d : freqs.map(() => null)))];
+  }
+
   /** Nearest drawn point within a few pixels of the click, across all XY series. */
   function pickXY(e: MouseEvent) {
     const u = plot;
@@ -197,6 +269,8 @@
     void compiled;
     if (!plot) return;
     void session.plotX;
+    void session.plotFft;
+    void session.plotFs;
     if (layoutKey() !== names) build();
     else update(true);
   });
@@ -237,11 +311,35 @@
       {#each WINDOWS as [v, l]}<option value={v}>{l}</option>{/each}
     </select>
     <button class="toggle" class:on={paused} onclick={() => { paused = !paused; update(true); }} title="Pause plot (data keeps arriving)">❚❚</button>
-    {#if seriesNames.length > 1}
-      <select value={session.plotX ?? ''} onchange={(e) => (session.plotX = e.currentTarget.value || null)} title="Horizontal axis: time, or another series for an XY plot">
+    {#if hasData}
+      <select
+        value={session.plotFft ? '\u0001fft' : (session.plotX ?? '')}
+        onchange={(e) => {
+          const v = e.currentTarget.value;
+          session.plotFft = v === '\u0001fft';
+          session.plotX = session.plotFft || !v ? null : v;
+        }}
+        title="Horizontal axis: time, another series (XY), or frequency (spectrum)"
+      >
         <option value="">vs time</option>
-        {#each seriesNames as n (n)}<option value={n}>vs {n}</option>{/each}
+        {#if seriesNames.length > 1}{#each seriesNames as n (n)}<option value={n}>vs {n}</option>{/each}{/if}
+        <option value={'\u0001fft'}>Spectrum</option>
       </select>
+    {/if}
+    {#if session.plotFft}
+      <input
+        class="fs"
+        inputmode="decimal"
+        value={session.plotFs ?? ''}
+        placeholder={fftInfo ? `${fftInfo.fs.toPrecision(4)} Hz` : 'Hz'}
+        onchange={(e) => { const v = Number(e.currentTarget.value); session.plotFs = e.currentTarget.value.trim() && v > 0 ? v : null; }}
+        title="Sample rate in Hz. Empty: estimated from arrival times{fftInfo ? ` (${fftInfo.n} samples, ${(fftInfo.fs / fftInfo.n).toPrecision(3)} Hz per bin)` : ''}"
+      />
+      {#if fftInfo?.peaks.length}
+        <span class="peaks" title={fftInfo.peaks.map((p) => `${p.name}: ${hz(p.hz)}`).join('\n')}>
+          peak {#each fftInfo.peaks.slice(0, 2) as pk}<b style:color={pk.color}>{hz(pk.hz)}</b> {/each}
+        </span>
+      {/if}
     {/if}
     <div class="anchor">
       <button bind:this={fxButton} class="fx" class:active={fxActive} onclick={() => (fxOpen = !fxOpen)} title="Scale or convert series (e.g. ADC counts to volts)">ƒx</button>
@@ -278,6 +376,8 @@
 <style>
   .anchor { position: relative; }
   .fx { font-style: italic; }
+  .fs { width: 8em; height: 23px; font: 12px var(--mono); }
+  .peaks { font: 12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .fx.active { color: var(--accent); border-color: var(--accent); }
   .popover {
     position: absolute; top: calc(100% + 4px); left: 0; z-index: 10; display: grid; grid-template-columns: auto 1fr 5em;

@@ -99,6 +99,8 @@ Any received line made only of numbers is plotted, Arduino style:
 
 The first such line switches to Split view. Click a point to jump to its line in the terminal. Drag across the plot to zoom, double-click to reset. Click a legend entry to hide that series. **vs time** switches to an XY plot of the other series against the one you pick, e.g. a Lissajous figure or an I–V curve. The time window still selects which samples are used; clicking a point jumps to its line as usual.
 
+**Spectrum** in the same selector shows each series' amplitude in dB against frequency, using the newest 32 to 16384 samples in the time window (Hann window, mean removed). The toolbar shows the strongest frequency. The sample rate is estimated from arrival times, which is typically within a few percent; for exact frequencies, type the device's real sample rate into the Hz box.
+
 **ƒx** converts a series for display: an expression in `x` (the received value) and a unit, e.g. `x*3.3/4095` in `V` for a 12-bit ADC, or `(x-500)/10` in `°C`. Available: `+ - * / ^`, `pi`, `e`, `abs sqrt exp ln log sin cos tan min max pow round floor ceil`. The terminal still shows the raw numbers. Conversions are saved with the tab and in profiles.
 
 CSV exports everything plotted since the last Clear, converted, with units in the header.

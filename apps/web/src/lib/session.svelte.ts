@@ -123,6 +123,10 @@ export class Session implements TermSource {
   plotTransforms = $state<Record<string, PlotTransform>>({});
   /** Series used as the X axis (XY plot); null plots against time. */
   plotX = $state<string | null>(null);
+  /** Plot the amplitude spectrum instead of values; takes precedence over plotX. */
+  plotFft = $state(false);
+  /** Sample rate for the spectrum in Hz; null estimates it from arrival times. */
+  plotFs = $state<number | null>(null);
   /** The profile last applied or saved here; settings may have changed since. */
   profileId = $state<string | null>(null);
   readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });

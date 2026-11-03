@@ -19,6 +19,8 @@ interface SavedTab {
   plotWindow?: number;
   plotTransforms?: Session['plotTransforms'];
   plotX?: string | null;
+  plotFft?: boolean;
+  plotFs?: number | null;
   dtr?: boolean;
   rts?: boolean;
 }
@@ -93,6 +95,8 @@ export class Workspace {
       plotWindow: s.plotWindow,
       plotTransforms: $state.snapshot(s.plotTransforms),
       plotX: s.plotX,
+      plotFft: s.plotFft,
+      plotFs: s.plotFs,
       dtr: s.dtr,
       rts: s.rts,
     }));
@@ -135,6 +139,8 @@ export class Workspace {
       if (t.plotWindow !== undefined) s.plotWindow = t.plotWindow;
       if (t.plotTransforms) s.plotTransforms = sanitizeTransforms(t.plotTransforms);
       if (typeof t.plotX === 'string') s.plotX = t.plotX;
+      if (t.plotFft) s.plotFft = true;
+      if (typeof t.plotFs === 'number' && t.plotFs > 0) s.plotFs = t.plotFs;
       if (t.dtr !== undefined) s.dtr = t.dtr;
       if (t.rts !== undefined) s.rts = t.rts;
       if (t.newline !== s.newline) s.setNewline(t.newline);
