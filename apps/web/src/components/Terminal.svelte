@@ -3,9 +3,9 @@
   import { untrack } from 'svelte';
   import CanvasView, { type Span } from './CanvasView.svelte';
   import { ansiColor } from '../lib/ansi-colors';
-  import type { Session } from '../lib/session.svelte';
+  import type { TermSource } from '../lib/source';
 
-  let { session }: { session: Session } = $props();
+  let { source }: { source: TermSource } = $props();
 
   type Format = 'ascii' | 'hex' | 'dec' | 'bin' | 'num';
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
@@ -66,7 +66,7 @@
   $effect(() => {
     const q = query, o = { caseSensitive, regex }, showAnsi = ansi;
     const t = setTimeout(() => {
-      index.set(q, o, untrack(() => session.log), (l) => (showAnsi ? l.text : (l.raw ?? l.text)));
+      index.set(q, o, untrack(() => source.log), (l) => (showAnsi ? l.text : (l.raw ?? l.text)));
       cur = null;
       untrack(() => findRev++);
     }, 120);
@@ -75,11 +75,11 @@
 
   // Only new data drives this; the bookkeeping it updates must not become a dependency.
   $effect(() => {
-    void session.version;
+    void source.version;
     untrack(() => {
       if (!index.active) return;
-      index.scan(session.log);
-      if (cur && cur.abs < session.log.dropped) cur = null;
+      index.scan(source.log);
+      if (cur && cur.abs < source.log.dropped) cur = null;
       findRev++;
     });
   });
@@ -108,14 +108,14 @@
       if (k < 0) { hi = (hi - 1 + hits.length) % hits.length; k = hits[hi]!.ranges.length - 1; }
       else if (k >= hits[hi]!.ranges.length) { hi = (hi + 1) % hits.length; k = 0; }
     } else {
-      const top = filtering ? (hits[view.topRow()]?.abs ?? 0) : session.log.dropped + view.topRow();
+      const top = filtering ? (hits[view.topRow()]?.abs ?? 0) : source.log.dropped + view.topRow();
       hi = index.lowerBound(top);
       if (dir < 0) hi -= 1;
       hi = (hi + hits.length) % hits.length;
       k = dir > 0 ? 0 : hits[hi]!.ranges.length - 1;
     }
     cur = { abs: hits[hi]!.abs, k };
-    view.scrollToRow(filtering ? hi : hits[hi]!.abs - session.log.dropped);
+    view.scrollToRow(filtering ? hi : hits[hi]!.abs - source.log.dropped);
   }
 
   export function openFind() {
@@ -173,31 +173,34 @@
 
   const pad = (n: number, w = 2) => String(n).padStart(w, '0');
   function stamp(t: number): string {
-    const d = session.wallClock(t);
+    const d = source.wallClock(t);
     return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)} `;
   }
 
   function dumpStart() {
-    return Math.max(session.hexStart, session.ring.start) + dump.skip;
+    return Math.max(source.hexStart ?? 0, source.ring!.start) + dump.skip;
   }
 
   const count = $derived.by(() => {
-    void session.version;
+    void source.version;
     if (filtering) return index.hits.length;
-    if (format === 'ascii') return session.log.length + (session.partial ? 1 : 0);
-    return Math.max(0, Math.ceil((session.ring.end - dumpStart()) / dump.per));
+    if (format === 'ascii') return source.log.length + (source.partial ? 1 : 0);
+    if (!source.ring) return 0;
+    return Math.max(0, Math.ceil((source.ring.end - dumpStart()) / dump.per));
   });
 
   function asciiLine(i: number) {
-    return i < session.log.length ? session.log.get(i)! : { ...session.partial!, dir: 'rx' as const };
+    return i < source.log.length ? source.log.get(i)! : { ...source.partial!, dir: 'rx' as const };
   }
 
   function row(i: number): Span[] {
     if (format === 'ascii') {
-      const li = filtering ? index.hits[i]!.abs - session.log.dropped : i;
+      const li = filtering ? index.hits[i]!.abs - source.log.dropped : i;
       const l = asciiLine(li);
-      const abs = li < session.log.length ? session.log.dropped + li : -1;
+      const abs = li < source.log.length ? source.log.dropped + li : -1;
       const spans: Span[] = [];
+      const tag = l.src !== undefined ? source.sources?.[l.src] : undefined;
+      if (tag) spans.push({ text: `${tag.label}› `, tone: 'fg', color: tag.color, bold: true });
       if (stamps) spans.push({ text: stamp(l.time), tone: 'muted' });
       if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, []));
       else if (ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? []));
@@ -206,7 +209,8 @@
     }
     const d = dump;
     const at = dumpStart() + i * d.per;
-    const bytes = session.ring.slice(at, Math.min(at + d.per, session.ring.end));
+    const ring = source.ring!;
+    const bytes = ring.slice(at, Math.min(at + d.per, ring.end));
     return [
       { text: at.toString(16).padStart(8, '0') + '  ', tone: 'muted' },
       { text: d.fmt(bytes).padEnd(d.width) + '  ', tone: 'fg' },
@@ -215,7 +219,7 @@
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
-  const revision = $derived(`${session.version}|${format}|${numType}|${littleEndian}|${align}|${stamps}|${findRev}|${filtering}|${ansi}|${dark}|${cur?.abs}:${cur?.k}`);
+  const revision = $derived(`${source.version}|${format}|${numType}|${littleEndian}|${align}|${stamps}|${findRev}|${filtering}|${ansi}|${dark}|${cur?.abs}:${cur?.k}`);
 
   const rowText = (i: number) => row(i).map((s) => s.text).join('');
 
@@ -223,14 +227,14 @@
   export function jumpToOffset(offset: number) {
     if (format !== 'ascii') format = 'ascii';
     filter = false;
-    const i = session.log.indexOfOffset(offset);
+    const i = source.log.indexOfOffset(offset);
     if (i >= 0) queueMicrotask(() => view.scrollToRow(i));
   }
 </script>
 
 <section class="pane">
   <div class="toolbar">
-    {#if !findOpen}
+    {#if !findOpen && source.ring}
       <div class="seg" role="group" aria-label="Display format">
         {#each [['ascii', 'ASCII'], ['hex', 'Hex'], ['dec', 'Dec'], ['bin', 'Bin'], ['num', 'Num']] as [f, l]}
           <button class:on={format === f} onclick={() => (format = f as Format)} title={f === 'num' ? 'Decode as integers or floats' : undefined}>{l}</button>
@@ -272,20 +276,24 @@
       <button onclick={() => step(1)} disabled={!(void findRev, index.total)} title="Next (Enter)">↓</button>
       <button onclick={closeFind} title="Close (Esc)">✕</button>
     {:else if format === 'ascii'}
-      <select value={session.newline} onchange={(e) => session.setNewline(e.currentTarget.value as NewlineMode)} title="Receive line ending">
-        <option value="auto">CR/LF auto</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CRLF</option>
-      </select>
+      {#if source.setNewline}
+        <select value={source.newline} onchange={(e) => source.setNewline?.(e.currentTarget.value as NewlineMode)} title="Receive line ending">
+          <option value="auto">CR/LF auto</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CRLF</option>
+        </select>
+      {/if}
       <button class="toggle" class:on={stamps} onclick={() => (stamps = !stamps)} title="Timestamps">⏱</button>
       <button class="toggle" class:on={ansi} onclick={() => (ansi = !ansi)} title="Interpret ANSI colour codes (off: show them as ␛[…)">ANSI</button>
-      <button class="toggle" class:on={session.echo} onclick={() => (session.echo = !session.echo)} title="Show sent data (local echo)">⇄</button>
+      {#if source.echo !== undefined}
+        <button class="toggle" class:on={source.echo} onclick={() => (source.echo = !source.echo)} title="Show sent data (local echo)">⇄</button>
+      {/if}
       <button onclick={openFind} title="Find (Ctrl+F)">Find</button>
     {/if}
     {#if !findOpen}<span class="spacer"></span>{/if}
     {#if !follow}<button onclick={() => (follow = true)} title="Scroll to newest">↓ Live</button>{/if}
-    {#if !findOpen}<button onclick={() => session.clear()} title="Clear (Ctrl+L)">Clear</button>{/if}
+    {#if !findOpen}<button onclick={() => source.clear()} title="Clear (Ctrl+L)">Clear</button>{/if}
   </div>
   <CanvasView bind:this={view} {count} version={revision} {row} {rowText} bind:follow />
-  {#if !session.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
+  {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
 </section>
 
 <style>

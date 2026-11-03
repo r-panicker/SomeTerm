@@ -72,7 +72,7 @@
 <TopBar {session} bind:drawer />
 <main bind:this={main} class:narrow>
   {#if showTerm}
-    <div class="slot" style:flex={showPlot ? `${split} 1 0` : '1 1 0'}><Terminal bind:this={terminal} {session} /></div>
+    <div class="slot" style:flex={showPlot ? `${split} 1 0` : '1 1 0'}><Terminal bind:this={terminal} source={session} /></div>
   {/if}
   {#if showTerm && showPlot}
     <div class="handle" role="separator" aria-orientation={narrow ? 'horizontal' : 'vertical'} onpointerdown={drag}></div>
