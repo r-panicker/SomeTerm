@@ -13,16 +13,22 @@ export class PipelineClient {
   private inline: RxPipeline | null = null;
   private queue: RxCommand[] = [];
   private timer: ReturnType<typeof setTimeout> | undefined;
+  private resets = 0;
+  /** Results are dropped until the worker acknowledges this reset. */
+  private awaiting: number | null = null;
 
   constructor(private readonly onBatch: (b: RxBatch) => void) {
     try {
       const w = new Worker(new URL('./rx.worker.ts', import.meta.url), { type: 'module' });
-      w.onmessage = (e: MessageEvent<RxBatch | 'ready'>) => {
-        if (e.data === 'ready') {
+      w.onmessage = (e: MessageEvent<RxBatch | 'ready' | { ack: number }>) => {
+        const d = e.data;
+        if (d === 'ready') {
           this.mode = 'worker';
           for (const c of this.queue) w.postMessage(c);
           this.queue = [];
-        } else this.onBatch(e.data);
+        } else if ('ack' in d) {
+          if (d.ack === this.awaiting) this.awaiting = null;
+        } else if (this.awaiting === null) this.onBatch(d);
       };
       w.onerror = () => {
         if (this.mode === 'starting') this.fallBack();
@@ -39,8 +45,25 @@ export class PipelineClient {
     this.send({ type: 'data', chunk: copy, time }, [copy.buffer]);
   }
 
-  reset(mode: NewlineMode, offset: number): void {
-    this.send({ type: 'reset', mode, offset });
+  /**
+   * Restarts parsing. With `discard`, results still in flight from before the
+   * reset are dropped (a replay seek re-delivers that data, so they would repeat).
+   */
+  reset(mode: NewlineMode, offset: number, discard = false): void {
+    if (!discard) {
+      this.send({ type: 'reset', mode, offset });
+      return;
+    }
+    const ack = ++this.resets;
+    if (this.mode === 'inline') {
+      clearTimeout(this.timer);
+      this.timer = undefined;
+      this.inline!.apply({ type: 'reset', mode, offset });
+      this.inline!.drain();
+      return;
+    }
+    this.awaiting = ack;
+    this.send({ type: 'reset', mode, offset, ack } as RxCommand);
   }
 
   dispose(): void {

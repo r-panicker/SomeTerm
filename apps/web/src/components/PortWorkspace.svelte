@@ -64,7 +64,7 @@
   {#if drawer}
     <aside>
       <div class="head"><strong>{drawer === 'capture' ? 'Capture' : 'Profiles'}</strong><button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button></div>
-      {#if drawer === 'capture'}<CapturePanel ctl={session.capture} newline={session.newline} />{:else}<ProfilesPanel {session} />{/if}
+      {#if drawer === 'capture'}<CapturePanel ctl={session.capture} newline={session.newline} meta={() => ({ port: session.portLabel(), options: $state.snapshot(session.options) })} onstart={() => session.recordSignals()} />{:else}<ProfilesPanel {session} />{/if}
     </aside>
   {/if}
 </main>

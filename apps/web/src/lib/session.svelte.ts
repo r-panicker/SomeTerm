@@ -19,6 +19,9 @@ import {
   type TermLine,
   type DeviceId,
   matchProfile,
+  ReplayTransport,
+  type Recording,
+  type SignalState,
 } from '@superserial/core';
 import {
   WEB_SERIAL_CAPABILITIES,
@@ -42,7 +45,23 @@ export type PortChoice =
   | { kind: 'loopback' }
   | { kind: 'webserial'; port: SerialPort }
   | { kind: 'add' }
-  | { kind: 'native'; path: string; label: string };
+  | { kind: 'native'; path: string; label: string }
+  | { kind: 'replay'; name: string; recording: Recording };
+
+export interface Player {
+  playing: boolean;
+  /** 0 means as fast as the view can take it. */
+  speed: number;
+  /** Recorded ms delivered so far. */
+  position: number;
+  duration: number;
+  /** Recorded DTR/RTS, which the top bar shows in place of the toggles. */
+  dtr: boolean;
+  rts: boolean;
+}
+
+/** Bytes a fast-forward or Max-speed replay delivers per frame, so the view keeps drawing. */
+const REPLAY_FRAME_BUDGET = 256 * 1024;
 export type View = 'terminal' | 'split' | 'plot';
 
 export interface SendOptions {
@@ -127,6 +146,13 @@ export class Session implements TermSource {
   plotFft = $state(false);
   /** Sample rate for the spectrum in Hz; null estimates it from arrival times. */
   plotFs = $state<number | null>(null);
+  /** Present while a recording is open in this tab. */
+  player = $state<Player | null>(null);
+  private replay: ReplayTransport | null = null;
+  private replayFrame = 0;
+  private seekTarget: number | null = null;
+  /** Shifts timestamps so a replay shows the recording's own wall-clock times. */
+  private clockOffset = 0;
   /** The profile last applied or saved here; settings may have changed since. */
   profileId = $state<string | null>(null);
   readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });
@@ -161,6 +187,7 @@ export class Session implements TermSource {
 
   portLabel(c: PortChoice = this.choice): string {
     if (c.kind === 'native') return c.label;
+    if (c.kind === 'replay') return `▶ ${c.name}`;
     return c.kind === 'loopback' ? 'Loopback' : c.kind === 'add' ? 'Add port…' : describePort(c.port);
   }
 
@@ -223,7 +250,8 @@ export class Session implements TermSource {
     this.busy = true;
     try {
       let t: SerialTransport;
-      if (this.choice.kind === 'loopback') t = new LoopbackTransport({}, now);
+      if (this.choice.kind === 'replay') t = this.startReplay(this.choice.recording);
+      else if (this.choice.kind === 'loopback') t = new LoopbackTransport({}, now);
       else if (this.choice.kind === 'native' && native) t = new IpcSerialTransport(native, this.choice.path, now);
       else if (this.choice.kind === 'webserial') t = new WebSerialTransport(this.choice.port, now);
       else {
@@ -251,7 +279,11 @@ export class Session implements TermSource {
       }
       this.transport = t;
       this.open = true;
-      if (!this.t0) this.t0 = now();
+      if (this.replay) {
+        this.t0 = this.replay.timeOrigin;
+        this.clockOffset = this.replay.recording.meta.created - (performance.timeOrigin + this.replay.timeOrigin);
+        this.runPlayer();
+      } else if (!this.t0) this.t0 = now();
       this.startTimers();
     } catch (e) {
       if (!(e instanceof DOMException && e.name === 'NotFoundError')) {
@@ -274,7 +306,7 @@ export class Session implements TermSource {
 
   /** Sends payload + checksum + suffix, honouring repeat, pacing and RTS options. */
   async sendMessage(payload: Uint8Array, suffix: Uint8Array): Promise<void> {
-    if (!this.transport || this.job) return;
+    if (!this.transport || this.job || this.replay) return;
     const bytes = frame(payload, this.sendOptions.checksum, suffix);
     if (!bytes.length) return;
     const o = this.sendOptions;
@@ -290,7 +322,7 @@ export class Session implements TermSource {
   }
 
   async sendFile(file: File): Promise<void> {
-    if (!this.transport || this.job) return;
+    if (!this.transport || this.job || this.replay) return;
     const bytes = new Uint8Array(await file.arrayBuffer());
     await this.runJob({ kind: 'file', label: file.name, done: 0, total: bytes.length }, (t) =>
       this.transmit(bytes, t, (n) => this.progress(n), `⟨${file.name}, ${bytes.length} B⟩`),
@@ -364,6 +396,75 @@ export class Session implements TermSource {
     if (!this.transport) return;
     await this.transport.setSignals({ [which]: value });
     this[which] = value;
+    this.recordSignals();
+  }
+
+  /** Writes the current line states into a session recording, if one is running. */
+  recordSignals(): void {
+    const s = this.signals;
+    const state: SignalState = { cts: !!s?.cts, dsr: !!s?.dsr, dcd: !!s?.dcd, ri: !!s?.ri, dtr: this.dtr, rts: this.rts };
+    this.capture.signals(state, Date.now());
+  }
+
+  /** Opens a recording (file chosen by the user) for replay in this tab. */
+  loadRecording(name: string, recording: Recording): void {
+    if (this.open) return;
+    this.choosePort({ kind: 'replay', name, recording });
+    if (recording.meta.options) Object.assign(this.options, recording.meta.options);
+  }
+
+  private startReplay(rec: Recording): ReplayTransport {
+    const t = new ReplayTransport(rec, now);
+    this.replay = t;
+    t.onTx((chunk, at) => {
+      const line: TermLine = { dir: 'tx', text: echoLine(chunk), time: at, offset: -1 };
+      this.onLine?.(line);
+      if (this.echo) { this.log.push(line); this.changed(); }
+    });
+    t.onSignals((s) => { if (this.player) { this.player.dtr = s.dtr; this.player.rts = s.rts; } });
+    this.player = { playing: true, speed: 1, position: 0, duration: rec.duration, dtr: false, rts: false };
+    return t;
+  }
+
+  togglePlay(): void {
+    const p = this.player;
+    if (!p || !this.replay) return;
+    if (!p.playing && this.replay.ended) this.seek(0);
+    p.playing = !p.playing;
+  }
+
+  /** Clears the view and re-delivers everything up to `ms`, spread over frames. */
+  seek(ms: number): void {
+    if (!this.replay || !this.player) return;
+    this.clear();
+    this.pipeline.reset(this.newline, this.ring.end, true);
+    this.partialLine = null;
+    this.t0 = this.replay.timeOrigin;
+    this.replay.rewind();
+    this.seekTarget = Math.max(0, Math.min(ms, this.player.duration));
+    this.player.position = this.seekTarget;
+  }
+
+  private runPlayer(): void {
+    let last = now();
+    const frame = () => {
+      const t = this.replay;
+      const p = this.player;
+      if (!t || !p || t.state !== 'open') return;
+      const n = now();
+      const dt = n - last;
+      last = n;
+      if (this.seekTarget !== null) {
+        if (t.advanceTo(this.seekTarget, REPLAY_FRAME_BUDGET)) this.seekTarget = null;
+      } else if (p.playing) {
+        const target = p.speed === 0 ? Infinity : t.position + dt * p.speed;
+        t.advanceTo(target, p.speed === 0 ? REPLAY_FRAME_BUDGET : Infinity);
+        if (t.ended) p.playing = false;
+      }
+      p.position = t.position;
+      this.replayFrame = requestAnimationFrame(frame);
+    };
+    this.replayFrame = requestAnimationFrame(frame);
   }
 
   async sendBreak(ms = 250): Promise<void> {
@@ -389,13 +490,13 @@ export class Session implements TermSource {
     this.partialLine = null;
     this.errors = 0;
     this.lastError = '';
-    this.t0 = now();
+    this.t0 = this.replay ? this.replay.timeOrigin : now();
     this.changed();
   }
 
   /** Wall-clock time for a stream timestamp. */
   wallClock(t: number): Date {
-    return new Date(performance.timeOrigin + t);
+    return new Date(performance.timeOrigin + t + this.clockOffset);
   }
 
   private receive(chunk: Uint8Array, ts: number): void {
@@ -425,7 +526,7 @@ export class Session implements TermSource {
   portKey(c: PortChoice = this.choice): unknown {
     if (c.kind === 'native') return `native:${c.path}`;
     if (c.kind === 'webserial') return c.port;
-    return null;
+    return null; // Loopback and recordings can be open in any number of tabs.
   }
 
   async dispose(): Promise<void> {
@@ -457,6 +558,11 @@ export class Session implements TermSource {
     this.open = false;
     this.signals = null;
     this.rate = 0;
+    cancelAnimationFrame(this.replayFrame);
+    this.replay = null;
+    this.player = null;
+    this.seekTarget = null;
+    this.clockOffset = 0;
   }
 
   private startTimers(): void {
@@ -471,7 +577,11 @@ export class Session implements TermSource {
     if (this.transport?.capabilities.lineSignals) {
       this.timers.push(setInterval(async () => {
         try {
-          if (this.transport?.state === 'open') this.signals = await this.transport.getSignals();
+          if (this.transport?.state !== 'open') return;
+          const next = await this.transport.getSignals();
+          const changed = JSON.stringify(next) !== JSON.stringify(this.signals);
+          this.signals = next;
+          if (changed) this.recordSignals();
         } catch {
           /* port went away between the state check and the read; onClose handles it */
         }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { unsupportedOptions, type SerialOptions } from '@superserial/core';
+  import { parseRecording, unsupportedOptions, type SerialOptions } from '@superserial/core';
   import { isWebSerialAvailable } from '@superserial/transport-webserial';
   import { native, type PortChoice, type Session, type View } from '../lib/session.svelte';
   import type { Workspace } from '../lib/workspace.svelte';
@@ -66,16 +66,41 @@
     ...session.granted.map((port, i) => ({ key: `p${i}`, c: { kind: 'webserial', port } as PortChoice })),
     ...(hasWebSerial ? [{ key: 'add', c: { kind: 'add' } as PortChoice }] : []),
     { key: 'loop', c: { kind: 'loopback' } as PortChoice },
+    ...(session.choice.kind === 'replay' ? [{ key: 'replay', c: session.choice }] : []),
   ]);
+  let recInput: HTMLInputElement;
+  let portSelect: HTMLSelectElement;
+
+  async function openRecording() {
+    const f = recInput.files?.[0];
+    recInput.value = '';
+    if (!f) return;
+    try {
+      session.loadRecording(f.name, parseRecording(new Uint8Array(await f.arrayBuffer())));
+    } catch (e) {
+      session.errors++;
+      session.lastError = `${f.name}: ${(e as Error).message}`;
+    }
+  }
+
+  const clock = (ms: number) => {
+    const s = Math.max(0, ms) / 1000;
+    return `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
+  };
   const selectedKey = $derived(
     choices.find((x) => keyOf(x.c) === keyOf(session.choice))?.key ?? choices[0]?.key ?? 'loop',
   );
 
   function keyOf(c: PortChoice): unknown {
-    return c.kind === 'native' ? `n:${c.path}` : c.kind === 'webserial' ? c.port : c.kind;
+    return c.kind === 'native' ? `n:${c.path}` : c.kind === 'webserial' ? c.port : c.kind === 'replay' ? c.recording : c.kind;
   }
 
   function pick(key: string) {
+    if (key === 'open-rec') {
+      portSelect.value = selectedKey;
+      recInput.click();
+      return;
+    }
     session.choosePort(choices.find((x) => x.key === key)!.c);
   }
 
@@ -92,8 +117,9 @@
 <svelte:window onmousedown={outside} onkeydown={(e) => e.key === 'Escape' && (settingsOpen = false)} />
 
 <header>
-  <select value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={session.open || session.busy} title="Port">
+  <select bind:this={portSelect} value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={session.open || session.busy} title="Port">
     {#each choices as x (x.key)}<option value={x.key} disabled={!!heldBy(x.c)} title={heldBy(x.c)}>{session.portLabel(x.c)}</option>{/each}
+    <option value="open-rec">Open recording…</option>
   </select>
   <div class="anchor">
     <button bind:this={chip} class="chip" onclick={() => (settingsOpen = !settingsOpen)} title={`${profile ? `Profile: ${profile.name}${dirty ? ' (changed since applied)' : ''}` : 'Port settings'}`}>
@@ -154,7 +180,19 @@
   <button class="primary" onclick={() => (session.open ? session.disconnect() : session.connect())} disabled={session.busy || (!session.open && !!heldBy(session.choice))} title={session.open ? '' : heldBy(session.choice)}>
     {session.open ? 'Disconnect' : 'Connect'}
   </button>
-  {#if session.open}
+  <input bind:this={recInput} type="file" accept=".ssrec" hidden onchange={openRecording} />
+  {#if session.player}
+    {@const pl = session.player}
+    <button class="play" onclick={() => session.togglePlay()} title={pl.playing ? 'Pause' : 'Play'}>{pl.playing ? '❚❚' : '▶'}</button>
+    <select class="speed" value={pl.speed} onchange={(e) => (pl.speed = Number(e.currentTarget.value))} title="Replay speed; Max is as fast as the view keeps up" aria-label="Replay speed">
+      <option value={1}>1×</option><option value={2}>2×</option><option value={10}>10×</option><option value={0}>Max</option>
+    </select>
+    <input class="seekbar" type="range" min="0" max={pl.duration || 1} step="any" value={pl.position} onchange={(e) => session.seek(Number(e.currentTarget.value))} title="Seek · {clock(pl.position)} / {clock(pl.duration)}" />
+    <span class="ptime">{clock(pl.position)} / {clock(pl.duration)}</span>
+    {#if session.choice.kind === 'replay' && session.choice.recording.records.some((r) => r.kind === 'signals')}
+      <span class="outs" title="Output lines as recorded"><span class:on={pl.dtr}>DTR</span> <span class:on={pl.rts}>RTS</span></span>
+    {/if}
+  {:else if session.open}
     {@const noLines = session.lineControl ? '' : 'This port has no modem control lines'}
     <button class="line" class:on={session.dtr && session.lineControl} onclick={() => session.setLine('dtr', !session.dtr)} disabled={!!noLines} title={noLines || 'DTR output'}>DTR</button>
     <button class="line" class:on={session.rts && session.lineControl} onclick={() => session.setLine('rts', !session.rts)} disabled={!!noLines} title={noLines || 'RTS output'}>RTS</button>
@@ -202,5 +240,13 @@
   .popover label { display: contents; color: var(--muted); }
   .popover input, .popover select { width: 100%; }
   .rec::before { content: '● '; color: var(--err); }
+  .play { width: 30px; padding: 0; }
+  .speed { width: 4.2em; }
+  select[title='Port'] { max-width: 170px; }
+  .seekbar { flex: 1 1 80px; min-width: 60px; max-width: 260px; height: 20px; padding: 0; border: 0; background: none; }
+  .ptime { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+  @media (max-width: 960px) { .ptime { display: none; } }
+  .outs { font: 11px var(--mono); color: var(--muted); white-space: nowrap; }
+  .outs .on { color: var(--ok); font-weight: 600; }
   .line.on { background: var(--ok); color: var(--accent-fg); border-color: var(--ok); }
 </style>

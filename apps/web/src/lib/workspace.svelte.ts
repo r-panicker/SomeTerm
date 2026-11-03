@@ -155,6 +155,8 @@ export class Workspace {
 }
 
 function saveChoice(c: PortChoice): SavedTab['choice'] {
+  // A recording's contents are not stored, so a replay tab comes back on the default port.
+  if (c.kind === 'replay') return { kind: 'add' };
   if (c.kind === 'native') return { kind: 'native', path: c.path, label: c.label };
   if (c.kind === 'webserial') {
     const { usbVendorId: vid, usbProductId: pid } = c.port.getInfo();

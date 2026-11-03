@@ -1,4 +1,4 @@
-import { Capture, RotatingSink, rotatedName, type CaptureOptions, type CaptureSink, type RotateOptions } from '@superserial/core';
+import { Capture, RECORDING_EXT, RotatingSink, rotatedName, type CaptureOptions, type CaptureSink, type RotateOptions, type SignalState } from '@superserial/core';
 import { FileSink, MemorySink, pickFolder } from './sinks';
 
 export interface CaptureInfo {
@@ -36,7 +36,9 @@ export class CaptureController {
   async start(options: CaptureOptions, dest: 'file' | 'memory', append: boolean, rotate?: RotateOptions): Promise<boolean> {
     if (this.active) return false;
     const base = `superserial-${stampForName(new Date())}`;
-    const ext = options.format === 'raw' ? '.bin' : '.txt';
+    const ext = options.format === 'raw' ? '.bin' : options.format === 'session' ? RECORDING_EXT : '.txt';
+    // A recording must be one file to be replayable.
+    if (options.format === 'session') rotate = undefined;
     let sink: CaptureSink;
     this.rotating = null;
     try {
@@ -83,6 +85,10 @@ export class CaptureController {
 
   tx(bytes: Uint8Array, epochMs: number): void {
     this.cap?.tx(bytes, epochMs);
+  }
+
+  signals(state: SignalState, epochMs: number): void {
+    this.cap?.signals(state, epochMs);
   }
 
   pause(): void { this.cap?.pause(); this.sync(); }

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { CaptureFormat, CaptureSource, NewlineMode } from '@superserial/core';
+  import type { CaptureFormat, CaptureOptions, CaptureSource, NewlineMode } from '@superserial/core';
   import type { CaptureController } from '../lib/capture.svelte';
   import { canPickFolder, canSaveToFile } from '../lib/sinks';
   import { formatBytes } from '../lib/format';
 
   /** `fixed` hides Data and Format for sources that decide them, such as the Monitor. */
-  let { ctl, newline = 'auto', fixed = false }: { ctl: CaptureController; newline?: NewlineMode; fixed?: boolean } = $props();
+  let { ctl, newline = 'auto', fixed = false, meta, onstart }: { ctl: CaptureController; newline?: NewlineMode; fixed?: boolean; meta?: () => CaptureOptions['meta']; onstart?: () => void } = $props();
 
   const fileOk = canSaveToFile();
   let dest = $state<'file' | 'memory'>(fileOk ? 'file' : 'memory');
@@ -17,7 +17,8 @@
   let splitMb = $state('');
   let splitMin = $state('');
   const folderOk = canPickFolder();
-  const splitting = $derived(dest === 'file' && folderOk && !!(positive(splitMb) || positive(splitMin)));
+  const recording = $derived(!fixed && format === 'session');
+  const splitting = $derived(dest === 'file' && folderOk && !recording && !!(positive(splitMb) || positive(splitMin)));
   let now = $state(Date.now());
 
   const c = $derived(ctl.info);
@@ -42,11 +43,11 @@
 
   function start() {
     ctl.discard();
-    const o = fixed ? { source: 'rx' as const, format: 'raw' as const } : { source, format, newline };
+    const o = fixed ? { source: 'rx' as const, format: 'raw' as const } : { source, format, newline, ...(recording && { meta: meta?.() }) };
     const mb = positive(splitMb);
     const min = positive(splitMin);
     const rotate = splitting ? { bytes: mb && Math.round(mb * 1024 * 1024), seconds: min && min * 60 } : undefined;
-    ctl.start({ ...o, maxBytes: positive(maxBytes), maxSeconds: positive(maxSeconds) }, dest, append, rotate);
+    ctl.start({ ...o, maxBytes: positive(maxBytes), maxSeconds: positive(maxSeconds) }, dest, append, rotate).then((ok) => ok && onstart?.());
   }
 
   function open(download: boolean) {
@@ -69,7 +70,7 @@
     <button class:on={dest === 'file'} onclick={() => (dest = 'file')} disabled={!fileOk || active} title={fileOk ? 'Stream to a file as data arrives' : 'This browser cannot write files directly'}>File</button>
     <button class:on={dest === 'memory'} onclick={() => (dest = 'memory')} disabled={active} title="Hold in memory; view or download after stopping">Memory</button>
   </div>
-  {#if dest === 'file' && folderOk}
+  {#if dest === 'file' && folderOk && !recording}
     <span>Split every</span>
     <div class="limits">
       <input bind:value={splitMb} inputmode="decimal" placeholder="–" disabled={active} title="Start a new file after this many megabytes" /> MB
@@ -84,17 +85,20 @@
     </div>
   {/if}
   {#if !fixed}
+  {#if !recording}
   <span>Data</span>
   <div class="seg">
     {#each [['rx', 'Received'], ['tx', 'Sent'], ['both', 'Both']] as [v, l]}
       <button class:on={source === v} onclick={() => (source = v as CaptureSource)} disabled={active}>{l}</button>
     {/each}
   </div>
+  {/if}
   <span>Format</span>
   <select bind:value={format} disabled={active}>
     <option value="text">Text, timestamped lines</option>
     <option value="raw">Raw bytes</option>
     <option value="hex">Hex, timestamped chunks</option>
+    <option value="session">Session recording, replayable (.ssrec)</option>
   </select>
   {/if}
   <span>Stop after</span>

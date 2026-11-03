@@ -18,6 +18,8 @@
   let optionsButton: HTMLButtonElement | undefined = $state();
 
   const o = $derived(session.sendOptions);
+  /** A recording being replayed has nothing to send to. */
+  const canSend = $derived(session.open && !session.player);
   const job = $derived(session.job);
 
   const preview = $derived.by(() => {
@@ -102,10 +104,10 @@
       bind:value={input}
       oninput={() => (error = '')}
       onkeydown={key}
-      placeholder={mode === 'hex' ? '0D 0A 41' : 'Text, \\r \\n \\xNN'}
+      placeholder={session.player ? 'Replaying a recording' : mode === 'hex' ? '0D 0A 41' : 'Text, \\r \\n \\xNN'}
       title={mode === 'hex' ? 'Hex bytes separated by spaces or commas' : 'Escapes: \\r \\n \\t \\0 \\\\ \\xNN. ↑/↓ for history'}
       class:bad={!!error}
-      disabled={!session.open}
+      disabled={!canSend}
       spellcheck="false"
       autocomplete="off"
     />
@@ -147,8 +149,8 @@
     {/if}
   </div>
   <input bind:this={fileInput} type="file" hidden onchange={pickedFile} />
-  <button type="button" onclick={() => fileInput.click()} disabled={!session.open || !!job} title="Send a file, using the delay settings">File…</button>
-  <button class="primary" disabled={!session.open}>{job ? 'Stop' : sendLabel}</button>
+  <button type="button" onclick={() => fileInput.click()} disabled={!canSend || !!job} title="Send a file, using the delay settings">File…</button>
+  <button class="primary" disabled={!canSend}>{job ? 'Stop' : sendLabel}</button>
   {#if error}<span class="err">{error}</span>{:else if preview && !job}<span class="preview">{preview}</span>{/if}
 </form>
 

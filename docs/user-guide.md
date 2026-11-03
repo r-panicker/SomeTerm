@@ -29,6 +29,21 @@ Settings a port cannot do are greyed out; hover for the reason. Disconnect to ch
 
 DTR and RTS toggle the output lines (green is asserted). Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
 
+## Recording and replay
+
+Choose **Session recording** as the capture format to save a replayable `.ssrec` file: both directions with their timing, plus line-signal changes (CTS, DSR, DCD, RI and your DTR/RTS toggles). A recording is always one file, so splitting is not offered for it.
+
+**Open recording…** in the port list loads one; **Connect** plays it like a live port, so the terminal, plot, find, spectrum, Monitor and capture all work on it. The chip shows the port settings it was recorded with, and timestamps are the original times. Sent data appears as `→` lines; nothing is transmitted, and the send bar is off.
+
+| Control | Use |
+|---|---|
+| ▶ / ❚❚ | Play or pause; at the end, ▶ starts over |
+| 1× 2× 10× Max | Replay speed; Max goes as fast as the view keeps up |
+| Slider | Seek; the view is rebuilt up to that point |
+| DTR RTS | Output lines as recorded, if the recording has any |
+
+A recording from a crashed session still opens, up to its last complete record.
+
 ## Profiles
 
 A profile stores a device's settings: port settings, DTR/RTS, receive line ending, echo, the terminal display (including Num type and byte order, timestamps, ANSI), send line ending, checksum and delays, view, and plot window.
