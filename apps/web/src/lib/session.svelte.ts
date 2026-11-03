@@ -1,6 +1,11 @@
 import {
   ByteRing,
   Capture,
+  frame,
+  repeatSend,
+  sendPaced,
+  type CancelToken,
+  type ChecksumKind,
   type CaptureOptions,
   FULL_CAPABILITIES,
   LineSplitter,
@@ -27,6 +32,26 @@ import { FileSink, MemorySink } from './sinks';
 
 export type PortChoice = { kind: 'loopback' } | { kind: 'webserial'; port: SerialPort } | { kind: 'add' };
 export type View = 'terminal' | 'split' | 'plot';
+
+export interface SendOptions {
+  checksum: ChecksumKind;
+  byteDelayMs: number;
+  lineDelayMs: number;
+  /** 1 = once, 0 = until stopped. */
+  repeat: number;
+  intervalMs: number;
+  /** Raise RTS for the duration of each send (RS-485 style direction control). */
+  rtsWhileSending: boolean;
+}
+
+export interface SendJob {
+  kind: 'paced' | 'repeat' | 'file';
+  label: string;
+  done: number;
+  total: number;
+}
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export interface CaptureInfo {
   name: string;
@@ -67,6 +92,9 @@ export class Session {
   echo = $state(true);
   newline = $state<NewlineMode>('auto');
   capture = $state<CaptureInfo | null>(null);
+  sendOptions = $state<SendOptions>({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false });
+  job = $state<SendJob | null>(null);
+  private token: CancelToken | null = null;
   private cap: Capture | null = null;
   private capSink: FileSink | MemorySink | null = null;
   private capTimer: ReturnType<typeof setInterval> | null = null;
@@ -160,20 +188,88 @@ export class Session {
     }
   }
 
-  async send(bytes: Uint8Array): Promise<void> {
-    if (!this.transport || !bytes.length) return;
-    // Echo and capture happen before the write so they precede any reply it provokes.
+  /** Sends payload + checksum + suffix, honouring repeat, pacing and RTS options. */
+  async sendMessage(payload: Uint8Array, suffix: Uint8Array): Promise<void> {
+    if (!this.transport || this.job) return;
+    const bytes = frame(payload, this.sendOptions.checksum, suffix);
+    if (!bytes.length) return;
+    const o = this.sendOptions;
+    const paced = o.byteDelayMs > 0 || o.lineDelayMs > 0;
+    if (o.repeat === 1) {
+      if (paced) await this.runJob({ kind: 'paced', label: 'Sending', done: 0, total: bytes.length }, (t) => this.transmit(bytes, t, (n) => this.progress(n)));
+      else await this.transmit(bytes, { cancelled: false });
+      return;
+    }
+    await this.runJob({ kind: 'repeat', label: 'Repeat', done: 0, total: o.repeat }, (t) =>
+      repeatSend(o.repeat, o.intervalMs, () => this.transmit(bytes, t), sleep, now, t, (n) => this.progress(n)).then(() => {}),
+    );
+  }
+
+  async sendFile(file: File): Promise<void> {
+    if (!this.transport || this.job) return;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    await this.runJob({ kind: 'file', label: file.name, done: 0, total: bytes.length }, (t) =>
+      this.transmit(bytes, t, (n) => this.progress(n), `⟨${file.name}, ${bytes.length} B⟩`),
+    );
+  }
+
+  cancelJob(): void {
+    if (this.token) this.token.cancelled = true;
+  }
+
+  private progress(n: number): void {
+    if (this.job) this.job.done = n;
+  }
+
+  private async runJob(job: SendJob, body: (t: CancelToken) => Promise<void>): Promise<void> {
+    const token: CancelToken = { cancelled: false };
+    this.token = token;
+    this.job = job;
+    try {
+      await body(token);
+    } catch (e) {
+      this.errors++;
+      this.lastError = `Send: ${(e as Error).message}`;
+    } finally {
+      this.job = null;
+      this.token = null;
+    }
+  }
+
+  /** One transmission: echo, optional RTS framing, paced writes with capture of each piece. */
+  private async transmit(bytes: Uint8Array, token: CancelToken, onProgress?: (n: number) => void, echoText?: string): Promise<void> {
+    const t = this.transport;
+    if (!t) return;
+    // Echo happens before the write so it precedes any reply it provokes.
     if (this.echo) {
-      // Received lines are shown without their terminator; sent lines match.
-      let end = bytes.length;
-      if (bytes[end - 1] === 0x0a) end--;
-      if (bytes[end - 1] === 0x0d) end--;
-      this.log.push({ dir: 'tx', text: toAscii(bytes.subarray(0, end), { controlPictures: true }), time: now(), offset: -1 });
+      this.log.push({ dir: 'tx', text: echoText ?? echoLine(bytes), time: now(), offset: -1 });
       this.changed();
     }
-    this.cap?.tx(bytes, Date.now());
-    await this.transport.write(bytes);
-    this.tx += bytes.length;
+    const o = this.sendOptions;
+    const rts = o.rtsWhileSending;
+    if (rts) await t.setSignals({ rts: true });
+    const started = now();
+    let sent = 0;
+    try {
+      sent = await sendPaced(bytes, o, async (piece) => {
+        this.cap?.tx(piece, Date.now());
+        await t.write(piece);
+        this.tx += piece.length;
+      }, sleep, token, onProgress);
+    } finally {
+      if (rts && t.state === 'open') {
+        // write() resolves when the driver has the data, not when it is on the wire.
+        const airtime = (sent * this.bitsPerChar() * 1000) / this.options.baudRate;
+        const wait = started + airtime - now();
+        if (wait > 0) await sleep(wait + 1);
+        await t.setSignals({ rts: this.rts });
+      }
+    }
+  }
+
+  private bitsPerChar(): number {
+    const o = this.options;
+    return 1 + o.dataBits + (o.parity === 'none' ? 0 : 1) + o.stopBits;
   }
 
   async setLine(which: 'dtr' | 'rts', value: boolean): Promise<void> {
@@ -333,4 +429,12 @@ export class Session {
 function stampForName(d: Date): string {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
+/** Sent lines are shown without their terminator, like received ones. */
+function echoLine(bytes: Uint8Array): string {
+  let end = bytes.length;
+  if (bytes[end - 1] === 0x0a) end--;
+  if (bytes[end - 1] === 0x0d) end--;
+  return toAscii(bytes.subarray(0, end), { controlPictures: true });
 }

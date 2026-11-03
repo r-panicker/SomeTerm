@@ -28,6 +28,17 @@ DTR and RTS toggle the output lines (green is asserted). Input lines CTS, DSR, D
 
 ↑ and ↓ recall earlier sends. ⇄ shows what you send in the terminal, prefixed with →.
 
+The ⋯ button holds send options; once any is set, the button shows it instead (`CRC-16/MODBUS · paced`).
+
+| Option | Effect |
+|---|---|
+| Checksum | Appended after the payload, before the line ending. Hover an entry for its polynomial and byte order |
+| Repeat | Send N times (0 = until **Stop**), interval measured start to start |
+| Delay | Pause after every byte and/or every line ending; also applies to files |
+| Half duplex | Raise RTS for each send and restore it afterwards, for RS-485 style direction control |
+
+**File…** sends a file's bytes as-is, paced by the delay settings; **Stop** cancels between writes.
+
 ## Terminal
 
 ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCII bytes as `.`. Pick the receive line ending to match the device; `CR/LF auto` treats CR, LF and CRLF each as one line break. Hex, Dec and Bin show the raw received stream with offsets.
