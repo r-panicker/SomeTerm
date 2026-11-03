@@ -16,11 +16,17 @@ export function decimateMinMax(
   from: number,
   to: number,
   buckets: number,
+  /** Per-column transform, applied before min/max so non-monotonic ones (abs, sin) keep the true envelope. */
+  maps: readonly ((x: number) => number)[] | null[] = [],
 ): Decimated {
   const n = to - from;
+  const mapped = (k: number) => {
+    const f = maps[k];
+    return f ? (v: number | null) => (v == null ? null : f(v)) : (v: number | null) => v;
+  };
   if (n <= buckets * 2) {
     const rows = Array.from({ length: n }, (_, i) => from + i);
-    return { data: [times.slice(from, to), ...columns.map((c) => c.slice(from, to))], rows };
+    return { data: [times.slice(from, to), ...columns.map((c, k) => c.slice(from, to).map(mapped(k)))], rows };
   }
   const t: number[] = [];
   const rows: number[] = [];
@@ -32,11 +38,13 @@ export function decimateMinMax(
     t.push(times[lo]!, times[hi - 1]!);
     rows.push(lo, hi - 1);
     columns.forEach((c, k) => {
+      const f = maps[k];
       let mn = Infinity;
       let mx = -Infinity;
       for (let i = lo; i < hi; i++) {
-        const v = c[i];
-        if (v == null) continue;
+        const raw = c[i];
+        if (raw == null) continue;
+        const v = f ? f(raw) : raw;
         if (v < mn) mn = v;
         if (v > mx) mx = v;
       }

@@ -16,6 +16,15 @@ describe('decimateMinMax', () => {
     expect(Math.min(...(r.data[1] as number[]))).toBe(0);
   });
 
+  it('applies transforms before min/max, so abs() keeps a negative spike', () => {
+    const times = Array.from({ length: 100 }, (_, i) => i);
+    const col = times.map((i) => (i === 40 ? -50 : 1));
+    const r = decimateMinMax(times, [col], 0, 100, 5, [Math.abs]);
+    expect(Math.max(...(r.data[1] as number[]))).toBe(50);
+    const small = decimateMinMax([0, 1], [[-2, null]], 0, 2, 10, [(x) => x * 10]);
+    expect(small.data[1]).toEqual([-20, null]);
+  });
+
   it('emits min at the bucket start time and max at its end, per series', () => {
     const times = [0, 1, 2, 3, 4, 5, 6, 7];
     const r = decimateMinMax(times, [[3, 1, 4, 1, 5, 9, 2, 6], [null, null, null, null, 1, 2, 3, 4]], 0, 8, 2);

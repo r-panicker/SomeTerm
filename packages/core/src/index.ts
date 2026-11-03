@@ -18,3 +18,4 @@ export { FindIndex, type Hit } from './terminal/find-index';
 export { AnsiParser, applySgr, RGB_FLAG, type AnsiStyle, type AnsiColor, type StyleRun } from './pipeline/ansi';
 export { matchProfile, exportProfiles, parseProfiles, uniqueName, PROFILE_FILE_FORMAT, type DeviceId, type Profile, type ImportedProfile } from './profiles';
 export { RotatingSink, rotatedName, type RotateOptions } from './capture/rotating';
+export { compileExpr, type Fn } from './plot/expr';
