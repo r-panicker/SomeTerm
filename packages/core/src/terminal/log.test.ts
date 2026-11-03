@@ -35,5 +35,6 @@ describe('TerminalLog', () => {
     for (let i = 0; i < 12; i++) log.push(rx(i));
     expect(log.length).toBe(10);
     expect(log.get(0)?.offset).toBe(2);
+    expect(log.dropped).toBe(2);
   });
 });

@@ -11,6 +11,8 @@ export interface TermLine {
 /** Bounded list of terminal lines; trims from the front in batches. */
 export class TerminalLog {
   private lines: TermLine[] = [];
+  /** Lines ever trimmed from the front; index i is absolute line `dropped + i`. */
+  dropped = 0;
 
   constructor(private readonly maxLines = 100_000) {}
 
@@ -24,7 +26,11 @@ export class TerminalLog {
 
   push(line: TermLine): void {
     this.lines.push(line);
-    if (this.lines.length > this.maxLines * 1.1) this.lines.splice(0, this.lines.length - this.maxLines);
+    if (this.lines.length > this.maxLines * 1.1) {
+      const n = this.lines.length - this.maxLines;
+      this.lines.splice(0, n);
+      this.dropped += n;
+    }
   }
 
   /**
@@ -44,6 +50,7 @@ export class TerminalLog {
   }
 
   clear(): void {
+    this.dropped += this.lines.length;
     this.lines = [];
   }
 

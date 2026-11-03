@@ -13,3 +13,5 @@ export { checksumBytes, frame, CHECKSUMS, type ChecksumKind } from './send/check
 export { planWrites, sendPaced, repeatSend, type PaceOptions, type CancelToken } from './send/pacing';
 export { RxPipeline, type RxLine, type RxBatch, type RxCommand } from './pipeline/rx';
 export { decodeNumbers, formatNumber, numInfo, NUM_TYPES, type NumType } from './format/numbers';
+export { buildMatcher, type Matcher, type SearchOptions } from './terminal/search';
+export { FindIndex, type Hit } from './terminal/find-index';
