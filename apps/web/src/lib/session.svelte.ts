@@ -8,13 +8,12 @@ import {
   type ChecksumKind,
   type CaptureOptions,
   FULL_CAPABILITIES,
-  LineSplitter,
   LoopbackTransport,
   SeriesStore,
   TerminalLog,
-  parseNumericLine,
   toAscii,
   type InputSignals,
+  type RxBatch,
   type NewlineMode,
   type SerialOptions,
   type SerialTransport,
@@ -31,6 +30,7 @@ import {
 import type { NativePortSummary, NativeSerialBridge } from '@superserial/transport-node/bridge';
 import { IpcSerialTransport } from '@superserial/transport-node/ipc-client';
 import { FileSink, MemorySink } from './sinks';
+import { PipelineClient } from './pipeline';
 
 /** Present when running inside the Electron app; serial I/O then goes through Node, not Web Serial. */
 export const native = (globalThis as { superserialNative?: NativeSerialBridge }).superserialNative;
@@ -121,7 +121,7 @@ export class Session {
   t0 = 0;
 
   private transport: SerialTransport | null = null;
-  private splitter = new LineSplitter('auto');
+  private pipeline = new PipelineClient((b) => this.onBatch(b));
   private offs: (() => void)[] = [];
   private timers: ReturnType<typeof setInterval>[] = [];
   private scheduled = false;
@@ -312,9 +312,14 @@ export class Session {
     await this.transport?.sendBreak(ms);
   }
 
+  /** 'worker' normally; 'inline' if the worker could not start. */
+  get pipelineMode(): string {
+    return this.pipeline.mode;
+  }
+
   setNewline(mode: NewlineMode): void {
     this.newline = mode;
-    this.splitter = new LineSplitter(mode);
+    this.pipeline.reset(mode, this.ring.end);
     this.partialText = '';
     this.changed();
   }
@@ -400,18 +405,19 @@ export class Session {
     this.rx += chunk.length;
     this.ring.push(chunk);
     this.cap?.rx(chunk, performance.timeOrigin + ts);
-    for (const l of this.splitter.push(chunk, ts)) {
-      const text = toAscii(l.bytes, { controlPictures: true });
-      this.log.push({ dir: 'rx', text, time: l.timestamp, offset: l.offset });
-      const samples = parseNumericLine(text);
-      if (samples) {
-        this.series.push((l.timestamp - this.t0) / 1000, l.offset, samples);
+    this.pipeline.data(chunk, ts);
+  }
+
+  private onBatch(b: RxBatch): void {
+    for (const l of b.lines) {
+      this.log.pushRx({ dir: 'rx', text: l.text, time: l.time, offset: l.offset });
+      if (l.samples) {
+        this.series.push((l.time - this.t0) / 1000, l.offset, l.samples);
         if (!this.viewChosen && this.view === 'terminal') this.view = 'split';
       }
     }
-    const p = this.splitter.peekPartial();
-    this.partialText = p ? toAscii(p.bytes, { controlPictures: true }) : '';
-    if (p) { this.partialTime = p.timestamp; this.partialOffset = p.offset; }
+    this.partialText = b.partial?.text ?? '';
+    if (b.partial) { this.partialTime = b.partial.time; this.partialOffset = b.partial.offset; }
     this.changed();
   }
 
