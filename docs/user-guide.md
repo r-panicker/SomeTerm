@@ -29,6 +29,16 @@ Settings a port cannot do are greyed out; hover for the reason. Disconnect to ch
 
 DTR and RTS toggle the output lines (green is asserted). Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
 
+## Profiles
+
+A profile stores a device's settings: port settings, DTR/RTS, receive line ending, echo, the terminal display (including Num type and byte order, timestamps, ANSI), send line ending, checksum and delays, view, and plot window.
+
+Save one from the settings chip: **Profile → Save as…**. With **Apply to … automatically** ticked, choosing that device's port applies the profile by itself; nothing is sent to the device, only the settings change. A profile saved in the desktop app also records the board's serial number, so it matches that one board rather than every board of the model.
+
+The chip then reads `ESP32 · 115200 8N1`; a • means the settings have changed since, and **Update** saves them into the profile. Profiles can be applied only while disconnected.
+
+**Manage…** renames, deletes, exports and imports profiles. An exported `.superserial.json` file leaves out serial numbers, so a profile shared for a lab matches every student's board of that model. Tabs restored on launch keep their own settings; profiles apply when you choose a port.
+
 ## Several ports
 
 **+** opens another port in a new tab. Tabs are lettered A, B, …; a port open in one tab is greyed out in the others.

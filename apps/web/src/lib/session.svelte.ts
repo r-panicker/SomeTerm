@@ -17,6 +17,8 @@ import {
   type SerialTransport,
   type TransportCapabilities,
   type TermLine,
+  type DeviceId,
+  matchProfile,
 } from '@superserial/core';
 import {
   WEB_SERIAL_CAPABILITIES,
@@ -29,6 +31,7 @@ import {
 import type { NativePortSummary, NativeSerialBridge } from '@superserial/transport-node/bridge';
 import { IpcSerialTransport } from '@superserial/transport-node/ipc-client';
 import { CaptureController } from './capture.svelte';
+import { applySettings, profiles } from './profiles.svelte';
 import { defaultDisplay, type DisplaySettings, type TermSource } from './source';
 import { PipelineClient } from './pipeline';
 
@@ -110,6 +113,8 @@ export class Session implements TermSource {
   display = $state<DisplaySettings>(defaultDisplay());
   /** Plot time window in seconds; 0 shows everything. */
   plotWindow = $state(30);
+  /** The profile last applied or saved here; settings may have changed since. */
+  profileId = $state<string | null>(null);
   readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });
   sendOptions = $state<SendOptions>({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false, eol: '\\r\\n' });
   job = $state<SendJob | null>(null);
@@ -155,12 +160,44 @@ export class Session implements TermSource {
     // Until the user picks, default to the first real port rather than Loopback.
     if (!this.portChosen && !this.open && this.choice.kind === 'loopback' && ports[0]) {
       this.choice = { kind: 'native', ...ports[0] };
+      this.applyMatchingProfile();
     }
   }
 
-  choosePort(c: PortChoice): void {
+  /** `restoring` skips profile matching: a restored tab already has the exact settings it was left with. */
+  choosePort(c: PortChoice, restoring = false): void {
     this.choice = c;
     this.portChosen = true;
+    if (!restoring) this.applyMatchingProfile();
+  }
+
+  /** USB identity of the chosen port, when it has one. */
+  deviceId(c: PortChoice = this.choice): DeviceId | null {
+    if (c.kind === 'webserial') {
+      const { usbVendorId: vid, usbProductId: pid } = c.port.getInfo();
+      return vid !== undefined && pid !== undefined ? { vid, pid } : null;
+    }
+    if (c.kind === 'native') {
+      const p = this.nativePorts.find((x) => x.path === c.path);
+      const vid = p?.vendorId ? parseInt(p.vendorId, 16) : NaN;
+      const pid = p?.productId ? parseInt(p.productId, 16) : NaN;
+      if (Number.isNaN(vid) || Number.isNaN(pid)) return null;
+      return { vid, pid, ...(p?.serialNumber && { serial: p.serialNumber }) };
+    }
+    return null;
+  }
+
+  applyProfile(id: string): void {
+    const p = profiles.get(id);
+    if (!p || this.open) return;
+    applySettings(this, p.settings);
+    this.profileId = p.id;
+  }
+
+  /** Applies the profile saved for this device, if any; settings change only, nothing is sent. */
+  private applyMatchingProfile(): void {
+    const p = matchProfile(profiles.list, this.deviceId());
+    if (p) this.applyProfile(p.id);
   }
 
   chooseView(v: View): void {
@@ -179,6 +216,8 @@ export class Session implements TermSource {
         const w = await requestWebSerialPort();
         await this.refreshPorts();
         this.choice = { kind: 'webserial', port: this.granted.find((p) => p === w.port) ?? w.port };
+        // A newly granted port gets its profile before it is opened with these settings.
+        this.applyMatchingProfile();
         t = w;
       }
       this.offs = [

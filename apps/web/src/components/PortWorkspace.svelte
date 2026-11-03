@@ -7,13 +7,14 @@
   import SendBar from './SendBar.svelte';
   import StatusBar from './StatusBar.svelte';
   import CapturePanel from './CapturePanel.svelte';
+  import ProfilesPanel from './ProfilesPanel.svelte';
 
   let { session, workspace, narrow }: { session: Session; workspace: Workspace; narrow: boolean } = $props();
   let terminal: Terminal | undefined = $state();
   let sendBar: SendBar;
   let main: HTMLElement;
   let split = $state(0.5);
-  let drawer = $state<'capture' | null>(null);
+  let drawer = $state<'capture' | 'profiles' | null>(null);
 
   /** Shortcuts that act on this tab; the app routes keys to the active tab. */
   export function handleKey(e: KeyboardEvent) {
@@ -60,10 +61,10 @@
       <Plot {session} onpick={(off) => { if (session.view === 'plot') session.chooseView('split'); queueMicrotask(() => terminal?.jumpToOffset(off)); }} />
     </div>
   {/if}
-  {#if drawer === 'capture'}
+  {#if drawer}
     <aside>
-      <div class="head"><strong>Capture</strong><button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button></div>
-      <CapturePanel ctl={session.capture} newline={session.newline} />
+      <div class="head"><strong>{drawer === 'capture' ? 'Capture' : 'Profiles'}</strong><button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button></div>
+      {#if drawer === 'capture'}<CapturePanel ctl={session.capture} newline={session.newline} />{:else}<ProfilesPanel {session} />{/if}
     </aside>
   {/if}
 </main>

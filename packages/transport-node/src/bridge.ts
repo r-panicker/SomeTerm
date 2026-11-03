@@ -3,6 +3,10 @@ import type { InputSignals, OutputSignals, SerialOptions, TransportCapabilities 
 export interface NativePortSummary {
   path: string;
   label: string;
+  /** Hex strings as the OS reports them, when the port is USB. */
+  vendorId?: string;
+  productId?: string;
+  serialNumber?: string;
 }
 
 export type BridgeEvent =

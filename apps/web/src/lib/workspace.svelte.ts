@@ -13,6 +13,7 @@ interface SavedTab {
   echo: boolean;
   newline: Session['newline'];
   forwardTo: string | null;
+  profileId?: string | null;
   display?: Session['display'];
   plotWindow?: number;
   dtr?: boolean;
@@ -84,6 +85,7 @@ export class Workspace {
       echo: s.echo,
       newline: s.newline,
       forwardTo: s.forwardTo?.letter ?? null,
+      profileId: s.profileId,
       display: $state.snapshot(s.display),
       plotWindow: s.plotWindow,
       dtr: s.dtr,
@@ -117,6 +119,10 @@ export class Workspace {
     }
     for (const t of saved.tabs) {
       const s = this.add();
+      // Port first: refreshing may default to a port and apply its profile, which the saved settings must then override.
+      await s.refreshPorts();
+      const c = await loadChoice(t.choice, s);
+      if (c) s.choosePort(c, true);
       Object.assign(s.options, t.options);
       Object.assign(s.sendOptions, t.sendOptions);
       s.echo = t.echo;
@@ -126,9 +132,7 @@ export class Workspace {
       if (t.rts !== undefined) s.rts = t.rts;
       if (t.newline !== s.newline) s.setNewline(t.newline);
       if (t.view !== 'terminal') s.chooseView(t.view);
-      await s.refreshPorts();
-      const c = await loadChoice(t.choice, s);
-      if (c) s.choosePort(c);
+      s.profileId = t.profileId ?? null;
     }
     saved.tabs.forEach((t, i) => {
       if (t.forwardTo) this.sessions[i]!.forwardTo = this.sessions.find((o) => o.letter === t.forwardTo) ?? null;
