@@ -12,3 +12,4 @@ export { Capture, formatStamp, type CaptureOptions, type CaptureSink, type Captu
 export { checksumBytes, frame, CHECKSUMS, type ChecksumKind } from './send/checksum';
 export { planWrites, sendPaced, repeatSend, type PaceOptions, type CancelToken } from './send/pacing';
 export { RxPipeline, type RxLine, type RxBatch, type RxCommand } from './pipeline/rx';
+export { decodeNumbers, formatNumber, numInfo, NUM_TYPES, type NumType } from './format/numbers';
