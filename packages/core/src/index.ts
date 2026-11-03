@@ -4,3 +4,6 @@ export { ByteRing } from './buffer/ring';
 export { LineSplitter, type Line, type NewlineMode } from './pipeline/lines';
 export { toHex, toBinary, toDecimal, toAscii, hexDump, type HexDumpRow } from './format/bytes';
 export { parseEscapes, parseHexBytes } from './send/escapes';
+export { parseNumericLine, type Sample } from './plot/parse';
+export { SeriesStore } from './plot/series';
+export { TerminalLog, type TermLine, type Direction } from './terminal/log';

@@ -99,10 +99,21 @@ Serial only. "Better" notes where the UX should deliberately depart from RealTer
 | Export PNG/CSV | | todo |
 | Click point to jump to raw bytes | | todo |
 
-### UX direction
-- Single window, collapsible side panels, command palette and keyboard shortcuts.
-- Dark/light theme, saved profiles per device.
-- Status bar for line signals and counters; nothing shown when idle.
+### Layout (decided: single workspace)
+| Region | Contents |
+|---|---|
+| Top bar | Port picker, settings chip (`115200 8N1`, popover for the rest), Connect, DTR/RTS toggles, Break; view switch Terminal / Split / Plot |
+| Main | Terminal and plot over the same stream; split is resizable; clicking a plot point scrolls the terminal to its line |
+| Pane toolbars | One thin row per pane |
+| Send bar | Text/Hex, input with history, line ending, Send; quick-send strip only once buttons are defined |
+| Right drawer | Capture, macros, port details, profiles; slides over the main area on demand. Only panels that exist are listed |
+| Status bar | CTS/DSR/DCD/RI LEDs, rx/tx bytes and rate, error count, capture indicator; each shown only when it carries information |
+| Multiple ports | Tab strip above the top bar, only when a second port is open |
+
+- Output line controls (DTR, RTS) sit with Connect; input signals sit in the status bar.
+- First connect opens Terminal only; the first numeric line switches to Split unless the user has picked a view.
+- Narrow windows (< ~700 px) stack the split vertically.
+- Keyboard: Ctrl+L clear, Esc focus send input; command palette (Ctrl+K) and find (Ctrl+F) to follow.
 
 ## Decisions
 - Half-duplex: local echo of Tx plus optional RTS direction control.
