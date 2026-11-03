@@ -20,10 +20,14 @@ export class LineSplitter {
   private pending: number[] = [];
   private pendingOffset = 0;
   private pendingTime = 0;
-  private offset = 0;
+  private offset: number;
   private sawCr = false;
 
-  constructor(private readonly mode: NewlineMode = 'auto') {}
+  /** `startOffset` is the stream offset of the next byte, so offsets stay absolute across a reset. */
+  constructor(private readonly mode: NewlineMode = 'auto', startOffset = 0) {
+    this.offset = startOffset;
+    this.pendingOffset = startOffset;
+  }
 
   push(chunk: Uint8Array, timestamp: number): Line[] {
     const lines: Line[] = [];

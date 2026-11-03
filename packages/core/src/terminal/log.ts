@@ -27,6 +27,22 @@ export class TerminalLog {
     if (this.lines.length > this.maxLines * 1.1) this.lines.splice(0, this.lines.length - this.maxLines);
   }
 
+  /**
+   * Pushes an rx line, placing it before any trailing tx lines that are newer.
+   * Rx lines reach the log after parsing, so a send echoed meanwhile can
+   * otherwise appear ahead of data that arrived before it.
+   */
+  pushRx(line: TermLine): void {
+    let i = this.lines.length;
+    while (i > 0) {
+      const prev = this.lines[i - 1]!;
+      if (prev.dir !== 'tx' || prev.time <= line.time) break;
+      i--;
+    }
+    if (i === this.lines.length) this.push(line);
+    else this.lines.splice(i, 0, line);
+  }
+
   clear(): void {
     this.lines = [];
   }

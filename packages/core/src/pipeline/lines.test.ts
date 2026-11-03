@@ -44,6 +44,11 @@ describe('LineSplitter', () => {
     ]);
   });
 
+  it('a splitter started mid-stream reports absolute offsets', () => {
+    const s = new LineSplitter('lf', 1000);
+    expect(s.push(enc('ab\ncd\n'), 0).map((l) => l.offset)).toEqual([1000, 1003]);
+  });
+
   it('exposes the unterminated tail as a partial line', () => {
     const s = new LineSplitter('auto');
     s.push(enc('hi\nwor'), 5);

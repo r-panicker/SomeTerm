@@ -20,6 +20,16 @@ describe('TerminalLog', () => {
     log.push(rx(50));
     expect(log.indexOfOffset(10)).toBe(-1);
   });
+  it('pushRx slots a late rx line before newer tx lines only', () => {
+    const log = new TerminalLog();
+    log.push({ dir: 'rx', text: 'a', time: 1, offset: 0 });
+    log.push({ dir: 'tx', text: 'T1', time: 5, offset: -1 });
+    log.push({ dir: 'tx', text: 'T2', time: 9, offset: -1 });
+    log.pushRx({ dir: 'rx', text: 'b', time: 7, offset: 2 });
+    log.pushRx({ dir: 'rx', text: 'c', time: 10, offset: 4 });
+    expect(Array.from({ length: log.length }, (_, i) => log.get(i)!.text)).toEqual(['a', 'T1', 'b', 'T2', 'c']);
+  });
+
   it('trims from the front past capacity', () => {
     const log = new TerminalLog(10);
     for (let i = 0; i < 12; i++) log.push(rx(i));
