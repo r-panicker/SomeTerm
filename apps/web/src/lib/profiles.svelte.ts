@@ -25,6 +25,7 @@ export interface ProfileSettings {
   view: View;
   plotWindow: number;
   plotTransforms: Record<string, PlotTransform>;
+  plotX: string | null;
 }
 
 export function settingsOf(s: Session): ProfileSettings {
@@ -40,6 +41,7 @@ export function settingsOf(s: Session): ProfileSettings {
     view: s.view,
     plotWindow: s.plotWindow,
     plotTransforms: $state.snapshot(s.plotTransforms),
+    plotX: s.plotX,
   };
 }
 
@@ -54,6 +56,7 @@ export function applySettings(s: Session, p: ProfileSettings): void {
   s.chooseView(p.view);
   s.plotWindow = p.plotWindow;
   s.plotTransforms = { ...p.plotTransforms };
+  s.plotX = p.plotX;
 }
 
 /** Keeps only transforms whose expression compiles; an imported file cannot smuggle in anything else. */
@@ -120,6 +123,7 @@ export function sanitizeSettings(raw: unknown): ProfileSettings | null {
     view: pick(r.view, ['terminal', 'split', 'plot'] as const, 'terminal'),
     plotWindow: int(r.plotWindow, 0, 86_400, 30),
     plotTransforms: sanitizeTransforms(r.plotTransforms),
+    plotX: ((x: unknown) => (typeof x === 'string' && x.length <= 64 ? x : null))((raw as Record<string, unknown>).plotX),
   };
 }
 

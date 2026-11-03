@@ -14,8 +14,17 @@
   let plot: uPlot | null = null;
   let names = '';
   const hasData = $derived.by(() => (void session.version, session.series.length > 0));
+  // Series names are plain data; the version tick makes the list reactive.
+  const seriesNames = $derived.by(() => (void session.version, [...session.series.names]));
   let paused = $state(false);
   let shownRows: number[] = [];
+  /** XY mode: for each drawn series, the source row of each point. */
+  let shownXY: { col: number; rows: number[] }[] = [];
+  const XY_MAX_POINTS = 20_000;
+
+  const xIndex = () => (session.plotX ? session.series.names.indexOf(session.plotX) : -1);
+  /** Changes whenever the plot must be rebuilt rather than just redrawn. */
+  const layoutKey = () => `${xIndex() >= 0 ? `xy:${session.plotX}` : 't'}|${session.series.names.map(label).join('\u0000')}`;
   let fxOpen = $state(false);
   let fxPopover: HTMLDivElement | undefined = $state();
   let fxButton: HTMLButtonElement | undefined = $state();
@@ -50,8 +59,32 @@
   function build() {
     plot?.destroy();
     const s = session.series;
-    names = s.names.map(label).join('\u0000');
+    names = layoutKey();
     const axis = { stroke: css('--muted'), grid: { stroke: css('--line'), width: 1 }, ticks: { stroke: css('--line') } };
+    const xi = xIndex();
+    if (xi >= 0) {
+      const facets = [{ scale: 'x', auto: true }, { scale: 'y', auto: true }];
+      plot = new uPlot(
+        {
+          mode: 2,
+          width: host.clientWidth,
+          height: Math.max(80, host.clientHeight - legendHeight()),
+          scales: { x: { time: false, auto: true }, y: { auto: true } },
+          axes: [{ ...axis, label: label(s.names[xi]!), labelSize: 14, size: 34 }, { ...axis, size: 50 }],
+          series: [
+            {},
+            ...s.names.flatMap((n, i) => (i === xi ? [] : [{ label: label(n), stroke: PALETTE[i % PALETTE.length], width: 1.5, points: { show: false }, facets }])),
+          ],
+          cursor: { drag: { x: false, y: false }, points: { show: false } },
+          legend: { live: false },
+        } as unknown as uPlot.Options,
+        [null, ...s.names.flatMap((_, i) => (i === xi ? [] : [[[], []]]))] as unknown as uPlot.AlignedData,
+        host,
+      );
+      plot.over.addEventListener('click', (e) => pickXY(e));
+      update(true);
+      return;
+    }
     plot = new uPlot(
       {
         width: host.clientWidth,
@@ -96,15 +129,66 @@
     if (!s.length) { plot.setData([[]] as unknown as uPlot.AlignedData); return; }
     const last = s.times[s.length - 1]!;
     const from = session.plotWindow ? s.lowerBound(last - session.plotWindow) : 0;
+    const xi = xIndex();
+    if (xi >= 0) {
+      plot.setData(xyData(from, xi) as unknown as uPlot.AlignedData);
+      return;
+    }
     const d = decimateMinMax(s.times, s.columns, from, s.length, Math.max(100, Math.round(plot.bbox.width / devicePixelRatio)), maps());
     shownRows = d.rows;
     plot.setData(d.data as uPlot.AlignedData);
   }
 
+  /**
+   * Pairs each series with the X series row by row. Time buckets mean nothing on
+   * an XY trace, so a long window is thinned by an even stride, which keeps its shape.
+   */
+  function xyData(from: number, xi: number) {
+    const s = session.series;
+    const fns = maps();
+    const tf = (k: number, v: number) => (fns[k] ? fns[k]!(v) : v);
+    const stride = Math.max(1, Math.ceil((s.length - from) / XY_MAX_POINTS));
+    const xcol = s.columns[xi]!;
+    shownXY = [];
+    const data: (null | number[][])[] = [null];
+    s.columns.forEach((col, k) => {
+      if (k === xi) return;
+      const xs: number[] = [], ys: number[] = [], rows: number[] = [];
+      for (let r = from; r < s.length; r += stride) {
+        const x = xcol[r], y = col[r];
+        if (x == null || y == null) continue;
+        xs.push(tf(xi, x)); ys.push(tf(k, y)); rows.push(r);
+      }
+      data.push([xs, ys]);
+      shownXY.push({ col: k, rows });
+    });
+    return data;
+  }
+
+  /** Nearest drawn point within a few pixels of the click, across all XY series. */
+  function pickXY(e: MouseEvent) {
+    const u = plot;
+    if (!u) return;
+    const rect = u.over.getBoundingClientRect();
+    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    let best = 64; // squared pixels
+    let row = -1;
+    const data = u.data as unknown as (null | number[][])[];
+    shownXY.forEach((sx, si) => {
+      const [xs, ys] = data[si + 1]!;
+      for (let j = 0; j < xs!.length; j++) {
+        const dx = u.valToPos(xs![j]!, 'x') - cx, dy = u.valToPos(ys![j]!, 'y') - cy;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < best) { best = d2; row = sx.rows[j]!; }
+      }
+    });
+    if (row >= 0) onpick(session.series.offsets[row]!);
+  }
+
   $effect(() => {
     void session.version;
     if (!host) return;
-    if (session.series.names.map(label).join('\u0000') !== names || !plot) build();
+    if (layoutKey() !== names || !plot) build();
     else update();
   });
 
@@ -112,7 +196,8 @@
   $effect(() => {
     void compiled;
     if (!plot) return;
-    if (session.series.names.map(label).join('\u0000') !== names) build();
+    void session.plotX;
+    if (layoutKey() !== names) build();
     else update(true);
   });
 
@@ -152,6 +237,12 @@
       {#each WINDOWS as [v, l]}<option value={v}>{l}</option>{/each}
     </select>
     <button class="toggle" class:on={paused} onclick={() => { paused = !paused; update(true); }} title="Pause plot (data keeps arriving)">❚❚</button>
+    {#if seriesNames.length > 1}
+      <select value={session.plotX ?? ''} onchange={(e) => (session.plotX = e.currentTarget.value || null)} title="Horizontal axis: time, or another series for an XY plot">
+        <option value="">vs time</option>
+        {#each seriesNames as n (n)}<option value={n}>vs {n}</option>{/each}
+      </select>
+    {/if}
     <div class="anchor">
       <button bind:this={fxButton} class="fx" class:active={fxActive} onclick={() => (fxOpen = !fxOpen)} title="Scale or convert series (e.g. ADC counts to volts)">ƒx</button>
       {#if fxOpen}

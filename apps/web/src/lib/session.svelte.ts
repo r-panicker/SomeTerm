@@ -121,6 +121,8 @@ export class Session implements TermSource {
   plotWindow = $state(30);
   /** Per-series display transform, keyed by series name; raw values are kept unchanged. */
   plotTransforms = $state<Record<string, PlotTransform>>({});
+  /** Series used as the X axis (XY plot); null plots against time. */
+  plotX = $state<string | null>(null);
   /** The profile last applied or saved here; settings may have changed since. */
   profileId = $state<string | null>(null);
   readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });
