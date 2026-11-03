@@ -23,6 +23,9 @@ importers:
       '@superserial/transport-webserial':
         specifier: workspace:*
         version: link:../../packages/transport-webserial
+      uplot:
+        specifier: 1.6.31
+        version: 1.6.31
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^5.1.1
@@ -772,6 +775,9 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  uplot@1.6.31:
+    resolution: {integrity: sha512-sQZqSwVCbJGnFB4IQjQYopzj5CoTZJ4Br1fG/xdONimqgHmsacvCjNesdGDypNKFbrhLGIeshYhy89FxPF+H+w==}
+
   vite-node@2.1.9:
     resolution: {integrity: sha512-AM9aQ/IPrW/6ENLQg3AGY4K1N2TGZdR5e4gu/MmmR2xR3Ll1+dib+nook92g4TV3PXVyeyxdWwtaCAiUL0hMxA==}
     engines: {node: ^18.0.0 || >=20.0.0}
@@ -1452,6 +1458,8 @@ snapshots:
   tinyspy@3.0.2: {}
 
   typescript@5.9.3: {}
+
+  uplot@1.6.31: {}
 
   vite-node@2.1.9:
     dependencies:
