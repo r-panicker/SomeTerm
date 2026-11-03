@@ -18,7 +18,6 @@
 - Don't spend screen space on what a user knows by common sense or after one try: idle status ("ready · 9 phases"), usage hints ("Press ▶ to step"). Show state only when it carries information.
 - A label never costs a row. Fit it into a line that already exists, shrinking type or dropping secondary detail (an address) before letting a header wrap; this matters most on a phone.
 - Keep the thing being studied next to what identifies it: nothing goes between an instruction and its drawing. Explanatory text is secondary; keep it short, and put it after the picture, never above it.
-- Interactive UI must keep its result and its controls on screen together. If acting on something requires seeing the result of the last action, do not put the result where reaching it scrolls the controls away — on narrow layouts especially, make it a tab/panel alongside the others rather than a strip below them. The waveform view is the worked example: a bottom dock on desktop, a sixth panel on mobile.
 
 ## Writing (code comments, docs, commit messages)
 - Comments explain non-obvious *current* behavior — a hidden constraint, why the less-obvious approach was chosen. They are never a changelog: don't narrate what a bug used to do or why a line was removed. That history belongs in the commit message and, for this project, `riscv_simulator_specs.md`'s version-history table.
