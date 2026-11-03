@@ -49,4 +49,5 @@ SuperSerial: a cross-platform serial terminal with RealTerm's serial feature par
 
 ## Scope
 - Ideate before implementing anything structural or UX-shaped: present options and a recommendation, wait for direction, rather than building first.
+- Choosing between next steps of similar value (build order, which piece first) is not a decision to hand back: pick one, say which, and proceed.
 - When a fix reveals the same latent pattern elsewhere, flag it and ask before touching more files than asked.

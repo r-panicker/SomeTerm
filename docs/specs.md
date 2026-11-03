@@ -116,3 +116,4 @@ Serial only. "Better" notes where the UX should deliberately depart from RealTer
 | 2026-11-03 | Resolved half-duplex, capture fallback and pnpm decisions. |
 | 2026-11-03 | Scaffolded pnpm workspace and `packages/core`: `SerialTransport` interface, capability flags and option checking, `LoopbackTransport` mock (RTS→CTS, DTR→DSR) with tests. |
 | 2026-11-03 | Added `ByteRing` (absolute-offset ring buffer), `LineSplitter` (cr/lf/crlf/auto, partial-line peek, CRLF across chunks) and byte formatters (hex, binary, decimal, ASCII with optional control pictures, hex dump rows). |
+| 2026-11-03 | Added `transport-webserial`: maps options and signals onto Web Serial, timed break, survives framing/parity errors by resuming on the replacement stream, self-closes on unplug. Tested against an in-memory fake `SerialPort`. `@types/w3c-web-serial` pinned to 1.0.8; 1.0.9 is an empty stub for TS 7.1+. |

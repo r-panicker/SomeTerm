@@ -17,6 +17,16 @@ importers:
 
   packages/core: {}
 
+  packages/transport-webserial:
+    dependencies:
+      '@superserial/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/w3c-web-serial':
+        specifier: ^1.0.8
+        version: 1.0.8
+
 packages:
 
   '@esbuild/aix-ppc64@0.21.5':
@@ -298,6 +308,9 @@ packages:
 
   '@types/estree@1.0.10':
     resolution: {integrity: sha512-lTyOMnOcmRBzdCv6/4zUZCrEhV0xrqQiUZBZtVcbmLHBXKLnN8q89v/wKRF/Q0HbwVsqbIG3o5HDoFl9sduM+g==}
+
+  '@types/w3c-web-serial@1.0.8':
+    resolution: {integrity: sha512-QQOT+bxQJhRGXoZDZGLs3ksLud1dMNnMiSQtBA0w8KXvLpXX4oM4TZb6J0GgJ8UbCaHo5s9/4VQT8uXy9JER2A==}
 
   '@vitest/expect@2.1.9':
     resolution: {integrity: sha512-UJCIkTBenHeKT1TTlKMJWy1laZewsRIzYighyYiJKZreqtdxSos/S1t+ktRMQWu2CKqaarrkeszJx1cgC5tGZw==}
@@ -667,6 +680,8 @@ snapshots:
     optional: true
 
   '@types/estree@1.0.10': {}
+
+  '@types/w3c-web-serial@1.0.8': {}
 
   '@vitest/expect@2.1.9':
     dependencies:
