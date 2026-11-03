@@ -20,3 +20,5 @@ export { matchProfile, exportProfiles, parseProfiles, uniqueName, PROFILE_FILE_F
 export { RotatingSink, rotatedName, type RotateOptions } from './capture/rotating';
 export { compileExpr, type Fn } from './plot/expr';
 export { spectrum, peakFrequency, estimateRate, largestPow2, type Spectrum } from './plot/fft';
+export { parseRecording, encodeHeader, encodeRecord, encodeSignals, decodeSignals, RECORDING_EXT, type Recording, type RecordingMeta, type RecordEntry, type SignalState } from './capture/recording';
+export { ReplayTransport } from './mock/replay';

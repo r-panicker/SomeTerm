@@ -1,15 +1,21 @@
 import { LineSplitter, type NewlineMode } from '../pipeline/lines';
 import { toHex } from '../format/bytes';
 import type { Direction } from '../terminal/log';
+import { encodeHeader, encodeRecord, encodeSignals, type RecordingMeta, type SignalState } from './recording';
 
 export type CaptureSource = 'rx' | 'tx' | 'both';
-export type CaptureFormat = 'raw' | 'text' | 'hex';
+export type CaptureFormat = 'raw' | 'text' | 'hex' | 'session';
 export type CaptureState = 'running' | 'paused' | 'stopped';
 
 export interface CaptureOptions {
   source: CaptureSource;
-  /** raw: bytes as received; text: one timestamped line per line; hex: one timestamped hex line per chunk. */
+  /**
+   * raw: bytes as received; text: one timestamped line per line; hex: one timestamped
+   * hex line per chunk; session: a replayable recording of both directions and line signals.
+   */
   format: CaptureFormat;
+  /** Header for the session format; `created` is taken from the capture start. */
+  meta?: Omit<RecordingMeta, 'version' | 'created'>;
   newline?: NewlineMode;
   /** Stop once this many data bytes have been captured; the chunk that crosses it is truncated. */
   maxBytes?: number;
@@ -58,6 +64,13 @@ export class Capture {
     const nl = options.newline ?? 'auto';
     this.splitters = { rx: new LineSplitter(nl), tx: new LineSplitter(nl) };
     this.done = new Promise((r) => (this.resolveDone = r));
+    if (options.format === 'session') this.emit(encodeHeader({ version: 1, created: startedAt, ...options.meta }));
+  }
+
+  /** Records a line-signal change; only the session format keeps these. */
+  signals(state: SignalState, epochMs: number): void {
+    if (this.state !== 'running' || this.options.format !== 'session') return;
+    this.emit(encodeRecord('signals', epochMs - this.startedAt, encodeSignals(state)));
   }
 
   rx(chunk: Uint8Array, epochMs: number): void {
@@ -103,7 +116,7 @@ export class Capture {
 
   private data(dir: Direction, chunk: Uint8Array, epochMs: number): void {
     if (this.state !== 'running') return;
-    if (this.options.source !== 'both' && this.options.source !== dir) return;
+    if (this.options.format !== 'session' && this.options.source !== 'both' && this.options.source !== dir) return;
     this.tick(epochMs);
     if (this.state !== 'running') return;
     let bytes = chunk;
@@ -114,6 +127,9 @@ export class Capture {
     switch (this.options.format) {
       case 'raw':
         this.emit(bytes.slice());
+        break;
+      case 'session':
+        if (bytes.length) this.emit(encodeRecord(dir, epochMs - this.startedAt, bytes));
         break;
       case 'hex':
         if (bytes.length) this.emit(ascii(`${formatStamp(epochMs)} ${this.tag(dir)}${toHex(bytes)}\n`));
