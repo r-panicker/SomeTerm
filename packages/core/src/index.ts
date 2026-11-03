@@ -19,3 +19,4 @@ export { AnsiParser, applySgr, RGB_FLAG, type AnsiStyle, type AnsiColor, type St
 export { matchProfile, exportProfiles, parseProfiles, uniqueName, PROFILE_FILE_FORMAT, type DeviceId, type Profile, type ImportedProfile } from './profiles';
 export { RotatingSink, rotatedName, type RotateOptions } from './capture/rotating';
 export { compileExpr, type Fn } from './plot/expr';
+export { spectrum, peakFrequency, estimateRate, largestPow2, type Spectrum } from './plot/fft';
