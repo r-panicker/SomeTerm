@@ -1,0 +1,23 @@
+{
+  "name": "@superserial/transport-node",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./bridge": "./src/bridge.ts",
+    "./ipc-client": "./src/ipc-client.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@superserial/core": "workspace:*",
+    "serialport": "^13.0.0"
+  },
+  "devDependencies": {
+    "@serialport/stream": "^13.0.0",
+    "@types/node": "^22.20.5"
+  }
+}

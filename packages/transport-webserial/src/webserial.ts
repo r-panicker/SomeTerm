@@ -18,6 +18,7 @@ export const WEB_SERIAL_CAPABILITIES: TransportCapabilities = {
   portMetadata: false,
   sendBreak: true,
   lineSignals: true,
+  ringIndicator: true,
 };
 
 export function isWebSerialAvailable(): boolean {

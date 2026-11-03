@@ -21,6 +21,8 @@ export interface TransportCapabilities {
   portMetadata: boolean;
   sendBreak: boolean;
   lineSignals: boolean;
+  /** Whether getSignals() reports RI; some drivers never do. */
+  ringIndicator: boolean;
 }
 
 export interface OutputSignals {

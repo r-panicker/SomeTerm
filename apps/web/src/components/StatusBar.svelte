@@ -11,7 +11,7 @@
 {#if show}
   <footer>
     {#if session.signals}
-      {#each SIGNALS as [k, l]}
+      {#each SIGNALS.filter(([k]) => k !== 'ri' || session.capabilities.ringIndicator) as [k, l]}
         <span class="sig" class:on={session.signals[k]} title="{l} input">{l}</span>
       {/each}
     {/if}

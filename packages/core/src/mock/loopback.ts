@@ -18,6 +18,7 @@ export const FULL_CAPABILITIES: TransportCapabilities = {
   portMetadata: true,
   sendBreak: true,
   lineSignals: true,
+  ringIndicator: true,
 };
 
 type Listeners<T extends unknown[]> = Set<(...args: T) => void>;
