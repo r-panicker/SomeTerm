@@ -7,7 +7,6 @@
 
   const HISTORY_MAX = 100;
   let mode = $state<'text' | 'hex'>('text');
-  let eol = $state('\\r\\n');
   let input = $state('');
   let error = $state('');
   let optionsOpen = $state(false);
@@ -50,7 +49,7 @@
       error = (err as Error).message;
       return;
     }
-    const suffix = mode === 'text' ? parseEscapes(eol) : new Uint8Array(0);
+    const suffix = mode === 'text' ? parseEscapes(session.sendOptions.eol) : new Uint8Array(0);
     if (input && history[0] !== input) history = [input, ...history].slice(0, HISTORY_MAX);
     cursor = -1;
     const sent = input;
@@ -112,7 +111,7 @@
     />
   {/if}
   {#if mode === 'text' && !job}
-    <select bind:value={eol} title="Appended to each send, after any checksum">
+    <select bind:value={session.sendOptions.eol} title="Appended to each send, after any checksum">
       <option value={'\\r\\n'}>+CRLF</option><option value={'\\n'}>+LF</option><option value={'\\r'}>+CR</option><option value="">none</option>
     </select>
   {/if}

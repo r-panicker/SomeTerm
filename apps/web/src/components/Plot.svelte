@@ -13,7 +13,6 @@
   let host: HTMLDivElement;
   let plot: uPlot | null = null;
   let names = '';
-  let windowS = $state(30);
   const hasData = $derived.by(() => (void session.version, session.series.length > 0));
   let paused = $state(false);
   let shownRows: number[] = [];
@@ -70,7 +69,7 @@
     const s = session.series;
     if (!s.length) { plot.setData([[]] as unknown as uPlot.AlignedData); return; }
     const last = s.times[s.length - 1]!;
-    const from = windowS ? s.lowerBound(last - windowS) : 0;
+    const from = session.plotWindow ? s.lowerBound(last - session.plotWindow) : 0;
     const d = decimateMinMax(s.times, s.columns, from, s.length, Math.max(100, Math.round(plot.bbox.width / devicePixelRatio)));
     shownRows = d.rows;
     plot.setData(d.data as uPlot.AlignedData);
@@ -84,7 +83,7 @@
   });
 
   $effect(() => {
-    void windowS;
+    void session.plotWindow;
     update(true);
   });
 
@@ -111,7 +110,7 @@
 
 <section class="pane">
   <div class="toolbar">
-    <select bind:value={windowS} title="Time window">
+    <select bind:value={session.plotWindow} title="Time window">
       {#each WINDOWS as [v, l]}<option value={v}>{l}</option>{/each}
     </select>
     <button class="toggle" class:on={paused} onclick={() => { paused = !paused; update(true); }} title="Pause plot (data keeps arriving)">❚❚</button>

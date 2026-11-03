@@ -13,6 +13,10 @@ interface SavedTab {
   echo: boolean;
   newline: Session['newline'];
   forwardTo: string | null;
+  display?: Session['display'];
+  plotWindow?: number;
+  dtr?: boolean;
+  rts?: boolean;
 }
 
 interface Saved {
@@ -80,6 +84,10 @@ export class Workspace {
       echo: s.echo,
       newline: s.newline,
       forwardTo: s.forwardTo?.letter ?? null,
+      display: $state.snapshot(s.display),
+      plotWindow: s.plotWindow,
+      dtr: s.dtr,
+      rts: s.rts,
     }));
     return JSON.stringify({ tabs, active: this.active } satisfies Saved);
   }
@@ -112,6 +120,10 @@ export class Workspace {
       Object.assign(s.options, t.options);
       Object.assign(s.sendOptions, t.sendOptions);
       s.echo = t.echo;
+      if (t.display) Object.assign(s.display, t.display);
+      if (t.plotWindow !== undefined) s.plotWindow = t.plotWindow;
+      if (t.dtr !== undefined) s.dtr = t.dtr;
+      if (t.rts !== undefined) s.rts = t.rts;
       if (t.newline !== s.newline) s.setNewline(t.newline);
       if (t.view !== 'terminal') s.chooseView(t.view);
       await s.refreshPorts();

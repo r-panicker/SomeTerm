@@ -1,6 +1,6 @@
 import { TerminalLog, formatStamp, type TermLine } from '@superserial/core';
 import { CaptureController } from './capture.svelte';
-import type { TermSource } from './source';
+import { defaultDisplay, type DisplaySettings, type TermSource } from './source';
 
 export const PORT_COLORS = ['#2563eb', '#e8590c', '#2b9348', '#c2255c', '#7048e8', '#0c8599', '#b08900', '#5c7cfa'];
 
@@ -11,6 +11,7 @@ export class Monitor implements TermSource {
   readonly log = new TerminalLog();
   readonly partial = null;
   version = $state(0);
+  display = $state<DisplaySettings>(defaultDisplay());
   errors = $state(0);
   lastError = $state('');
   readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });

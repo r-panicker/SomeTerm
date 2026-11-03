@@ -3,11 +3,12 @@
   import { untrack } from 'svelte';
   import CanvasView, { type Span } from './CanvasView.svelte';
   import { ansiColor } from '../lib/ansi-colors';
-  import type { TermSource } from '../lib/source';
+  import type { DisplayFormat, TermSource } from '../lib/source';
 
   let { source }: { source: TermSource } = $props();
 
-  type Format = 'ascii' | 'hex' | 'dec' | 'bin' | 'num';
+  type Format = DisplayFormat;
+  const disp = $derived(source.display);
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
   const DUMP: Record<'hex' | 'dec' | 'bin', Dump> = {
     hex: { per: 16, skip: 0, fmt: (b) => toHex(b), width: 16 * 3 - 1, side: (b) => toAscii(b) },
@@ -15,25 +16,19 @@
     bin: { per: 8, skip: 0, fmt: (b) => toBinary(b), width: 8 * 9 - 1, side: (b) => toAscii(b) },
   };
 
-  let format = $state<Format>('ascii');
-  let numType = $state<NumType>('int16');
-  let littleEndian = $state(true);
-  let align = $state(0);
-  const size = $derived(numInfo(numType).size);
+  const size = $derived(numInfo(disp.numType).size);
   // Changing to a smaller type must not leave an alignment it cannot have.
-  $effect(() => { if (align >= size) align = 0; });
+  $effect(() => { if (disp.align >= size) disp.align = 0; });
 
   /** Numeric rows keep 16 bytes per row; the raw bytes are shown beside the values. */
   const numDump = $derived<Dump>({
     per: 16,
-    skip: align,
-    fmt: (b) => decodeNumbers(b, numType, littleEndian).map((v) => formatNumber(v, numType)).join(' '),
-    width: (16 / size) * (numInfo(numType).width + 1) - 1,
+    skip: disp.align,
+    fmt: (b) => decodeNumbers(b, disp.numType, disp.littleEndian).map((v) => formatNumber(v, disp.numType)).join(' '),
+    width: (16 / size) * (numInfo(disp.numType).width + 1) - 1,
     side: (b) => toHex(b),
   });
-  const dump = $derived(format === 'num' ? numDump : format === 'ascii' ? DUMP.hex : DUMP[format]);
-  let stamps = $state(false);
-  let ansi = $state(true);
+  const dump = $derived(disp.format === 'num' ? numDump : disp.format === 'ascii' ? DUMP.hex : DUMP[disp.format]);
 
   // Theme-dependent colours for the ANSI palette and for inverse video.
   let dark = $state(false);
@@ -64,7 +59,7 @@
   const index = new FindIndex();
 
   $effect(() => {
-    const q = query, o = { caseSensitive, regex }, showAnsi = ansi;
+    const q = query, o = { caseSensitive, regex }, showAnsi = disp.ansi;
     const t = setTimeout(() => {
       index.set(q, o, untrack(() => source.log), (l) => (showAnsi ? l.text : (l.raw ?? l.text)));
       cur = null;
@@ -84,7 +79,7 @@
     });
   });
 
-  const filtering = $derived(findOpen && filter && format === 'ascii' && (void findRev, index.active));
+  const filtering = $derived(findOpen && filter && disp.format === 'ascii' && (void findRev, index.active));
 
   const position = $derived.by(() => {
     void findRev;
@@ -119,7 +114,7 @@
   }
 
   export function openFind() {
-    format = 'ascii';
+    disp.format = 'ascii';
     findOpen = true;
     queueMicrotask(() => { findInput?.focus(); findInput?.select(); });
   }
@@ -184,7 +179,7 @@
   const count = $derived.by(() => {
     void source.version;
     if (filtering) return index.hits.length;
-    if (format === 'ascii') return source.log.length + (source.partial ? 1 : 0);
+    if (disp.format === 'ascii') return source.log.length + (source.partial ? 1 : 0);
     if (!source.ring) return 0;
     return Math.max(0, Math.ceil((source.ring.end - dumpStart()) / dump.per));
   });
@@ -194,16 +189,16 @@
   }
 
   function row(i: number): Span[] {
-    if (format === 'ascii') {
+    if (disp.format === 'ascii') {
       const li = filtering ? index.hits[i]!.abs - source.log.dropped : i;
       const l = asciiLine(li);
       const abs = li < source.log.length ? source.log.dropped + li : -1;
       const spans: Span[] = [];
       const tag = l.src !== undefined ? source.sources?.[l.src] : undefined;
       if (tag) spans.push({ text: `${tag.label}› `, tone: 'fg', color: tag.color, bold: true });
-      if (stamps) spans.push({ text: stamp(l.time), tone: 'muted' });
+      if (disp.stamps) spans.push({ text: stamp(l.time), tone: 'muted' });
       if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, []));
-      else if (ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? []));
+      else if (disp.ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? []));
       else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, []));
       return spans;
     }
@@ -219,13 +214,13 @@
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
-  const revision = $derived(`${source.version}|${format}|${numType}|${littleEndian}|${align}|${stamps}|${findRev}|${filtering}|${ansi}|${dark}|${cur?.abs}:${cur?.k}`);
+  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${dark}|${cur?.abs}:${cur?.k}`);
 
   const rowText = (i: number) => row(i).map((s) => s.text).join('');
 
   /** Scrolls to the line containing a stream offset, switching to ASCII if needed. */
   export function jumpToOffset(offset: number) {
-    if (format !== 'ascii') format = 'ascii';
+    if (disp.format !== 'ascii') disp.format = 'ascii';
     filter = false;
     const i = source.log.indexOfOffset(offset);
     if (i >= 0) queueMicrotask(() => view.scrollToRow(i));
@@ -237,20 +232,20 @@
     {#if !findOpen && source.ring}
       <div class="seg" role="group" aria-label="Display format">
         {#each [['ascii', 'ASCII'], ['hex', 'Hex'], ['dec', 'Dec'], ['bin', 'Bin'], ['num', 'Num']] as [f, l]}
-          <button class:on={format === f} onclick={() => (format = f as Format)} title={f === 'num' ? 'Decode as integers or floats' : undefined}>{l}</button>
+          <button class:on={disp.format === f} onclick={() => (disp.format = f as Format)} title={f === 'num' ? 'Decode as integers or floats' : undefined}>{l}</button>
         {/each}
       </div>
     {/if}
-    {#if format === 'num'}
-      <select bind:value={numType} title="Value type">
+    {#if disp.format === 'num'}
+      <select bind:value={disp.numType} title="Value type">
         {#each NUM_TYPES as n}<option value={n.type}>{n.type}</option>{/each}
       </select>
       {#if size > 1}
         <div class="seg" role="group" aria-label="Byte order">
-          <button class:on={littleEndian} onclick={() => (littleEndian = true)} title="Little endian (least significant byte first)">LE</button>
-          <button class:on={!littleEndian} onclick={() => (littleEndian = false)} title="Big endian (most significant byte first)">BE</button>
+          <button class:on={disp.littleEndian} onclick={() => (disp.littleEndian = true)} title="Little endian (least significant byte first)">LE</button>
+          <button class:on={!disp.littleEndian} onclick={() => (disp.littleEndian = false)} title="Big endian (most significant byte first)">BE</button>
         </div>
-        <select bind:value={align} title="Skip bytes so values line up with the sender's framing">
+        <select bind:value={disp.align} title="Skip bytes so values line up with the sender's framing">
           {#each Array.from({ length: size }, (_, i) => i) as a}<option value={a}>+{a}</option>{/each}
         </select>
       {/if}
@@ -275,14 +270,14 @@
       <button onclick={() => step(-1)} disabled={!(void findRev, index.total)} title="Previous (Shift+Enter)">↑</button>
       <button onclick={() => step(1)} disabled={!(void findRev, index.total)} title="Next (Enter)">↓</button>
       <button onclick={closeFind} title="Close (Esc)">✕</button>
-    {:else if format === 'ascii'}
+    {:else if disp.format === 'ascii'}
       {#if source.setNewline}
         <select value={source.newline} onchange={(e) => source.setNewline?.(e.currentTarget.value as NewlineMode)} title="Receive line ending">
           <option value="auto">CR/LF auto</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CRLF</option>
         </select>
       {/if}
-      <button class="toggle" class:on={stamps} onclick={() => (stamps = !stamps)} title="Timestamps">⏱</button>
-      <button class="toggle" class:on={ansi} onclick={() => (ansi = !ansi)} title="Interpret ANSI colour codes (off: show them as ␛[…)">ANSI</button>
+      <button class="toggle" class:on={disp.stamps} onclick={() => (disp.stamps = !disp.stamps)} title="Timestamps">⏱</button>
+      <button class="toggle" class:on={disp.ansi} onclick={() => (disp.ansi = !disp.ansi)} title="Interpret ANSI colour codes (off: show them as ␛[…)">ANSI</button>
       {#if source.echo !== undefined}
         <button class="toggle" class:on={source.echo} onclick={() => (source.echo = !source.echo)} title="Show sent data (local echo)">⇄</button>
       {/if}

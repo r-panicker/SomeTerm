@@ -29,7 +29,7 @@ import {
 import type { NativePortSummary, NativeSerialBridge } from '@superserial/transport-node/bridge';
 import { IpcSerialTransport } from '@superserial/transport-node/ipc-client';
 import { CaptureController } from './capture.svelte';
-import type { TermSource } from './source';
+import { defaultDisplay, type DisplaySettings, type TermSource } from './source';
 import { PipelineClient } from './pipeline';
 
 /** Present when running inside the Electron app; serial I/O then goes through Node, not Web Serial. */
@@ -51,6 +51,8 @@ export interface SendOptions {
   intervalMs: number;
   /** Raise RTS for the duration of each send (RS-485 style direction control). */
   rtsWhileSending: boolean;
+  /** Appended to text sends, as escape text (`\\r\\n`). */
+  eol: string;
 }
 
 export interface SendJob {
@@ -105,8 +107,11 @@ export class Session implements TermSource {
   view = $state<View>('terminal');
   echo = $state(true);
   newline = $state<NewlineMode>('auto');
+  display = $state<DisplaySettings>(defaultDisplay());
+  /** Plot time window in seconds; 0 shows everything. */
+  plotWindow = $state(30);
   readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });
-  sendOptions = $state<SendOptions>({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false });
+  sendOptions = $state<SendOptions>({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false, eol: '\\r\\n' });
   job = $state<SendJob | null>(null);
   private token: CancelToken | null = null;
 
