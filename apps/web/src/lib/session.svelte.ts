@@ -1,5 +1,7 @@
 import {
   ByteRing,
+  Capture,
+  type CaptureOptions,
   FULL_CAPABILITIES,
   LineSplitter,
   LoopbackTransport,
@@ -21,9 +23,20 @@ import {
   isWebSerialAvailable,
   requestWebSerialPort,
 } from '@superserial/transport-webserial';
+import { FileSink, MemorySink } from './sinks';
 
 export type PortChoice = { kind: 'loopback' } | { kind: 'webserial'; port: SerialPort } | { kind: 'add' };
 export type View = 'terminal' | 'split' | 'plot';
+
+export interface CaptureInfo {
+  name: string;
+  kind: 'file' | 'memory';
+  state: 'running' | 'paused' | 'stopped';
+  captured: number;
+  written: number;
+  startedAt: number;
+  reason: string;
+}
 
 const RING_BYTES = 4 << 20;
 const SIGNAL_POLL_MS = 100;
@@ -53,6 +66,10 @@ export class Session {
   view = $state<View>('terminal');
   echo = $state(true);
   newline = $state<NewlineMode>('auto');
+  capture = $state<CaptureInfo | null>(null);
+  private cap: Capture | null = null;
+  private capSink: FileSink | MemorySink | null = null;
+  private capTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly log = new TerminalLog();
   readonly ring = new ByteRing(RING_BYTES);
@@ -145,7 +162,7 @@ export class Session {
 
   async send(bytes: Uint8Array): Promise<void> {
     if (!this.transport || !bytes.length) return;
-    // Logged before the write so the echo precedes any reply it provokes.
+    // Echo and capture happen before the write so they precede any reply it provokes.
     if (this.echo) {
       // Received lines are shown without their terminator; sent lines match.
       let end = bytes.length;
@@ -154,6 +171,7 @@ export class Session {
       this.log.push({ dir: 'tx', text: toAscii(bytes.subarray(0, end), { controlPictures: true }), time: now(), offset: -1 });
       this.changed();
     }
+    this.cap?.tx(bytes, Date.now());
     await this.transport.write(bytes);
     this.tx += bytes.length;
   }
@@ -186,6 +204,67 @@ export class Session {
     this.changed();
   }
 
+  /**
+   * Starts a capture. For a file, opens the save dialog, so call from a user gesture.
+   * Returns false if the user cancelled the dialog.
+   */
+  async startCapture(options: CaptureOptions, dest: 'file' | 'memory', append: boolean): Promise<boolean> {
+    if (this.cap && this.cap.state !== 'stopped') return false;
+    const name = `superserial-${stampForName(new Date())}.txt`;
+    let sink: FileSink | MemorySink;
+    try {
+      const f = dest === 'file' ? await FileSink.pick(name, append) : new MemorySink(name);
+      if (!f) return false;
+      sink = f;
+    } catch (e) {
+      this.errors++;
+      this.lastError = `Capture: ${(e as Error).message}`;
+      return false;
+    }
+    this.capSink = sink;
+    const cap = new Capture(sink, { ...options, newline: this.newline }, Date.now(), () => this.syncCapture());
+    this.cap = cap;
+    this.syncCapture();
+    this.capTimer = setInterval(() => { cap.tick(Date.now()); this.syncCapture(); }, 250);
+    return true;
+  }
+
+  pauseCapture(): void { this.cap?.pause(); this.syncCapture(); }
+  resumeCapture(): void { this.cap?.resume(); this.syncCapture(); }
+
+  async stopCapture(): Promise<void> {
+    await this.cap?.stop();
+  }
+
+  /** The finished in-memory capture, if any. */
+  captureBlob(): Blob | null {
+    return this.capSink instanceof MemorySink && this.cap?.state === 'stopped'
+      ? this.capSink.blob(this.cap.options.format === 'raw' ? 'application/octet-stream' : 'text/plain;charset=utf-8')
+      : null;
+  }
+
+  discardCapture(): void {
+    if (this.cap && this.cap.state !== 'stopped') return;
+    this.cap = null;
+    this.capSink = null;
+    this.capture = null;
+  }
+
+  private syncCapture(): void {
+    const c = this.cap;
+    if (!c || !this.capSink) return;
+    if (c.state === 'stopped' && this.capTimer) { clearInterval(this.capTimer); this.capTimer = null; }
+    this.capture = {
+      name: this.capSink.name,
+      kind: this.capSink instanceof FileSink ? 'file' : 'memory',
+      state: c.state,
+      captured: c.captured,
+      written: c.written,
+      startedAt: c.startedAt,
+      reason: c.stopReason,
+    };
+  }
+
   /** Wall-clock time for a stream timestamp. */
   wallClock(t: number): Date {
     return new Date(performance.timeOrigin + t);
@@ -194,6 +273,7 @@ export class Session {
   private receive(chunk: Uint8Array, ts: number): void {
     this.rx += chunk.length;
     this.ring.push(chunk);
+    this.cap?.rx(chunk, performance.timeOrigin + ts);
     for (const l of this.splitter.push(chunk, ts)) {
       const text = toAscii(l.bytes, { controlPictures: true });
       this.log.push({ dir: 'rx', text, time: l.timestamp, offset: l.offset });
@@ -248,4 +328,9 @@ export class Session {
       this.version++;
     });
   }
+}
+
+function stampForName(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 }

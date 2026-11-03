@@ -3,7 +3,7 @@
   import { isWebSerialAvailable } from '@superserial/transport-webserial';
   import type { PortChoice, Session, View } from '../lib/session.svelte';
 
-  let { session }: { session: Session } = $props();
+  let { session, drawer = $bindable(null) }: { session: Session; drawer?: 'capture' | null } = $props();
 
   const BAUDS = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 250000, 460800, 500000, 921600, 1000000, 2000000];
   const PARITY = { none: 'N', even: 'E', odd: 'O', mark: 'M', space: 'S' } as const;
@@ -96,6 +96,7 @@
     {#if session.capabilities.sendBreak}<button onclick={() => session.sendBreak()} title="Send a 250 ms break">Break</button>{/if}
   {/if}
   <span class="spacer"></span>
+  <button class="toggle" class:on={drawer === 'capture'} class:rec={session.capture?.state === 'running'} onclick={() => (drawer = drawer === 'capture' ? null : 'capture')} title="Capture to file">Capture</button>
   <div class="seg" role="group" aria-label="View">
     {#each [['terminal', 'Terminal'], ['split', 'Split'], ['plot', 'Plot']] as [v, l]}
       <button class:on={session.view === v} onclick={() => session.chooseView(v as View)}>{l}</button>
@@ -113,5 +114,6 @@
   }
   .popover label { display: contents; color: var(--muted); }
   .popover input, .popover select { width: 100%; }
+  .rec::before { content: '● '; color: var(--err); }
   .line.on { background: var(--ok); color: var(--accent-fg); border-color: var(--ok); }
 </style>

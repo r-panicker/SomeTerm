@@ -45,9 +45,21 @@ Any received line made only of numbers is plotted, Arduino style:
 
 The first such line switches to Split view. Click a point to jump to its line in the terminal. Drag across the plot to zoom, double-click to reset. Click a legend entry to hide that series. CSV exports everything plotted since the last Clear.
 
+## Capture
+
+**Capture** in the top bar opens the capture panel. Capture is independent of the connection: it keeps running across disconnects until you stop it or a limit is reached.
+
+| Format | One record per | Use for |
+|---|---|---|
+| Text, timestamped lines | received line, prefixed `YYYY-MM-DD HH:MM:SS.mmm` | logs to read or grep |
+| Raw bytes | byte, exactly as received | binary data, replay |
+| Hex, timestamped chunks | chunk as it arrived | timing and framing questions |
+
+Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as data arrives (Chrome and Edge); **Memory** keeps it until you View, Download or Discard. Leave a limit empty for no limit.
+
 ## Shortcuts
 
 | Key | Action |
 |---|---|
 | Ctrl+L | Clear terminal, plot and error count |
-| Esc | Focus the send box |
+| Esc | Close the capture panel, else focus the send box |

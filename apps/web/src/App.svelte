@@ -6,6 +6,7 @@
   import Plot from './components/Plot.svelte';
   import SendBar from './components/SendBar.svelte';
   import StatusBar from './components/StatusBar.svelte';
+  import CapturePanel from './components/CapturePanel.svelte';
 
   const session = new Session();
   if (import.meta.env.DEV) (window as unknown as { session: Session }).session = session;
@@ -14,6 +15,7 @@
   let main: HTMLElement;
   let split = $state(0.5);
   let narrow = $state(false);
+  let drawer = $state<'capture' | null>(null);
 
   onMount(() => {
     session.refreshPorts();
@@ -37,7 +39,8 @@
       e.preventDefault();
       session.clear();
     } else if (e.key === 'Escape' && !(e.target instanceof HTMLSelectElement)) {
-      sendBar.focus();
+      if (drawer) drawer = null;
+      else sendBar.focus();
     }
   }
 
@@ -59,7 +62,7 @@
 
 <svelte:window onkeydown={key} />
 
-<TopBar {session} />
+<TopBar {session} bind:drawer />
 <main bind:this={main} class:narrow>
   {#if showTerm}
     <div class="slot" style:flex={showPlot ? `${split} 1 0` : '1 1 0'}><Terminal bind:this={terminal} {session} /></div>
@@ -72,12 +75,24 @@
       <Plot {session} onpick={(off) => { if (session.view === 'plot') session.chooseView('split'); queueMicrotask(() => terminal?.jumpToOffset(off)); }} />
     </div>
   {/if}
+  {#if drawer === 'capture'}
+    <aside>
+      <div class="head"><strong>Capture</strong><button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button></div>
+      <CapturePanel {session} />
+    </aside>
+  {/if}
 </main>
 <SendBar bind:this={sendBar} {session} />
-<StatusBar {session} />
+<StatusBar {session} onCapture={() => (drawer = 'capture')} />
 
 <style>
-  main { flex: 1; min-height: 0; display: flex; }
+  main { flex: 1; min-height: 0; display: flex; position: relative; }
+  aside {
+    position: absolute; top: 0; right: 0; bottom: 0; width: min(340px, 100%); z-index: 5; overflow: auto;
+    padding: 10px 12px; background: var(--panel); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgb(0 0 0 / .12);
+  }
+  aside .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .close { border: 0; background: none; color: var(--muted); }
   main.narrow { flex-direction: column; }
   .slot { display: flex; min-width: 0; min-height: 0; }
   .handle { flex: 0 0 5px; cursor: col-resize; background: var(--line); }
