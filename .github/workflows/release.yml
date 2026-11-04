@@ -1,0 +1,94 @@
+# Desktop installers for each OS (built on that OS) and a zip of the web app.
+# Started by hand, it only builds; for a v* tag it also publishes a GitHub
+# release named after the tag with every file attached. Ordinary pushes do not
+# run it, so they use no Actions minutes.
+name: Build and release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      # A tag build carries the tag's version in the app and file names.
+      - if: startsWith(github.ref, 'refs/tags/v')
+        run: echo "EB_ARGS=-c.extraMetadata.version=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - run: pnpm --filter @superserial/electron run build
+      - run: pnpm exec electron-builder $EB_ARGS
+        working-directory: apps/electron
+        env:
+          # Unsigned builds; signing needs certificates added as secrets later.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: superserial-${{ matrix.os }}
+          path: |
+            apps/electron/release/*.AppImage
+            apps/electron/release/*.exe
+            apps/electron/release/*.dmg
+          if-no-files-found: error
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @superserial/web build
+      - name: Zip the web app
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          [[ "$GITHUB_REF" == refs/tags/v* ]] || version=$(git rev-parse --short HEAD)
+          mkdir -p out
+          (cd apps/web/dist && zip -qr "$GITHUB_WORKSPACE/out/SuperSerial-web-$version.zip" .)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: superserial-web
+          path: out/*.zip
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [desktop, web]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: files
+          merge-multiple: true
+      # Re-running for the same tag replaces the files instead of failing.
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          ls -l files
+          if ! gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            pre=; [[ "$GITHUB_REF_NAME" == *-* ]] && pre=--prerelease
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "SuperSerial ${GITHUB_REF_NAME#v}" --generate-notes $pre
+          fi
+          gh release upload "$GITHUB_REF_NAME" files/* --clobber

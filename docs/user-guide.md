@@ -25,7 +25,19 @@ To build the desktop app as an installer for the machine you are on:
 pnpm dist:electron
 ```
 
-The result is in `apps/electron/release/`: an AppImage on Linux, an installer `.exe` on Windows, a `.dmg` on macOS. Each OS builds its own; the **Desktop builds** GitHub workflow builds all three when started by hand or for a `v*` tag. Builds are unsigned, so Windows SmartScreen and macOS Gatekeeper ask for confirmation the first time.
+The result is in `apps/electron/release/`: an AppImage on Linux, an installer `.exe` on Windows, a `.dmg` on macOS. Each OS builds its own; the **Build and release** GitHub workflow builds all three, plus a zip of the web app, when started by hand. Builds are unsigned, so Windows SmartScreen and macOS Gatekeeper ask for confirmation the first time.
+
+To publish a release, push a version tag. The workflow builds everything and creates a GitHub release named after the tag with the installers and `SuperSerial-web-<version>.zip` attached. A tag with a hyphen (`v0.3.0-rc.1`) is marked as a pre-release.
+
+```bash
+git tag v0.2.0
+```
+
+```bash
+git push origin v0.2.0
+```
+
+The web zip is a static site: serve it from any web server. Web Serial only works over HTTPS or on `localhost`, and not from a file opened directly.
 
 To use a port the OS does not list (socat, other virtual ports), start the desktop app with `SUPERSERIAL_EXTRA_PORTS=/dev/pts/5` (several separated by `:`, or `;` on Windows).
 
