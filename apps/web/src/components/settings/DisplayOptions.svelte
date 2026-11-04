@@ -15,6 +15,7 @@
   </label>
 {/if}
 <label class="check"><input type="checkbox" bind:checked={disp.stamps} /> Timestamps</label>
+<label class="check" title="Long lines continue on the next row instead of scrolling sideways"><input type="checkbox" bind:checked={disp.wrap} /> Wrap long lines</label>
 <label class="check" title="Off: show escape codes as ␛[…"><input type="checkbox" bind:checked={disp.ansi} /> ANSI colours</label>
 <label class="check" title="Show CR, LF, TAB, NUL and every other non-printing byte, line endings included"><input type="checkbox" bind:checked={disp.ctrl} /> Control characters</label>
 {#if source.typeKeys}

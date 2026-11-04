@@ -14,9 +14,11 @@ export interface DisplaySettings {
   ctrl: boolean;
   /** Bytes per row in Hex, Dec and Num; Bin shows half as many. */
   perRow: number;
+  /** Long lines continue on the next row instead of scrolling sideways. */
+  wrap: boolean;
 }
 
-export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16 });
+export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16, wrap: false });
 
 /** What the terminal view needs from whatever feeds it: one port, or several merged. */
 export interface TermSource {

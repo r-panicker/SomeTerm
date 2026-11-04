@@ -37,8 +37,14 @@
     /** Outline the view while it is capturing keys. */
     typing?: boolean;
     follow?: boolean;
+    /** Row `i` continues row `i - 1` (a wrapped line): copies join them without a line break. */
+    continues?: (i: number) => boolean;
+    /** Characters that fit across the view; set by the view. */
+    cols?: number;
+    /** Rows never exceed `cols`, so there is nothing to scroll sideways. */
+    wrapped?: boolean;
   }
-  let { count, version, row, rowText, rowBg, onkey, onpaste, ontext, typing = false, follow = $bindable(true) }: Props = $props();
+  let { count, version, row, rowText, rowBg, onkey, onpaste, ontext, typing = false, follow = $bindable(true), continues, cols = $bindable(0), wrapped = false }: Props = $props();
 
   const PAD = 8;
   /**
@@ -113,6 +119,11 @@
     draw();
   });
 
+  $effect(() => {
+    const n = width && charW ? Math.max(10, Math.floor((width - PAD * 2) / charW)) : 0;
+    if (n !== cols) cols = n;
+  });
+
   function draw() {
     if (!canvas || !width || !height) return;
     const dpr = devicePixelRatio || 1;
@@ -131,10 +142,11 @@
     const top = scroller.scrollTop - PAD;
     const first = Math.max(0, Math.floor(top / LINE));
     const last = Math.min(count, Math.ceil((top + height) / LINE));
+    if (wrapped && scroller.scrollLeft) scroller.scrollLeft = 0;
     const x0 = PAD - scroller.scrollLeft;
     const lo = sel ? Math.min(sel.a, sel.b) : -1;
     const hi = sel ? Math.max(sel.a, sel.b) : -2;
-    let widest = maxChars;
+    let widest = wrapped ? 0 : maxChars;
     for (let i = first; i < last; i++) {
       const y = i * LINE - top;
       const tint = rowBg?.(i);
@@ -202,7 +214,10 @@
     const lo = Math.min(sel.a, sel.b);
     const hi = Math.max(sel.a, sel.b);
     const lines: string[] = [];
-    for (let i = lo; i <= hi && i < count; i++) lines.push(rowText(i));
+    for (let i = lo; i <= hi && i < count; i++) {
+      if (i > lo && continues?.(i)) lines[lines.length - 1] += rowText(i);
+      else lines.push(rowText(i));
+    }
     // The empty last row exists to type on; it is not a line of data.
     if (hi >= count - 1 && lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
     e.clipboardData?.setData('text/plain', lines.join('\n'));

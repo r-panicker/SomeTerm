@@ -4,6 +4,7 @@
   import CanvasView, { type Span } from './CanvasView.svelte';
   import DisplayOptions from './settings/DisplayOptions.svelte';
   import Screen from './Screen.svelte';
+  import { WrapMap, sliceSpans } from '../lib/wrap';
   import { prefs } from '../lib/prefs.svelte';
   import type { Session } from '../lib/session.svelte';
   import { ansiColor } from '../lib/ansi-colors';
@@ -71,7 +72,7 @@
   /** Auto-replies send on their own, so while any is on the toolbar says so. */
   const replyCount = $derived(source.autoReplies?.filter((r) => r.enabled).length ?? 0);
   /** The ⋯ button is highlighted whenever something in its menu is not at its default. */
-  const viewChanged = $derived(disp.stamps || !disp.ansi || disp.ctrl || !!source.echo || !!source.localEcho || source.typeToDevice === false || (source.newline ?? 'auto') !== 'auto');
+  const viewChanged = $derived(disp.stamps || disp.wrap || !disp.ansi || disp.ctrl || !!source.echo || !!source.localEcho || source.typeToDevice === false || (source.newline ?? 'auto') !== 'auto');
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
   const per = $derived(disp.perRow || 16);
   const DUMP: Record<'hex' | 'dec' | 'bin', Dump> = $derived({
@@ -119,14 +120,19 @@
   let findInput: HTMLInputElement | undefined = $state();
   const index = new FindIndex();
 
+  /** The query the index was last built for; Enter applies a newer one at once rather than waiting out the debounce. */
+  let appliedKey = '';
+  const searchKey = () => `${query}\u0000${caseSensitive}${regex}${disp.ansi}${disp.ctrl}`;
+  function applySearch() {
+    index.set(query, { caseSensitive, regex }, untrack(() => source.log), (l) => shownText(l));
+    appliedKey = searchKey();
+    cur = null;
+    untrack(() => findRev++);
+  }
+
   $effect(() => {
-    const q = query, o = { caseSensitive, regex };
-    void disp.ansi; void disp.ctrl;
-    const t = setTimeout(() => {
-      index.set(q, o, untrack(() => source.log), (l) => shownText(l));
-      cur = null;
-      untrack(() => findRev++);
-    }, 120);
+    void query; void caseSensitive; void regex; void disp.ansi; void disp.ctrl;
+    const t = setTimeout(() => untrack(() => { if (searchKey() !== appliedKey) applySearch(); }), 120);
     return () => clearTimeout(t);
   });
 
@@ -165,14 +171,15 @@
       if (k < 0) { hi = (hi - 1 + hits.length) % hits.length; k = hits[hi]!.ranges.length - 1; }
       else if (k >= hits[hi]!.ranges.length) { hi = (hi + 1) % hits.length; k = 0; }
     } else {
-      const top = filtering ? (hits[view?.topRow() ?? 0]?.abs ?? 0) : source.log.dropped + (view?.topRow() ?? 0);
+      const topRow = toLogical(view?.topRow() ?? 0);
+      const top = filtering ? (hits[topRow]?.abs ?? 0) : source.log.dropped + topRow;
       hi = index.lowerBound(top);
       if (dir < 0) hi -= 1;
       hi = (hi + hits.length) % hits.length;
       k = dir > 0 ? 0 : hits[hi]!.ranges.length - 1;
     }
     cur = { abs: hits[hi]!.abs, k };
-    view?.scrollToRow(filtering ? hi : hits[hi]!.abs - source.log.dropped);
+    view?.scrollToRow(toScreen(filtering ? hi : hits[hi]!.abs - source.log.dropped));
   }
 
   export function openFind() {
@@ -189,7 +196,11 @@
   }
 
   function findKey(e: KeyboardEvent) {
-    if (e.key === 'Enter') { e.preventDefault(); step(e.shiftKey ? -1 : 1); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (searchKey() !== appliedKey) applySearch();
+      step(e.shiftKey ? -1 : 1);
+    }
     else if (e.key === 'Escape') { e.stopPropagation(); closeFind(); }
   }
 
@@ -242,7 +253,7 @@
     return Math.max(source.hexStart ?? 0, source.ring!.start) + dump.skip;
   }
 
-  const count = $derived.by(() => {
+  const logicalCount = $derived.by(() => {
     void source.version;
     if (filtering) return index.hits.length;
     if (disp.format === 'ascii') return source.log.length + (source.partial || typing ? 1 : 0);
@@ -256,7 +267,48 @@
     return source.partial ? { ...source.partial, dir: 'rx' as const } : { text: '', time: 0, offset: -1, dir: 'rx' as const };
   }
 
-  function row(i: number): Span[] {
+  /** Screen width in characters, from the view; wrapping needs it. */
+  let cols = $state(0);
+  const wrapping = $derived(disp.wrap && disp.format === 'ascii' && cols > 0);
+  const wrap = new WrapMap();
+  const STAMP_LEN = 13;
+
+  /** Characters a logical row draws, without building its spans; must match `logicalRow`. */
+  function logicalLen(i: number): number {
+    const li = filtering ? index.hits[i]!.abs - source.log.dropped : i;
+    const l = asciiLine(li);
+    const tag = l.src !== undefined ? source.sources?.[l.src] : undefined;
+    let n = (tag ? tag.label.length + 2 : 0) + (disp.stamps ? STAMP_LEN : 0);
+    const pre = l.dir === 'tx' && !('via' in l && l.via === 'typed') ? 2 : 0;
+    if (l.dir === 'sys') n += l.text.length;
+    else if (disp.ctrl) n += (l.dir === 'tx' ? pre : 0) + expanded(l).text.length;
+    else if (l.dir === 'tx') n += pre + l.text.length;
+    else n += (disp.ansi ? l.text : (l.raw ?? l.text)).length;
+    if (typing && li === source.log.length) n += (source.localEcho ? source.typed?.length ?? 0 : 0) + 1;
+    return n;
+  }
+
+  const count = $derived.by(() => {
+    const n = logicalCount;
+    if (!wrapping) return n;
+    void source.typed;
+    const settled = filtering ? n : Math.min(n, source.log.length);
+    const key = `${cols}|${disp.stamps}|${disp.ctrl}|${disp.ansi}|${filtering ? findRev : 'all'}`;
+    wrap.update(key, source.log.dropped, settled, n, cols, logicalLen);
+    return wrap.rows;
+  });
+
+  /** Screen row ↔ logical row, which differ only while wrapping. */
+  const toScreen = (j: number) => (wrapping ? (void count, wrap.first(j)) : j);
+  const toLogical = (r: number) => (wrapping ? (void count, wrap.locate(r).j) : r);
+
+  function row(r: number): Span[] {
+    if (!wrapping) return logicalRow(r);
+    const { j, k } = wrap.locate(r);
+    return sliceSpans(logicalRow(j), k * cols, (k + 1) * cols);
+  }
+
+  function logicalRow(i: number): Span[] {
     if (disp.format === 'ascii') {
       const li = filtering ? index.hits[i]!.abs - source.log.dropped : i;
       const l = asciiLine(li);
@@ -326,8 +378,9 @@
     if (viewMenu && !menuEl?.contains(e.target as Node) && !menuButton?.contains(e.target as Node)) viewMenu = false;
   }
 
-  function rowBg(i: number): string | undefined {
+  function rowBg(r: number): string | undefined {
     if (disp.format !== 'ascii' || !rules.compiled.length) return undefined;
+    const i = toLogical(r);
     const li = filtering ? index.hits[i]!.abs - source.log.dropped : i;
     const c = applyRules(rules.compiled, shownText(asciiLine(li))).line;
     return c === undefined ? undefined : ruleTint(c, dark);
@@ -340,16 +393,18 @@
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
-  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${per}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${typing}|${source.typed}|${source.localEcho}|${cur?.abs}:${cur?.k}|${rules.version}`);
+  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${per}|${disp.stamps}|${wrapping}|${cols}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${typing}|${source.typed}|${source.localEcho}|${cur?.abs}:${cur?.k}|${rules.version}`);
 
   const rowText = (i: number) => row(i).filter((s) => !s.decor).map((s) => s.text).join('');
+  /** A wrapped continuation: copied without a line break before it. */
+  const continues = (r: number) => wrapping && (void count, wrap.locate(r).k > 0);
 
   /** Scrolls to the line containing a stream offset, switching to ASCII if needed. */
   export function jumpToOffset(offset: number) {
     if (disp.format !== 'ascii') disp.format = 'ascii';
     filter = false;
     const i = source.log.indexOfOffset(offset);
-    if (i >= 0) queueMicrotask(() => view?.scrollToRow(i));
+    if (i >= 0) queueMicrotask(() => view?.scrollToRow(toScreen(i)));
   }
 </script>
 
@@ -429,7 +484,7 @@
   {#if disp.format === 'screen' && screenSource}
     <Screen bind:this={screen} session={screenSource} />
   {:else}
-    <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} onkey={typeKey} onpaste={typing ? typePaste : undefined} ontext={typing ? imeText : undefined} {typing} bind:follow />
+    <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} {continues} bind:cols wrapped={wrapping} onkey={typeKey} onpaste={typing ? typePaste : undefined} ontext={typing ? imeText : undefined} {typing} bind:follow />
     {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
   {/if}
 </section>
