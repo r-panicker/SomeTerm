@@ -50,16 +50,16 @@ export class LineSplitter {
         this.sawCr = false;
         if (b === LF) return; // second half of CRLF, already terminated
       }
-      if (b === CR) { this.sawCr = true; this.emit(out); return; }
-      if (b === LF) { this.emit(out); return; }
+      if (b === CR) { this.sawCr = true; this.emit(out, t); return; }
+      if (b === LF) { this.emit(out, t); return; }
     } else if (this.mode === 'cr') {
-      if (b === CR) { this.emit(out); return; }
+      if (b === CR) { this.emit(out, t); return; }
     } else if (this.mode === 'lf') {
-      if (b === LF) { this.emit(out); return; }
+      if (b === LF) { this.emit(out, t); return; }
     } else {
       if (this.sawCr) {
         this.sawCr = false;
-        if (b === LF) { this.emit(out); return; }
+        if (b === LF) { this.emit(out, t); return; }
         this.append(CR, this.offset - 1, t);
       }
       if (b === CR) { this.sawCr = true; return; }
@@ -72,8 +72,10 @@ export class LineSplitter {
     this.pending.push(b);
   }
 
-  private emit(out: Line[]): void {
-    out.push({ bytes: Uint8Array.from(this.pending), offset: this.pendingOffset, timestamp: this.pendingTime });
+  private emit(out: Line[], t: number): void {
+    // An empty line has no first byte of its own; it happened when its terminator arrived.
+    const time = this.pending.length ? this.pendingTime : t;
+    out.push({ bytes: Uint8Array.from(this.pending), offset: this.pendingOffset, timestamp: time });
     this.pending = [];
     this.pendingOffset = this.offset + 1;
   }

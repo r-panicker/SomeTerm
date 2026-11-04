@@ -49,6 +49,12 @@ describe('LineSplitter', () => {
     expect(s.push(enc('ab\ncd\n'), 0).map((l) => l.offset)).toEqual([1000, 1003]);
   });
 
+  it('an empty line is timestamped when its terminator arrives, not with the previous line', () => {
+    const s = new LineSplitter('auto');
+    const lines = [...s.push(enc('abc\n'), 1), ...s.push(enc('\n'), 9)];
+    expect(lines.map((l) => [String.fromCharCode(...l.bytes), l.timestamp])).toEqual([['abc', 1], ['', 9]]);
+  });
+
   it('exposes the unterminated tail as a partial line', () => {
     const s = new LineSplitter('auto');
     s.push(enc('hi\nwor'), 5);
