@@ -17,6 +17,8 @@ on:
 
 env:
   TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+  # Shown in the app's About tab; empty for build-only runs.
+  VITE_APP_VERSION: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
 
 jobs:
   desktop:

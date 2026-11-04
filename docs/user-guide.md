@@ -47,7 +47,7 @@ Pick a port, check the settings chip (`115200 8N1`), then Connect. In the browse
 
 Settings a port cannot do are greyed out; hover for the reason.
 
-**⚙** (Ctrl+,) opens every setting of the current tab in one place, grouped as Port, Display, Send, Capture, Plot, Automation (colour rules and auto-replies) and Profiles. These are the same settings the chip, menus and popovers change, so use whichever is closer. **Reset to defaults** at the bottom puts the tab's settings back; profiles, colour rules and auto-replies are kept, and so are the port settings while connected.
+**⚙** (Ctrl+,) opens every setting of the current tab in one place, grouped as Port, Display, Send, Capture, Plot, Automation (colour rules and auto-replies) and Profiles. These are the same settings the chip, menus and popovers change, so use whichever is closer. **Reset** in its header puts the tab's settings back to defaults, keeping colour rules, auto-replies, quick-send buttons, text size and scrollback; tick **All** first to reset those too. Profiles are never deleted by a reset, and port settings stay while connected. **About** shows the version and credits.
 
 If the device is unplugged or resets its USB connection, the tab waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
 

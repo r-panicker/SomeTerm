@@ -12,6 +12,8 @@ import {
   type AutoReply,
 } from '@superserial/core';
 import { defaultDisplay, type DisplaySettings } from './source';
+import { rules } from './rules.svelte';
+import { prefs, SCROLLBACK, TEXT_SIZES } from './prefs.svelte';
 import { defaultSendOptions, defaultSerialOptions, type PlotTransform, type QuickSend, type SendOptions, type Session, type View } from './session.svelte';
 
 /** What a profile carries. Repeat count and interval are left out: they describe one job, not a device. */
@@ -55,11 +57,12 @@ export function settingsOf(s: Session): ProfileSettings {
 }
 
 /**
- * Back to defaults for one tab. User-made content (auto-replies, colour rules,
- * profiles) and the view are kept, and so are the port settings while the port
- * is open, since they cannot change on a live connection.
+ * Back to defaults for one tab. Normally user-made content (auto-replies,
+ * quick sends, colour rules) and app-wide preferences are kept; `everything`
+ * resets those too. Profiles and the view are always kept, and so are the port
+ * settings while the port is open, since they cannot change on a live connection.
  */
-export function resetSettings(s: Session): void {
+export function resetSettings(s: Session, everything = false): void {
   const send = defaultSendOptions();
   applySettings(s, {
     options: s.open ? $state.snapshot(s.options) : defaultSerialOptions(),
@@ -75,9 +78,14 @@ export function resetSettings(s: Session): void {
     plotX: null,
     plotFft: false,
     plotFs: null,
-    autoReplies: s.autoReplies,
-    quickSends: s.quickSends,
+    autoReplies: everything ? [] : s.autoReplies,
+    quickSends: everything ? [] : s.quickSends,
   });
+  if (everything) {
+    rules.clear();
+    prefs.setTextSize(TEXT_SIZES[0]);
+    prefs.setScrollback(SCROLLBACK[1]);
+  }
   s.sendOptions.repeat = send.repeat;
   s.sendOptions.intervalMs = send.intervalMs;
   s.typeToDevice = true;

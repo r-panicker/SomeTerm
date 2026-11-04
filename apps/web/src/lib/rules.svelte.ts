@@ -54,6 +54,11 @@ class RuleStore {
     this.changed();
   }
 
+  clear(): void {
+    this.list = [];
+    this.changed();
+  }
+
   remove(id: string): void {
     this.list = this.list.filter((r) => r.id !== id);
     this.changed();

@@ -11,6 +11,7 @@
   import RulesPanel from './RulesPanel.svelte';
   import AutoReplyPanel from './AutoReplyPanel.svelte';
   import SettingsPanel, { showSettingsTab } from './SettingsPanel.svelte';
+  import { resetSettings } from '../lib/profiles.svelte';
   import QuickSendStrip from './QuickSendStrip.svelte';
 
   let { session, workspace, narrow }: { session: Session; workspace: Workspace; narrow: boolean } = $props();
@@ -20,6 +21,19 @@
   let split = $state(0.5);
   let drawer = $state<'capture' | 'profiles' | 'rules' | 'replies' | 'settings' | null>(null);
   const DRAWER_TITLES = { capture: 'Capture', profiles: 'Profiles', rules: 'Colour rules', replies: 'Auto-replies', settings: 'Settings' };
+
+  let resetAll = $state(false);
+
+  function reset() {
+    const kept = [
+      ...(session.open ? ['port settings (while connected)'] : []),
+      'profiles',
+      ...(resetAll ? [] : ['colour rules', 'auto-replies', 'quick-send buttons', 'text size and scrollback']),
+    ];
+    if (!confirm(`Reset ${resetAll ? 'everything' : "this tab's settings"} to defaults?\n\nKept: ${kept.join(', ')}.`)) return;
+    resetSettings(session, resetAll);
+    resetAll = false;
+  }
 
   /** Shortcuts that act on this tab; the app routes keys to the active tab. */
   export function handleKey(e: KeyboardEvent) {
@@ -77,7 +91,16 @@
   {/if}
   {#if drawer}
     <aside class:wide={drawer === 'settings'}>
-      <div class="head"><strong>{DRAWER_TITLES[drawer]}</strong><button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button></div>
+      <div class="head">
+        <strong>{DRAWER_TITLES[drawer]}</strong>
+        <span class="tools">
+          {#if drawer === 'settings'}
+            <label class="all" title="Also reset what Reset normally keeps: colour rules, auto-replies, quick-send buttons, text size and scrollback. Profiles are never deleted here, and port settings stay while connected"><input type="checkbox" bind:checked={resetAll} /> All</label>
+            <button class="reset" onclick={reset} title="This tab's settings back to their defaults; profiles, colour rules, auto-replies and quick-send buttons are kept unless All is ticked">Reset</button>
+          {/if}
+          <button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button>
+        </span>
+      </div>
       {#if drawer === 'capture'}<CapturePanel ctl={session.capture} newline={session.newline} meta={() => ({ port: session.portLabel(), options: $state.snapshot(session.options) })} onstart={() => session.recordSignals()} />{:else if drawer === 'profiles'}<ProfilesPanel {session} />{:else if drawer === 'replies'}<AutoReplyPanel {session} />{:else if drawer === 'settings'}<SettingsPanel {session} {workspace} />{:else}<RulesPanel />{/if}
     </aside>
   {/if}
@@ -94,6 +117,9 @@
   }
   aside.wide { width: min(420px, 100%); }
   aside .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .tools { display: flex; align-items: center; gap: 8px; }
+  .all { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .reset { height: 24px; font-size: 12px; padding: 0 8px; }
   .close { border: 0; background: none; color: var(--muted); }
   main.narrow { flex-direction: column; }
   .slot { display: flex; min-width: 0; min-height: 0; }
