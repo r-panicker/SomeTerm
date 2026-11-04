@@ -87,12 +87,28 @@ Download the installer for your OS from [Releases](https://github.com/r-panicker
 |---|---|
 | Windows | `SuperSerial-<version>-win-x64.exe` |
 | macOS | `SuperSerial-<version>-mac-arm64.dmg` (Apple Silicon) or `SuperSerial-<version>-mac-x64.dmg` (Intel) |
-| Linux | `SuperSerial-<version>-linux-x86_64.AppImage` (`chmod +x`, then run) |
+| Linux | `SuperSerial-<version>-linux-x86_64.AppImage` |
 
-Builds are not code-signed yet, so Windows SmartScreen and macOS Gatekeeper will ask you to confirm the first launch.
+The builds are not code-signed yet, so the first launch needs one extra step:
+
+| OS | First launch |
+|---|---|
+| Windows | On the SmartScreen warning, click **More info → Run anyway**. If there is no **Run anyway**, right-click the downloaded `.exe` → **Properties**, tick **Unblock** at the bottom of the General tab, click OK, then run it again. |
+| macOS | Open the `.dmg` and drag SuperSerial to Applications. Open it once and dismiss the warning, then go to **System Settings → Privacy & Security** and click **Open Anyway**. Alternatively, run `xattr -dr com.apple.quarantine /Applications/SuperSerial.app` in Terminal. |
+| Linux | `chmod +x SuperSerial-*.AppImage`, then run it. |
 
 ### Browser
-Unzip `SuperSerial-web-<version>.zip` from the same release and serve it from any static web server, then open it in Chrome or Edge. Web Serial needs HTTPS or `localhost`; opening `index.html` straight from disk won't work.
+Nothing to install. Open this link in Chrome or Edge:
+
+**https://raw.githack.com/r-panicker/SuperSerial/web/index.html**
+
+It always serves the latest release. To run a copy yourself, unzip `SuperSerial-web-<version>.zip` from a release, start a local server in that folder, and open http://localhost:8000:
+
+```bash
+python -m http.server 8000
+```
+
+Web Serial needs HTTPS or `localhost`, so opening `index.html` straight from disk won't work.
 
 ### Browser or desktop?
 Both run the same app. The desktop version talks to the OS serial driver directly, so it can do a little more:
@@ -125,7 +141,7 @@ pnpm dev:electron   # desktop app
 pnpm test           # unit tests, no hardware needed
 ```
 
-`pnpm dist:electron` builds an installer for the OS you're on. Pushing a `v*` tag builds all of them on GitHub Actions and publishes a release.
+`pnpm dist:electron` builds an installer for the OS you're on. Pushing a `v*` tag, or running the **Build and release** workflow with a tag filled in, builds all of them on GitHub Actions and publishes a release.
 
 ## Project layout
 
