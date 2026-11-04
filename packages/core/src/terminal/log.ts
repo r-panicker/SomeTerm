@@ -29,7 +29,8 @@ export class TerminalLog {
   /** Lines ever trimmed from the front; index i is absolute line `dropped + i`. */
   dropped = 0;
 
-  constructor(private readonly maxLines = 100_000) {}
+  /** `limit` may be a function, so a scrollback preference can change while lines arrive. */
+  constructor(private readonly limit: number | (() => number) = 100_000) {}
 
   get length(): number {
     return this.lines.length;
@@ -41,8 +42,9 @@ export class TerminalLog {
 
   push(line: TermLine): void {
     this.lines.push(line);
-    if (this.lines.length > this.maxLines * 1.1) {
-      const n = this.lines.length - this.maxLines;
+    const max = typeof this.limit === 'number' ? this.limit : this.limit();
+    if (this.lines.length > max * 1.1) {
+      const n = this.lines.length - max;
       this.lines.splice(0, n);
       this.dropped += n;
     }

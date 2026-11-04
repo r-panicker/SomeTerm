@@ -22,7 +22,7 @@ export interface ProfileSettings {
   newline: NewlineMode;
   echo: boolean;
   display: DisplaySettings;
-  send: Pick<SendOptions, 'eol' | 'checksum' | 'byteDelayMs' | 'lineDelayMs' | 'rtsWhileSending' | 'echoWaitMs'>;
+  send: Pick<SendOptions, 'eol' | 'checksum' | 'byteDelayMs' | 'lineDelayMs' | 'rtsWhileSending' | 'echoWaitMs' | 'backspace'>;
   view: View;
   plotWindow: number;
   plotTransforms: Record<string, PlotTransform>;
@@ -41,7 +41,7 @@ export function settingsOf(s: Session): ProfileSettings {
     newline: s.newline,
     echo: s.echo,
     display: $state.snapshot(s.display),
-    send: { eol: o.eol, checksum: o.checksum, byteDelayMs: o.byteDelayMs, lineDelayMs: o.lineDelayMs, rtsWhileSending: o.rtsWhileSending, echoWaitMs: o.echoWaitMs },
+    send: { eol: o.eol, checksum: o.checksum, byteDelayMs: o.byteDelayMs, lineDelayMs: o.lineDelayMs, rtsWhileSending: o.rtsWhileSending, echoWaitMs: o.echoWaitMs, backspace: o.backspace },
     view: s.view,
     plotWindow: s.plotWindow,
     plotTransforms: $state.snapshot(s.plotTransforms),
@@ -163,7 +163,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
     dtr: bool(r.dtr, true),
     rts: bool(r.rts, true),
     newline: pick(r.newline, ['auto', 'lf', 'cr', 'crlf'] as const, 'auto'),
-    echo: bool(r.echo, true),
+    echo: bool(r.echo, false),
     display: {
       format: pick(d.format, ['ascii', 'hex', 'dec', 'bin', 'num'] as const, 'ascii'),
       numType: pick(d.numType, NUM_TYPES.map((n) => n.type), 'int16'),
@@ -172,6 +172,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
       stamps: bool(d.stamps, false),
       ansi: bool(d.ansi, true),
       ctrl: bool(d.ctrl, false),
+      perRow: pick(d.perRow, [8, 16, 32] as const, 16),
     },
     send: {
       eol: pick(s.eol, ['\\r\\n', '\\n', '\\r', ''], '\\r\\n'),
@@ -180,6 +181,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
       lineDelayMs: int(s.lineDelayMs, 0, 60_000, 0),
       rtsWhileSending: bool(s.rtsWhileSending, false),
       echoWaitMs: int(s.echoWaitMs, 0, 60_000, 0),
+      backspace: pick(s.backspace, ['bs', 'del'] as const, 'bs'),
     },
     view: pick(r.view, ['terminal', 'split', 'plot'] as const, 'terminal'),
     plotWindow: int(r.plotWindow, 0, 86_400, 30),

@@ -17,6 +17,9 @@
     Backspace: Uint8Array.of(0x08), Tab: Uint8Array.of(0x09), Escape: Uint8Array.of(0x1b),
     ArrowUp: CSI('A'), ArrowDown: CSI('B'), ArrowRight: CSI('C'), ArrowLeft: CSI('D'),
     Home: CSI('H'), End: CSI('F'), Delete: CSI('3~'), PageUp: CSI('5~'), PageDown: CSI('6~'), Insert: CSI('2~'),
+    // VT220/xterm function keys
+    F1: utf8.encode('\x1bOP'), F2: utf8.encode('\x1bOQ'), F3: utf8.encode('\x1bOR'), F4: utf8.encode('\x1bOS'),
+    F5: CSI('15~'), F6: CSI('17~'), F7: CSI('18~'), F8: CSI('19~'), F9: CSI('20~'), F10: CSI('21~'), F11: CSI('23~'), F12: CSI('24~'),
   };
 
   /** Terminal-mode key mapping. Ctrl+Shift stays with the app; Ctrl+C copies when lines are selected. */
@@ -61,22 +64,23 @@
   /** The ⋯ button is highlighted whenever something in its menu is not at its default. */
   const viewChanged = $derived(disp.stamps || !disp.ansi || disp.ctrl || !!source.echo || !!source.localEcho || source.typeToDevice === false || (source.newline ?? 'auto') !== 'auto');
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
-  const DUMP: Record<'hex' | 'dec' | 'bin', Dump> = {
-    hex: { per: 16, skip: 0, fmt: (b) => toHex(b), width: 16 * 3 - 1, side: (b) => toAscii(b) },
-    dec: { per: 16, skip: 0, fmt: (b) => Array.from(b, (x) => String(x).padStart(3)).join(' '), width: 16 * 4 - 1, side: (b) => toAscii(b) },
-    bin: { per: 8, skip: 0, fmt: (b) => toBinary(b), width: 8 * 9 - 1, side: (b) => toAscii(b) },
-  };
+  const per = $derived(disp.perRow || 16);
+  const DUMP: Record<'hex' | 'dec' | 'bin', Dump> = $derived({
+    hex: { per, skip: 0, fmt: (b) => toHex(b), width: per * 3 - 1, side: (b) => toAscii(b) },
+    dec: { per, skip: 0, fmt: (b) => Array.from(b, (x) => String(x).padStart(3)).join(' '), width: per * 4 - 1, side: (b) => toAscii(b) },
+    bin: { per: per / 2, skip: 0, fmt: (b) => toBinary(b), width: (per / 2) * 9 - 1, side: (b) => toAscii(b) },
+  });
 
   const size = $derived(numInfo(disp.numType).size);
   // Changing to a smaller type must not leave an alignment it cannot have.
   $effect(() => { if (disp.align >= size) disp.align = 0; });
 
-  /** Numeric rows keep 16 bytes per row; the raw bytes are shown beside the values. */
+  /** Numeric rows show the raw bytes beside the values. */
   const numDump = $derived<Dump>({
-    per: 16,
+    per,
     skip: disp.align,
     fmt: (b) => decodeNumbers(b, disp.numType, disp.littleEndian).map((v) => formatNumber(v, disp.numType)).join(' '),
-    width: (16 / size) * (numInfo(disp.numType).width + 1) - 1,
+    width: (per / size) * (numInfo(disp.numType).width + 1) - 1,
     side: (b) => toHex(b),
   });
   const dump = $derived(disp.format === 'num' ? numDump : disp.format === 'ascii' ? DUMP.hex : DUMP[disp.format]);
@@ -330,7 +334,7 @@
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
-  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${typing}|${source.typed}|${source.localEcho}|${cur?.abs}:${cur?.k}|${rules.version}`);
+  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${per}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${typing}|${source.typed}|${source.localEcho}|${cur?.abs}:${cur?.k}|${rules.version}`);
 
   const rowText = (i: number) => row(i).map((s) => s.text).join('');
 

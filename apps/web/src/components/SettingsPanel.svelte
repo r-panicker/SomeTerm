@@ -16,7 +16,7 @@
   import AutoReplyPanel from './AutoReplyPanel.svelte';
   import ProfilesPanel from './ProfilesPanel.svelte';
   import { resetSettings } from '../lib/profiles.svelte';
-  import { prefs, TEXT_SIZES } from '../lib/prefs.svelte';
+  import { prefs, SCROLLBACK, TEXT_SIZES } from '../lib/prefs.svelte';
 
   let { session, workspace }: { session: Session; workspace: Workspace } = $props();
 
@@ -60,6 +60,11 @@
           <option value="ascii">ASCII</option><option value="hex">Hex</option><option value="dec">Dec</option><option value="bin">Bin</option><option value="num">Num</option>
         </select>
       </label>
+      {#if disp.format !== 'ascii'}
+        <label>Bytes per row
+          <select bind:value={disp.perRow} title="Bin shows half as many">{#each [8, 16, 32] as n}<option value={n}>{n}</option>{/each}</select>
+        </label>
+      {/if}
       {#if disp.format === 'num'}
         <label>Value type
           <select bind:value={disp.numType}>{#each NUM_TYPES as n}<option value={n.type}>{n.type}</option>{/each}</select>
@@ -75,6 +80,13 @@
       {/if}
     </div>
     <div class="list"><DisplayOptions source={session} /></div>
+    <div class="form">
+      <label>Scrollback
+        <select value={prefs.scrollback} onchange={(e) => prefs.setScrollback(Number(e.currentTarget.value))} title="Lines kept per terminal, in every tab; older lines are dropped from the view (captures are unaffected)">
+          {#each SCROLLBACK as n}<option value={n}>{n.toLocaleString()} lines</option>{/each}
+        </select>
+      </label>
+    </div>
   {:else if lastTab === 'send'}
     <div class="form">
       <label>Line ending
@@ -83,6 +95,11 @@
         </select>
       </label>
       <SendOptions {session} onfile={() => fileInput?.click()} />
+      <label>Backspace key
+        <select bind:value={session.sendOptions.backspace} title="What Backspace sends when typing to the device; many Linux consoles expect DEL">
+          <option value="bs">BS (0x08)</option><option value="del">DEL (0x7F)</option>
+        </select>
+      </label>
     </div>
     <input bind:this={fileInput} type="file" hidden onchange={() => { const f = fileInput?.files?.[0]; if (fileInput) fileInput.value = ''; if (f) session.sendFile(f); }} />
   {:else if lastTab === 'capture'}

@@ -1,4 +1,5 @@
 import { TerminalLog, formatStamp, type TermLine } from '@superserial/core';
+import { prefs } from './prefs.svelte';
 import { CaptureController } from './capture.svelte';
 import { defaultDisplay, type DisplaySettings, type TermSource } from './source';
 
@@ -8,7 +9,7 @@ const utf8 = new TextEncoder();
 
 /** One timeline merging every port's received and sent lines, tagged by port. */
 export class Monitor implements TermSource {
-  readonly log = new TerminalLog();
+  readonly log = new TerminalLog(() => prefs.scrollback);
   readonly partial = null;
   version = $state(0);
   display = $state<DisplaySettings>(defaultDisplay());

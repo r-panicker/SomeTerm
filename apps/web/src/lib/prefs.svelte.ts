@@ -1,4 +1,8 @@
 const STORAGE_KEY = 'superserial.textSize.v1';
+const SCROLLBACK_KEY = 'superserial.scrollback.v1';
+
+/** Lines kept per terminal; the default comes second. */
+export const SCROLLBACK = [10_000, 100_000, 500_000] as const;
 
 /** Terminal text sizes in CSS px; the default comes first. */
 export const TEXT_SIZES = [12.5, 14, 16, 18, 21, 24, 28, 34] as const;
@@ -6,17 +10,25 @@ export const TEXT_SIZES = [12.5, 14, 16, 18, 21, 24, 28, 34] as const;
 /** App-wide preferences that are not part of a tab or profile. */
 class Prefs {
   textSize = $state<number>(TEXT_SIZES[0]);
+  scrollback = $state<number>(SCROLLBACK[1]);
 
   constructor() {
     try {
       const v = Number(localStorage.getItem(STORAGE_KEY));
       if ((TEXT_SIZES as readonly number[]).includes(v)) this.textSize = v;
+      const n = Number(localStorage.getItem(SCROLLBACK_KEY));
+      if ((SCROLLBACK as readonly number[]).includes(n)) this.scrollback = n;
     } catch { /* storage unavailable: keep the default */ }
   }
 
   setTextSize(v: number): void {
     this.textSize = v;
     try { localStorage.setItem(STORAGE_KEY, String(v)); } catch { /* not persisted */ }
+  }
+
+  setScrollback(n: number): void {
+    this.scrollback = n;
+    try { localStorage.setItem(SCROLLBACK_KEY, String(n)); } catch { /* not persisted */ }
   }
 
   /** One step larger (+1) or smaller (-1), staying within the list. */

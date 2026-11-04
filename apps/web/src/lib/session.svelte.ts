@@ -44,6 +44,7 @@ import { CaptureController } from './capture.svelte';
 import { applySettings, profiles } from './profiles.svelte';
 import { defaultDisplay, type DisplaySettings, type TermSource } from './source';
 import { PipelineClient } from './pipeline';
+import { prefs } from './prefs.svelte';
 
 /** Present when running inside the Electron app; serial I/O then goes through Node, not Web Serial. */
 export const native = (globalThis as { superserialNative?: NativeSerialBridge }).superserialNative;
@@ -84,6 +85,8 @@ export interface SendOptions {
   eol: string;
   /** Above 0: send byte by byte, waiting up to this long for each byte's echo (half-duplex handshake). */
   echoWaitMs: number;
+  /** What the Backspace key sends when typing to the device: BS (0x08) or DEL (0x7F). */
+  backspace: 'bs' | 'del';
 }
 
 export interface PlotTransform {
@@ -112,7 +115,7 @@ const now = () => performance.now();
  * redraw per frame rather than per chunk.
  */
 export const defaultSerialOptions = (): SerialOptions => ({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
-export const defaultSendOptions = (): SendOptions => ({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false, eol: '\\r\\n', echoWaitMs: 0 });
+export const defaultSendOptions = (): SendOptions => ({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false, eol: '\\r\\n', echoWaitMs: 0, backspace: 'bs' });
 
 export class Session implements TermSource {
   /** Received data is also written to this port when set (RealTerm's echo port). */
@@ -187,7 +190,7 @@ export class Session implements TermSource {
   job = $state<SendJob | null>(null);
   private token: CancelToken | null = null;
 
-  readonly log = new TerminalLog();
+  readonly log = new TerminalLog(() => prefs.scrollback);
   readonly ring = new ByteRing(RING_BYTES);
   readonly series = new SeriesStore();
   /** Stream offset where the hex view starts; moved by Clear. */
@@ -382,6 +385,7 @@ export class Session implements TermSource {
     if (!this.open || this.player) return;
     // Enter sends the send-bar line ending; CR when none is set, as most terminals do.
     if (key === 'enter' && !bytes.length) bytes = parseEscapes(this.sendOptions.eol || '\\r');
+    if (key === 'backspace') bytes = Uint8Array.of(this.sendOptions.backspace === 'del' ? 0x7f : 0x08);
     void this.sendRaw(bytes);
     if (key === 'text') this.typed += text;
     else if (key === 'backspace') this.typed = [...this.typed].slice(0, -1).join('');

@@ -52,3 +52,17 @@ describe('TerminalLog', () => {
     expect(log.dropped).toBe(2);
   });
 });
+
+describe('TerminalLog limit', () => {
+  it('follows a limit function that changes while lines arrive', () => {
+    let max = 100;
+    const log = new TerminalLog(() => max);
+    for (let i = 0; i < 105; i++) log.push({ dir: 'rx', text: String(i), time: i, offset: i });
+    expect(log.length).toBe(105); // within the 10 % slack
+    max = 20;
+    log.push({ dir: 'rx', text: 'x', time: 200, offset: 200 });
+    expect(log.length).toBe(20);
+    expect(log.dropped).toBe(86);
+    expect(log.get(19)!.text).toBe('x');
+  });
+});

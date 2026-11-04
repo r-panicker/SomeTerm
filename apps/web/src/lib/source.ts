@@ -12,9 +12,11 @@ export interface DisplaySettings {
   ansi: boolean;
   /** Show every control and non-ASCII byte as a token, line endings included. */
   ctrl: boolean;
+  /** Bytes per row in Hex, Dec and Num; Bin shows half as many. */
+  perRow: number;
 }
 
-export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false });
+export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16 });
 
 /** What the terminal view needs from whatever feeds it: one port, or several merged. */
 export interface TermSource {
