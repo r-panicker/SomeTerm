@@ -13,6 +13,8 @@ export interface TermLine {
   time: number;
   /** Stream offset of the first byte for rx lines; -1 for tx. */
   offset: number;
+  /** Content bytes of an rx line in the stream; its text can be shorter (BS, CR) or differ (UTF-8). */
+  len?: number;
   /** Which port the line came from, in views that merge several. */
   src?: number;
   /** Exact bytes of a sent line (terminator included), for showing control characters. */

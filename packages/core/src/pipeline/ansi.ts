@@ -73,10 +73,12 @@ export class AnsiParser {
   private style: AnsiStyle = {};
 
   /**
-   * `render` maps the remaining bytes to display text one character per byte.
+   * `render` maps the remaining bytes to display text one character per byte;
+   * `runs` are positions in `kept`, the bytes left once escapes are removed, for
+   * a caller whose rendering is not one character per byte (see `renderLine`).
    * With `commit` false the carried style is left unchanged (for partial lines).
    */
-  parse(bytes: Uint8Array, render: (b: Uint8Array) => string, commit = true): { text: string; runs: StyleRun[]; hadEscape: boolean } {
+  parse(bytes: Uint8Array, render: (b: Uint8Array) => string, commit = true): { text: string; runs: StyleRun[]; hadEscape: boolean; kept: Uint8Array } {
     let style = this.style;
     const keep: number[] = [];
     const runs: StyleRun[] = [];
@@ -119,7 +121,8 @@ export class AnsiParser {
     }
     mark();
     if (commit) this.style = style;
-    return { text: render(Uint8Array.from(keep)), runs, hadEscape };
+    const kept = Uint8Array.from(keep);
+    return { text: render(kept), runs, hadEscape, kept };
   }
 
   reset(): void {

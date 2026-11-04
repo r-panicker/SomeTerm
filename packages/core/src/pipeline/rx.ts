@@ -1,11 +1,13 @@
-import { toAscii } from '../format/bytes';
+import { renderLine } from './render';
 import { parseNumericLine, type Sample } from '../plot/parse';
 import { LineSplitter, type NewlineMode } from './lines';
 import { AnsiParser, type StyleRun } from './ansi';
 
 export interface RxLine {
-  /** Display text with ANSI escapes removed. */
+  /** Display text with ANSI escapes removed, UTF-8 decoded, BS and CR applied. */
   text: string;
+  /** Content bytes in the stream, terminator excluded; the text can be shorter or longer. */
+  len: number;
   /** ANSI styling over `text`; empty when unstyled. */
   runs: StyleRun[];
   /** The line with escapes shown as ␛…, present only when it contained any. */
@@ -18,7 +20,7 @@ export interface RxLine {
 
 export interface RxBatch {
   lines: RxLine[];
-  partial: { text: string; runs: StyleRun[]; raw?: string; time: number; offset: number } | null;
+  partial: { text: string; runs: StyleRun[]; raw?: string; time: number; offset: number; len: number } | null;
 }
 
 export type RxCommand =
@@ -49,10 +51,8 @@ export class RxPipeline {
     }
     for (const l of this.splitter.push(cmd.chunk, cmd.time)) {
       const { text, runs, raw } = this.render(l.bytes, true);
-      // In LF mode a CRLF sender leaves a CR on every line; it must not stop the line plotting.
-      const plain = text.replace(/\u240d+$/, '');
-      const samples = parseNumericLine(plain);
-      this.lines.push({ text, runs, ...(raw !== undefined && { raw }), time: l.timestamp, offset: l.offset, samples });
+      const samples = parseNumericLine(text);
+      this.lines.push({ text, runs, ...(raw !== undefined && { raw }), time: l.timestamp, offset: l.offset, len: l.bytes.length, samples });
     }
     this.dirty = true;
   }
@@ -64,15 +64,16 @@ export class RxPipeline {
     const p = this.splitter.peekPartial();
     const batch: RxBatch = {
       lines: this.lines,
-      partial: p ? { ...this.render(p.bytes, false), time: p.timestamp, offset: p.offset } : null,
+      partial: p ? { ...this.render(p.bytes, false), time: p.timestamp, offset: p.offset, len: p.bytes.length } : null,
     };
     this.lines = [];
     return batch;
   }
 
   private render(bytes: Uint8Array, commit: boolean): { text: string; runs: StyleRun[]; raw?: string } {
-    const show = (b: Uint8Array) => toAscii(b, { controlPictures: true });
-    const r = this.ansi.parse(bytes, show, commit);
-    return r.hadEscape ? { text: r.text, runs: r.runs, raw: show(bytes) } : { text: r.text, runs: r.runs };
+    const r = this.ansi.parse(bytes, () => '', commit);
+    const { text, runs } = renderLine(r.kept, r.runs);
+    // The escapes-visible form is the raw stream, so BS and CR stay as ␈ and ␍ there.
+    return r.hadEscape ? { text, runs, raw: renderLine(bytes, [], false).text } : { text, runs };
   }
 }

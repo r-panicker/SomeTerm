@@ -288,7 +288,7 @@
   }
 
   /** The text a line is drawn with, which is also what rules and find match against. */
-  function shownText(l: Pick<TermLine, 'dir' | 'text' | 'raw' | 'offset' | 'bytes'>): string {
+  function shownText(l: Pick<TermLine, 'dir' | 'text' | 'raw' | 'offset' | 'bytes' | 'len'>): string {
     if (disp.ctrl && l.dir !== 'sys') return expanded(l).text;
     return l.dir === 'tx' || disp.ansi ? l.text : (l.raw ?? l.text);
   }
@@ -298,13 +298,14 @@
    * ring with their terminator, so non-ASCII bytes show as hex rather than '.';
    * once evicted, or for sent lines, the stored control pictures are used.
    */
-  function expanded(l: Pick<TermLine, 'dir' | 'text' | 'raw' | 'offset' | 'bytes'>): Expanded {
+  function expanded(l: Pick<TermLine, 'dir' | 'text' | 'raw' | 'offset' | 'bytes' | 'len'>): Expanded {
     if (l.bytes) return expandBytes(l.bytes);
     const shown = l.raw ?? l.text;
     const ring = source.ring;
     if (l.dir === 'rx' && ring && l.offset >= ring.start && l.offset < ring.end) {
-      const bytes = ring.slice(l.offset, Math.min(ring.end, l.offset + shown.length + 2));
-      let end = Math.min(shown.length, bytes.length);
+      const n = l.len ?? shown.length;
+      const bytes = ring.slice(l.offset, Math.min(ring.end, l.offset + n + 2));
+      let end = Math.min(n, bytes.length);
       while (end < bytes.length && (bytes[end] === 0x0d || bytes[end] === 0x0a)) end++;
       return expandBytes(bytes.subarray(0, end));
     }

@@ -13,8 +13,12 @@ const CR = 0x0d;
 const LF = 0x0a;
 
 /**
- * Streaming line splitter. `auto` accepts CR, LF or CRLF, each ending exactly one line.
- * `crlf` ends a line only on the two-byte sequence, so a lone CR or LF is content.
+ * Streaming line splitter. `auto` accepts CR, LF or CRLF, each ending exactly one line,
+ * until the first LF arrives: from then on the sender is known to end lines with LF or
+ * CRLF, so a lone CR is content (a terminal's return to the start of the line, used for
+ * progress counters) instead of a line end. A sender that only ever uses CR keeps
+ * getting a line per CR. `crlf` ends a line only on the two-byte sequence, so a lone
+ * CR or LF is content.
  */
 export class LineSplitter {
   private pending: number[] = [];
@@ -22,6 +26,9 @@ export class LineSplitter {
   private pendingTime = 0;
   private offset: number;
   private sawCr = false;
+  /** Auto mode: an LF has been seen, so a CR waits to see whether LF follows. */
+  private seenLf = false;
+  private crHeld = false;
 
   /** `startOffset` is the stream offset of the next byte, so offsets stay absolute across a reset. */
   constructor(private readonly mode: NewlineMode = 'auto', startOffset = 0) {
@@ -48,10 +55,22 @@ export class LineSplitter {
     if (this.mode === 'auto') {
       if (this.sawCr) {
         this.sawCr = false;
-        if (b === LF) return; // second half of CRLF, already terminated
+        if (this.crHeld) {
+          this.crHeld = false;
+          if (b === LF) { this.emit(out, t); return; }
+          this.append(CR, this.offset - 1, t);
+        } else if (b === LF) {
+          this.seenLf = true;
+          return; // second half of CRLF, already terminated
+        }
       }
-      if (b === CR) { this.sawCr = true; this.emit(out, t); return; }
-      if (b === LF) { this.emit(out, t); return; }
+      if (b === CR) {
+        this.sawCr = true;
+        if (this.seenLf) this.crHeld = true;
+        else this.emit(out, t);
+        return;
+      }
+      if (b === LF) { this.seenLf = true; this.emit(out, t); return; }
     } else if (this.mode === 'cr') {
       if (b === CR) { this.emit(out, t); return; }
     } else if (this.mode === 'lf') {

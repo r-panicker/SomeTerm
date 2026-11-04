@@ -9,18 +9,19 @@ describe('RxPipeline', () => {
     p.apply({ type: 'data', chunk: enc('boot\r\nt:1,h:2\r\n\x01x'), time: 5 });
     expect(p.drain()).toEqual({
       lines: [
-        { text: 'boot', runs: [], time: 5, offset: 0, samples: null },
-        { text: 't:1,h:2', runs: [], time: 5, offset: 6, samples: [{ name: 't', value: 1 }, { name: 'h', value: 2 }] },
+        { text: 'boot', runs: [], time: 5, offset: 0, len: 4, samples: null },
+        { text: 't:1,h:2', runs: [], time: 5, offset: 6, len: 7, samples: [{ name: 't', value: 1 }, { name: 'h', value: 2 }] },
       ],
-      partial: { text: '␁x', runs: [], time: 5, offset: 15 },
+      partial: { text: '␁x', runs: [], time: 5, offset: 15, len: 2 },
     });
   });
 
-  it('a trailing CR (CRLF sender, LF mode) still plots but stays visible', () => {
+  it('a trailing CR (CRLF sender, LF mode) returns to the line start as on a terminal, and still plots', () => {
     const p = new RxPipeline('lf');
     p.apply({ type: 'data', chunk: enc('5,6\r\n'), time: 0 });
     const [l] = p.drain()!.lines;
-    expect(l!.text).toBe('5,6\u240d');
+    expect(l!.text).toBe('5,6');
+    expect(l!.len).toBe(4);
     expect(l!.samples).toEqual([{ name: '1', value: 5 }, { name: '2', value: 6 }]);
   });
 

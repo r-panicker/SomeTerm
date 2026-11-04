@@ -689,7 +689,7 @@ export class Session implements TermSource {
     if (replying) this.replier.setRules($state.snapshot(this.autoReplies));
     for (const l of b.lines) {
       if (replying) this.handleReplies(l.text, l.offset);
-      const line: TermLine = { dir: 'rx', text: l.text, runs: l.runs, raw: l.raw, time: l.time, offset: l.offset };
+      const line: TermLine = { dir: 'rx', text: l.text, runs: l.runs, raw: l.raw, time: l.time, offset: l.offset, len: l.len };
       this.log.pushRx(line);
       this.onLine?.(line);
       if (l.samples) {
