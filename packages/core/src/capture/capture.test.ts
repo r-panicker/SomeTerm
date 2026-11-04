@@ -95,6 +95,45 @@ describe('Capture', () => {
     expect(out).toEqual([1, 3]);
   });
 
+  it('start after N bytes begins exactly at byte N+1 and limits count from there', async () => {
+    const { c, out } = setup({ source: 'rx', format: 'raw', startAfterBytes: 5, maxBytes: 3 });
+    expect(c.state).toBe('armed');
+    c.rx(Uint8Array.of(1, 2, 3), T0);
+    c.rx(Uint8Array.of(4, 5, 6, 7), T0 + 10);
+    c.rx(Uint8Array.of(8, 9), T0 + 20);
+    await c.done;
+    expect(out).toEqual([6, 7, 8]);
+    expect(c.startedAt).toBe(T0 + 10);
+  });
+
+  it('start on text includes the match, even when it is split across chunks', async () => {
+    const { c, text } = setup({ source: 'rx', format: 'raw', startOnText: 'READY\\r\\n' });
+    c.rx(enc('boot...RE'), T0);
+    expect(c.state).toBe('armed');
+    c.rx(enc('ADY\r\nv:1\n'), T0 + 5);
+    c.rx(enc('v:2\n'), T0 + 6);
+    await c.stop();
+    expect(text()).toBe('READY\r\nv:1\nv:2\n');
+  });
+
+  it('text trigger watches only the captured direction', async () => {
+    const { c, out } = setup({ source: 'rx', format: 'raw', startOnText: 'GO' });
+    c.tx(enc('GO'), T0);
+    expect(c.state).toBe('armed');
+    c.rx(enc('xGOy'), T0);
+    await c.stop();
+    expect(String.fromCharCode(...out)).toBe('GOy');
+  });
+
+  it('armed: the time limit waits for the trigger; stopping while armed writes nothing', async () => {
+    const { c, out, closed } = setup({ source: 'rx', format: 'raw', startOnText: 'Z', maxSeconds: 1 });
+    c.tick(T0 + 5000);
+    expect(c.state).toBe('armed');
+    await c.stop();
+    expect(out).toEqual([]);
+    expect(closed()).toBe(1);
+  });
+
   it('a sink error stops the capture with the reason', async () => {
     const { c, out, stops } = setup({ source: 'rx', format: 'raw' }, 1);
     c.rx(Uint8Array.of(1), T0);

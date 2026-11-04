@@ -2,10 +2,12 @@ import { LineSplitter, type NewlineMode } from '../pipeline/lines';
 import { toHex } from '../format/bytes';
 import type { Direction } from '../terminal/log';
 import { encodeHeader, encodeRecord, encodeSignals, type RecordingMeta, type SignalState } from './recording';
+import { parseEscapes } from '../send/escapes';
 
 export type CaptureSource = 'rx' | 'tx' | 'both';
 export type CaptureFormat = 'raw' | 'text' | 'hex' | 'session';
-export type CaptureState = 'running' | 'paused' | 'stopped';
+/** armed: waiting for the start trigger; nothing is written yet. */
+export type CaptureState = 'armed' | 'running' | 'paused' | 'stopped';
 
 export interface CaptureOptions {
   source: CaptureSource;
@@ -21,6 +23,10 @@ export interface CaptureOptions {
   maxBytes?: number;
   /** Stop this many seconds after starting. */
   maxSeconds?: number;
+  /** Start only after this many data bytes have gone by. */
+  startAfterBytes?: number;
+  /** Start where this text (send-box escapes allowed) first appears; the match is included. */
+  startOnText?: string;
 }
 
 export interface CaptureSink {
@@ -42,7 +48,7 @@ export function formatStamp(epochMs: number): string {
  * slow sink never reorders data; a sink error stops the capture.
  */
 export class Capture {
-  state: CaptureState = 'running';
+  state: CaptureState;
   /** Data bytes captured (before formatting). */
   captured = 0;
   /** Bytes handed to the sink (after formatting). */
@@ -58,13 +64,46 @@ export class Capture {
   constructor(
     private readonly sink: CaptureSink,
     readonly options: CaptureOptions,
-    readonly startedAt: number,
+    /** When writing began: construction, or the trigger for an armed capture. Limits count from here. */
+    public startedAt: number,
     private readonly onStop: (c: Capture) => void = () => {},
   ) {
     const nl = options.newline ?? 'auto';
     this.splitters = { rx: new LineSplitter(nl), tx: new LineSplitter(nl) };
     this.done = new Promise((r) => (this.resolveDone = r));
-    if (options.format === 'session') this.emit(encodeHeader({ version: 1, created: startedAt, ...options.meta }));
+    this.trigger = options.startOnText ? parseEscapes(options.startOnText) : null;
+    this.state = (this.trigger && this.trigger.length) || options.startAfterBytes ? 'armed' : 'running';
+    if (this.state === 'running') this.begin(startedAt);
+  }
+
+  private trigger: Uint8Array | null;
+  private skipped = 0;
+  /** The last trigger-length−1 bytes per direction, so a trigger split across chunks is still found. */
+  private tails: Record<Direction, Uint8Array> = { rx: new Uint8Array(0), tx: new Uint8Array(0) };
+
+  private begin(at: number): void {
+    this.state = 'running';
+    this.startedAt = at;
+    if (this.options.format === 'session') this.emit(encodeHeader({ version: 1, created: at, ...this.options.meta }));
+  }
+
+  /** While armed: returns the bytes of this chunk that come after the trigger, or null if it has not fired. */
+  private armed(dir: Direction, chunk: Uint8Array): Uint8Array | null {
+    const n = this.options.startAfterBytes;
+    if (n && !this.trigger?.length) {
+      const before = this.skipped;
+      this.skipped += chunk.length;
+      return this.skipped > n ? chunk.subarray(Math.max(0, n - before)) : null;
+    }
+    const t = this.trigger!;
+    const tail = this.tails[dir];
+    const window = new Uint8Array(tail.length + chunk.length);
+    window.set(tail);
+    window.set(chunk, tail.length);
+    const at = indexOf(window, t);
+    if (at >= 0) return window.subarray(at);
+    this.tails[dir] = window.slice(Math.max(0, window.length - (t.length - 1)));
+    return null;
   }
 
   /** Records a line-signal change; only the session format keeps these. */
@@ -83,7 +122,7 @@ export class Capture {
 
   /** Call periodically so a time limit fires even when no data arrives. */
   tick(epochMs: number): void {
-    if (this.state !== 'stopped' && this.options.maxSeconds && epochMs - this.startedAt >= this.options.maxSeconds * 1000) {
+    if (this.state !== 'stopped' && this.state !== 'armed' && this.options.maxSeconds && epochMs - this.startedAt >= this.options.maxSeconds * 1000) {
       void this.stop('time limit reached');
     }
   }
@@ -115,8 +154,14 @@ export class Capture {
   }
 
   private data(dir: Direction, chunk: Uint8Array, epochMs: number): void {
-    if (this.state !== 'running') return;
+    if (this.state !== 'running' && this.state !== 'armed') return;
     if (this.options.format !== 'session' && this.options.source !== 'both' && this.options.source !== dir) return;
+    if (this.state === 'armed') {
+      const rest = this.armed(dir, chunk);
+      if (!rest) return;
+      this.begin(epochMs);
+      chunk = rest;
+    }
     this.tick(epochMs);
     if (this.state !== 'running') return;
     let bytes = chunk;
@@ -162,4 +207,12 @@ export class Capture {
         if (this.state !== 'stopped') void this.stop(`write failed: ${(e as Error).message}`);
       });
   }
+}
+
+function indexOf(hay: Uint8Array, needle: Uint8Array): number {
+  outer: for (let i = 0; i + needle.length <= hay.length; i++) {
+    for (let j = 0; j < needle.length; j++) if (hay[i + j] !== needle[j]) continue outer;
+    return i;
+  }
+  return -1;
 }
