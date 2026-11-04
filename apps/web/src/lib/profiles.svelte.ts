@@ -9,6 +9,7 @@ import {
   type Profile,
   type SerialOptions,
   compileExpr,
+  type AutoReply,
 } from '@superserial/core';
 import type { DisplaySettings } from './source';
 import type { PlotTransform, SendOptions, Session, View } from './session.svelte';
@@ -28,6 +29,7 @@ export interface ProfileSettings {
   plotX: string | null;
   plotFft: boolean;
   plotFs: number | null;
+  autoReplies: AutoReply[];
 }
 
 export function settingsOf(s: Session): ProfileSettings {
@@ -46,6 +48,7 @@ export function settingsOf(s: Session): ProfileSettings {
     plotX: s.plotX,
     plotFft: s.plotFft,
     plotFs: s.plotFs,
+    autoReplies: $state.snapshot(s.autoReplies),
   };
 }
 
@@ -63,6 +66,27 @@ export function applySettings(s: Session, p: ProfileSettings): void {
   s.plotX = p.plotX;
   s.plotFft = p.plotFft;
   s.plotFs = p.plotFs;
+  s.autoReplies = p.autoReplies.map((r) => ({ ...r }));
+}
+
+/**
+ * Auto-replies from a file send data on their own, so an imported one always
+ * arrives switched off; the user turns it on after reading it.
+ */
+export function sanitizeReplies(raw: unknown, keepEnabled = false): AutoReply[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 64).flatMap((r: Record<string, unknown>) => {
+    if (!r || typeof r.pattern !== 'string' || typeof r.reply !== 'string') return [];
+    return [{
+      id: typeof r.id === 'string' ? r.id : `a${Math.random().toString(36).slice(2, 9)}`,
+      enabled: keepEnabled && r.enabled === true,
+      pattern: r.pattern.slice(0, 200),
+      caseSensitive: r.caseSensitive === true,
+      regex: r.regex === true,
+      reply: r.reply.slice(0, 1000),
+      delayMs: Number.isInteger(r.delayMs) && (r.delayMs as number) >= 0 && (r.delayMs as number) <= 60_000 ? (r.delayMs as number) : 0,
+    }];
+  });
 }
 
 /** Keeps only transforms whose expression compiles; an imported file cannot smuggle in anything else. */
@@ -91,7 +115,7 @@ const int = (v: unknown, min: number, max: number, fallback: number) =>
  * or out of range falls back to the default; only an unusable baud rate rejects
  * the profile outright, since that is the one setting it cannot do without.
  */
-export function sanitizeSettings(raw: unknown): ProfileSettings | null {
+export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, Record<string, unknown> | undefined> & Record<string, unknown>;
   const o = (r.options ?? {}) as Record<string, unknown>;
@@ -133,6 +157,7 @@ export function sanitizeSettings(raw: unknown): ProfileSettings | null {
     plotTransforms: sanitizeTransforms(r.plotTransforms),
     plotX: ((x: unknown) => (typeof x === 'string' && x.length <= 64 ? x : null))((raw as Record<string, unknown>).plotX),
     plotFft: bool(r.plotFft, false),
+    autoReplies: sanitizeReplies((raw as Record<string, unknown>).autoReplies, trusted),
     plotFs: ((x: unknown) => (typeof x === 'number' && x > 0 && x <= 10_000_000 ? x : null))((raw as Record<string, unknown>).plotFs),
   };
 }
@@ -148,7 +173,7 @@ class ProfileStore {
     try {
       const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as Profile<ProfileSettings>[];
       this.list = raw.flatMap((p) => {
-        const settings = sanitizeSettings(p?.settings);
+        const settings = sanitizeSettings(p?.settings, true);
         return settings && typeof p.name === 'string' ? [{ ...p, settings }] : [];
       });
     } catch {

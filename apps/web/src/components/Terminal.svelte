@@ -58,6 +58,8 @@
 
   type Format = DisplayFormat;
   const disp = $derived(source.display);
+  /** Auto-replies send on their own, so while any is on the toolbar says so. */
+  const replyCount = $derived(source.autoReplies?.filter((r) => r.enabled).length ?? 0);
   /** The ⋯ button is highlighted whenever something in its menu is not at its default. */
   const viewChanged = $derived(disp.stamps || !disp.ansi || disp.ctrl || source.echo === false || !!source.localEcho || (source.newline ?? 'auto') !== 'auto');
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
@@ -260,9 +262,13 @@
       else if (disp.ctrl) {
         const x = expanded(l);
         const tokens = x.tokens.map(([from, to]) => ({ from, to, fg: TOKEN }));
-        if (l.dir === 'tx') spans.push(...segments('→ ' + x.text, 'tx', abs, 2, tokens, ruled));
+        if (l.dir === 'tx') {
+          const pre = 'via' in l && l.via === 'auto' ? '↩ ' : 'via' in l && l.via === 'typed' ? '' : '→ ';
+          spans.push(...segments(pre + x.text, 'tx', abs, pre.length, tokens, ruled));
+        }
         else spans.push(...segments(x.text, 'fg', abs, 0, tokens, ruled));
       } else if (l.dir === 'tx' && 'via' in l && l.via === 'typed') spans.push(...segments(l.text, 'tx', abs, 0, [], ruled));
+      else if (l.dir === 'tx' && 'via' in l && l.via === 'auto') spans.push(...segments('↩ ' + l.text, 'tx', abs, 2, [], ruled));
       else if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, [], ruled));
       else if (disp.ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? [], ruled));
       else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, [], ruled));
@@ -386,6 +392,9 @@
       <button onclick={closeFind} title="Close (Esc)">✕</button>
     {:else if disp.format === 'ascii'}
       <button onclick={openFind} title="Find (Ctrl+F)">Find</button>
+      {#if replyCount}
+        <button class="active" onclick={onautoreply} title="{replyCount} auto-repl{replyCount === 1 ? 'y is' : 'ies are'} on and will send data">↩ {replyCount}</button>
+      {/if}
       {#if source.typeKeys}
         <button class="toggle" class:on={typing} onclick={toggleTyping} disabled={!source.open} title={source.open ? 'Type straight to the device, like a terminal. Ctrl+Shift keeps app shortcuts' : 'Connect to type'}>Type</button>
       {/if}

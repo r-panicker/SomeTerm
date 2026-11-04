@@ -2,6 +2,8 @@ import {
   ByteRing,
   frame,
   parseEscapes,
+  AutoReplier,
+  type AutoReply,
   repeatSend,
   sendPaced,
   sendWithEcho,
@@ -154,6 +156,9 @@ export class Session implements TermSource {
   plotFft = $state(false);
   /** Sample rate for the spectrum in Hz; null estimates it from arrival times. */
   plotFs = $state<number | null>(null);
+  /** Pattern → reply rules for this tab; kept in profiles. */
+  autoReplies = $state<AutoReply[]>([]);
+  private replier = new AutoReplier(now);
   /** Terminal mode: the line being typed, and whether to show it (devices that echo make that redundant). */
   typed = $state('');
   localEcho = $state(false);
@@ -322,6 +327,31 @@ export class Session implements TermSource {
     } finally {
       this.userClosing = false;
       this.busy = false;
+    }
+  }
+
+  private handleReplies(text: string, offset: number): void {
+    const r = this.replier.check(text, offset);
+    for (const a of r.send) {
+      const go = () => {
+        if (!this.open) return;
+        void this.sendRaw(a.bytes);
+        const line: TermLine = { dir: 'tx', text: echoLine(a.bytes), bytes: a.bytes, via: 'auto', time: now(), offset: -1 };
+        this.onLine?.(line);
+        if (this.echo) { this.log.push(line); this.changed(); }
+      };
+      if (a.rule.delayMs > 0) setTimeout(go, a.rule.delayMs);
+      else go();
+    }
+    for (const d of r.disabled) {
+      const rule = this.autoReplies.find((x) => x.id === d.id);
+      if (rule) rule.enabled = false;
+      this.errors++;
+      this.lastError = `Auto-reply “${d.pattern}” fired over 10 times a second and was turned off`;
+    }
+    for (const e of r.errors) {
+      this.errors++;
+      this.lastError = `Auto-reply “${e.rule.pattern}”: ${e.message}`;
     }
   }
 
@@ -650,7 +680,10 @@ export class Session implements TermSource {
   }
 
   private onBatch(b: RxBatch): void {
+    const replying = this.open && !this.player && this.autoReplies.some((r) => r.enabled);
+    if (replying) this.replier.setRules($state.snapshot(this.autoReplies));
     for (const l of b.lines) {
+      if (replying) this.handleReplies(l.text, l.offset);
       const line: TermLine = { dir: 'rx', text: l.text, runs: l.runs, raw: l.raw, time: l.time, offset: l.offset };
       this.log.pushRx(line);
       this.onLine?.(line);
@@ -660,6 +693,8 @@ export class Session implements TermSource {
       }
     }
     this.partialLine = b.partial;
+    // A prompt without a newline yet ("Password:") still gets its answer.
+    if (replying && b.partial) this.handleReplies(b.partial.text, b.partial.offset);
     this.changed();
   }
 

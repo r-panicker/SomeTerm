@@ -90,6 +90,10 @@ The ⋯ button holds send options; once any is set, the button shows it instead 
 
 **File…** sends a file's bytes as-is, paced by the delay settings; **Stop** cancels between writes.
 
+## Auto-replies
+
+**Auto-replies…** in the terminal's ⋯ menu answers patterns automatically, for login prompts, handshakes or keep-alives. **+** adds one: a pattern (text, or a regular expression with **.\***; `$1`…`$9` in the reply insert its groups), the reply (send-box escapes) and an optional delay. A rule answers each matching line once, including a prompt that has no newline yet such as `Password:`. Replies show as `↩` lines, and while any rule is on the toolbar shows `↩ N`. A rule that fires more than 10 times a second (usually a reply that matches itself through an echo) is switched off and reported. Auto-replies are kept with the tab and in profiles; ones imported from a profile file arrive switched off.
+
 ## Terminal
 
 **Type** turns the terminal into a terminal emulator, as in GTKTerm or TeraTerm: click in it and keys go straight to the device. Enter sends the send bar's line ending (CR if none is set), Backspace sends BS, arrows and Home/End/Delete send the usual VT sequences, and Ctrl+letter sends the control code (Ctrl+C copies instead when lines are selected). Pasting sends the text. App shortcuts still work with Ctrl+Shift (Ctrl+Shift+F to find). Most device shells echo what you type; for one that does not, tick **Local echo while typing** in the ⋯ menu to see your typing in the sent-data colour.
