@@ -10,9 +10,11 @@ export interface DisplaySettings {
   align: number;
   stamps: boolean;
   ansi: boolean;
+  /** Show every control and non-ASCII byte as a token, line endings included. */
+  ctrl: boolean;
 }
 
-export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true });
+export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false });
 
 /** What the terminal view needs from whatever feeds it: one port, or several merged. */
 export interface TermSource {

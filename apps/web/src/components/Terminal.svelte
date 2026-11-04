@@ -4,13 +4,20 @@
   import CanvasView, { type Span } from './CanvasView.svelte';
   import { ansiColor } from '../lib/ansi-colors';
   import { rules, ruleText, ruleTint } from '../lib/rules.svelte';
-  import { applyRules, type RuleRun } from '@superserial/core';
+  import { applyRules, RGB_FLAG, type RuleRun, type TermLine } from '@superserial/core';
+  import { expandBytes, expandPictures, type Expanded } from '../lib/ctrl';
   import type { DisplayFormat, TermSource } from '../lib/source';
 
-  let { source, onrules }: { source: TermSource; onrules?: () => void } = $props();
+  let { source, onrules, onautoreply }: { source: TermSource; onrules?: () => void; onautoreply?: () => void } = $props();
+  let viewMenu = $state(false);
+  let menuEl: HTMLDivElement | undefined = $state();
+  let menuButton: HTMLButtonElement | undefined = $state();
+  const TOKEN = RGB_FLAG | 0x5b7fb8;
 
   type Format = DisplayFormat;
   const disp = $derived(source.display);
+  /** The ⋯ button is highlighted whenever something in its menu is not at its default. */
+  const viewChanged = $derived(disp.stamps || !disp.ansi || disp.ctrl || source.echo === false || (source.newline ?? 'auto') !== 'auto');
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
   const DUMP: Record<'hex' | 'dec' | 'bin', Dump> = {
     hex: { per: 16, skip: 0, fmt: (b) => toHex(b), width: 16 * 3 - 1, side: (b) => toAscii(b) },
@@ -61,9 +68,10 @@
   const index = new FindIndex();
 
   $effect(() => {
-    const q = query, o = { caseSensitive, regex }, showAnsi = disp.ansi;
+    const q = query, o = { caseSensitive, regex };
+    void disp.ansi; void disp.ctrl;
     const t = setTimeout(() => {
-      index.set(q, o, untrack(() => source.log), (l) => (showAnsi ? l.text : (l.raw ?? l.text)));
+      index.set(q, o, untrack(() => source.log), (l) => shownText(l));
       cur = null;
       untrack(() => findRev++);
     }, 120);
@@ -205,7 +213,12 @@
       if (disp.stamps) spans.push({ text: stamp(l.time), tone: 'muted' });
       const ruled = applyRules(rules.compiled, shownText(l)).runs;
       if (l.dir === 'sys') spans.push(...segments(l.text, 'muted', abs, 0, [], ruled));
-      else if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, [], ruled));
+      else if (disp.ctrl) {
+        const x = expanded(l);
+        const tokens = x.tokens.map(([from, to]) => ({ from, to, fg: TOKEN }));
+        if (l.dir === 'tx') spans.push(...segments('→ ' + x.text, 'tx', abs, 2, tokens, ruled));
+        else spans.push(...segments(x.text, 'fg', abs, 0, tokens, ruled));
+      } else if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, [], ruled));
       else if (disp.ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? [], ruled));
       else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, [], ruled));
       return spans;
@@ -222,8 +235,31 @@
   }
 
   /** The text a line is drawn with, which is also what rules and find match against. */
-  function shownText(l: { dir: string; text: string; raw?: string }): string {
+  function shownText(l: Pick<TermLine, 'dir' | 'text' | 'raw' | 'offset' | 'bytes'>): string {
+    if (disp.ctrl && l.dir !== 'sys') return expanded(l).text;
     return l.dir === 'tx' || disp.ansi ? l.text : (l.raw ?? l.text);
+  }
+
+  /**
+   * Every byte of a line as text or a token. Received lines are read back from the
+   * ring with their terminator, so non-ASCII bytes show as hex rather than '.';
+   * once evicted, or for sent lines, the stored control pictures are used.
+   */
+  function expanded(l: Pick<TermLine, 'dir' | 'text' | 'raw' | 'offset' | 'bytes'>): Expanded {
+    if (l.bytes) return expandBytes(l.bytes);
+    const shown = l.raw ?? l.text;
+    const ring = source.ring;
+    if (l.dir === 'rx' && ring && l.offset >= ring.start && l.offset < ring.end) {
+      const bytes = ring.slice(l.offset, Math.min(ring.end, l.offset + shown.length + 2));
+      let end = Math.min(shown.length, bytes.length);
+      while (end < bytes.length && (bytes[end] === 0x0d || bytes[end] === 0x0a)) end++;
+      return expandBytes(bytes.subarray(0, end));
+    }
+    return expandPictures(shown);
+  }
+
+  function outsideMenu(e: MouseEvent) {
+    if (viewMenu && !menuEl?.contains(e.target as Node) && !menuButton?.contains(e.target as Node)) viewMenu = false;
   }
 
   function rowBg(i: number): string | undefined {
@@ -240,7 +276,7 @@
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
-  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${dark}|${cur?.abs}:${cur?.k}|${rules.version}`);
+  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${cur?.abs}:${cur?.k}|${rules.version}`);
 
   const rowText = (i: number) => row(i).map((s) => s.text).join('');
 
@@ -252,6 +288,8 @@
     if (i >= 0) queueMicrotask(() => view.scrollToRow(i));
   }
 </script>
+
+<svelte:window onmousedown={outsideMenu} onkeydown={(e) => e.key === 'Escape' && (viewMenu = false)} />
 
 <section class="pane">
   <div class="toolbar">
@@ -298,22 +336,36 @@
       <button onclick={() => step(1)} disabled={!(void findRev, index.total)} title="Next (Enter)">↓</button>
       <button onclick={closeFind} title="Close (Esc)">✕</button>
     {:else if disp.format === 'ascii'}
-      {#if source.setNewline}
-        <select value={source.newline} onchange={(e) => source.setNewline?.(e.currentTarget.value as NewlineMode)} title="Receive line ending. Auto: CR, LF or CRLF each end a line">
-          <option value="auto">Auto</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CRLF</option>
-        </select>
-      {/if}
-      <button class="toggle" class:on={disp.stamps} onclick={() => (disp.stamps = !disp.stamps)} title="Timestamps">⏱</button>
-      <button class="toggle" class:on={disp.ansi} onclick={() => (disp.ansi = !disp.ansi)} title="Interpret ANSI colour codes (off: show them as ␛[…)">ANSI</button>
-      {#if source.echo !== undefined}
-        <button class="toggle" class:on={source.echo} onclick={() => (source.echo = !source.echo)} title="Show sent data (local echo)">⇄</button>
-      {/if}
       <button onclick={openFind} title="Find (Ctrl+F)">Find</button>
-      {#if onrules}<button class:active={rules.list.length > 0} onclick={onrules} title="Colour rules: patterns that are always highlighted">Rules</button>{/if}
     {/if}
     {#if !findOpen}<span class="spacer"></span>{/if}
     {#if !follow}<button onclick={() => (follow = true)} title="Scroll to newest">↓ Live</button>{/if}
     {#if !findOpen}<button onclick={() => source.clear()} title="Clear (Ctrl+L)">Clear</button>{/if}
+    {#if !findOpen && disp.format === 'ascii'}
+      <div class="anchor">
+        <button bind:this={menuButton} class:active={viewChanged} onclick={() => (viewMenu = !viewMenu)} title="View options" aria-expanded={viewMenu}>⋯</button>
+        {#if viewMenu}
+          <div class="menu" bind:this={menuEl}>
+            {#if source.setNewline}
+              <label class="row">Line ending
+                <select value={source.newline} onchange={(e) => source.setNewline?.(e.currentTarget.value as NewlineMode)} title="Auto: CR, LF or CRLF each end a line">
+                  <option value="auto">Auto</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CRLF</option>
+                </select>
+              </label>
+            {/if}
+            <label class="check"><input type="checkbox" bind:checked={disp.stamps} /> Timestamps</label>
+            <label class="check" title="Off: show escape codes as ␛[…"><input type="checkbox" bind:checked={disp.ansi} /> ANSI colours</label>
+            <label class="check" title="Show CR, LF, TAB, NUL and every other non-printing byte, line endings included"><input type="checkbox" bind:checked={disp.ctrl} /> Control characters</label>
+            {#if source.echo !== undefined}
+              <label class="check" title="Show what you send, as → lines"><input type="checkbox" checked={source.echo} onchange={(e) => (source.echo = e.currentTarget.checked)} /> Show sent data</label>
+            {/if}
+            {#if onrules || onautoreply}<hr />{/if}
+            {#if onrules}<button class="link" onclick={() => { viewMenu = false; onrules?.(); }}>Colour rules…{rules.list.length ? ` (${rules.list.length})` : ''}</button>{/if}
+            {#if onautoreply}<button class="link" onclick={() => { viewMenu = false; onautoreply?.(); }}>Auto-replies…</button>{/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
   </div>
   <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} bind:follow />
   {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
@@ -324,4 +376,14 @@
   .find.bad { border-color: var(--err); }
   .count { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
   button.active { color: var(--accent); border-color: var(--accent); }
+  .anchor { position: relative; }
+  .menu {
+    position: absolute; top: calc(100% + 4px); right: 0; z-index: 10; display: flex; flex-direction: column; gap: 6px; min-width: 210px;
+    padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 24px rgb(0 0 0 / .18); font-size: 12px;
+  }
+  .menu .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); }
+  .menu .check { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .menu hr { width: 100%; border: 0; border-top: 1px solid var(--line); margin: 2px 0; }
+  .menu .link { border: 0; background: none; text-align: left; padding: 2px 0; height: auto; font-size: 12px; color: var(--fg); }
+  .menu .link:hover { color: var(--accent); }
 </style>

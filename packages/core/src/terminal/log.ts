@@ -15,6 +15,8 @@ export interface TermLine {
   offset: number;
   /** Which port the line came from, in views that merge several. */
   src?: number;
+  /** Exact bytes of a sent line (terminator included), for showing control characters. */
+  bytes?: Uint8Array;
 }
 
 /** Bounded list of terminal lines; trims from the front in batches. */

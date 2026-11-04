@@ -429,7 +429,7 @@ export class Session implements TermSource {
     if (!t) return;
     // Echo happens before the write so it precedes any reply it provokes.
     if (this.echo || this.onLine) {
-      const line: TermLine = { dir: 'tx', text: echoText ?? echoLine(bytes), time: now(), offset: -1 };
+      const line: TermLine = { dir: 'tx', text: echoText ?? echoLine(bytes), ...(!echoText && { raw: toAscii(bytes, { controlPictures: true }), bytes: bytes.slice() }), time: now(), offset: -1 };
       this.onLine?.(line);
       if (this.echo) {
         this.log.push(line);

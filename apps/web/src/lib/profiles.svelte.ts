@@ -118,6 +118,7 @@ export function sanitizeSettings(raw: unknown): ProfileSettings | null {
       align: int(d.align, 0, 7, 0),
       stamps: bool(d.stamps, false),
       ansi: bool(d.ansi, true),
+      ctrl: bool(d.ctrl, false),
     },
     send: {
       eol: pick(s.eol, ['\\r\\n', '\\n', '\\r', ''], '\\r\\n'),

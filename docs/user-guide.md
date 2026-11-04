@@ -76,7 +76,7 @@ Tabs, port choices and settings are restored on the next launch, but ports are n
 | Text | Escapes `\r \n \t \0 \\ \xNN`; the selected line ending is appended | `AT\r` |
 | Hex | Bytes separated by spaces or commas, optional `0x` | `0D 0A 41` |
 
-↑ and ↓ recall earlier sends. ⇄ shows what you send in the terminal, prefixed with →.
+↑ and ↓ recall earlier sends. What you send appears in the terminal as → lines (turn off with **Show sent data** in the terminal's ⋯ menu).
 
 The ⋯ button holds send options; once any is set, the button shows it instead (`CRC-16/MODBUS · paced`).
 
@@ -92,7 +92,7 @@ The ⋯ button holds send options; once any is set, the button shows it instead 
 
 ## Terminal
 
-ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCII bytes as `.`. Pick the receive line ending to match the device; `CR/LF auto` treats CR, LF and CRLF each as one line break. Hex, Dec and Bin show the raw received stream with offsets. Num decodes it as 8, 16 or 32-bit integers or 32/64-bit floats, with the raw bytes alongside:
+ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCII bytes as `.`. The terminal's ⋯ menu holds the view options: receive **Line ending** (match the device; `Auto` treats CR, LF and CRLF each as one line break), **Timestamps**, **ANSI colours**, **Control characters** (every non-printing byte as `[CR]`, `[LF]`, `[TAB]`, `[NUL]` or hex such as `[FF]`, line endings included, RealTerm style) and **Show sent data**. The ⋯ button is highlighted while any of them differs from the default. Hex, Dec and Bin show the raw received stream with offsets. Num decodes it as 8, 16 or 32-bit integers or 32/64-bit floats, with the raw bytes alongside:
 
 | Control | Use |
 |---|---|
@@ -102,11 +102,11 @@ ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCI
 
 **Find** (Ctrl+F) searches the ASCII view, sent and received lines alike. Enter and Shift+Enter step through matches; **Aa** matches case, **.\*** takes a regular expression, and **Filter** hides lines without a match. New data is searched as it arrives. Esc closes find.
 
-**Rules** keeps patterns coloured all the time, in every tab and the Monitor: **Line** tints the whole line, **Match** colours the matched text in bold over any ANSI colour. Earlier rules win where they overlap; drag ⋮⋮ to reorder. **Add common rules** gives errors red, warnings amber and OK/pass green. In the find bar, **+ Rule** turns the current search into a rule. Rules only change how lines look; capture, copy and find are unaffected.
+**Colour rules** (in the ⋯ menu) keep patterns coloured all the time, in every tab and the Monitor: **Line** tints the whole line, **Match** colours the matched text in bold over any ANSI colour. Earlier rules win where they overlap; drag ⋮⋮ to reorder. **Add common rules** gives errors red, warnings amber and OK/pass green. In the find bar, **+ Rule** turns the current search into a rule. Rules only change how lines look; capture, copy and find are unaffected.
 
-ANSI colour codes are shown as colour; other escape sequences (cursor movement, clear screen, titles) are removed rather than acted on, since this is a scrolling log, not a screen. Turn **ANSI** off to see the raw codes as `␛[31m`. Coloured numeric lines still plot.
+ANSI colour codes are shown as colour; other escape sequences (cursor movement, clear screen, titles) are removed rather than acted on, since this is a scrolling log, not a screen. Turn **ANSI colours** off to see the raw codes as `␛[31m`. Coloured numeric lines still plot.
 
-⏱ adds arrival timestamps. Drag to select lines, Ctrl+A for all, then Ctrl+C. Scrolling up pauses following; **↓ Live** resumes.
+Drag to select lines, Ctrl+A for all, then Ctrl+C. Scrolling up pauses following; **↓ Live** resumes.
 
 ## Plotting
 
