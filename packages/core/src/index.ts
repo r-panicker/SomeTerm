@@ -22,3 +22,4 @@ export { compileExpr, type Fn } from './plot/expr';
 export { spectrum, peakFrequency, estimateRate, largestPow2, type Spectrum } from './plot/fft';
 export { parseRecording, encodeHeader, encodeRecord, encodeSignals, decodeSignals, RECORDING_EXT, type Recording, type RecordingMeta, type RecordEntry, type SignalState } from './capture/recording';
 export { ReplayTransport } from './mock/replay';
+export { compileRules, applyRules, type ColorRule, type CompiledRule, type RuleRun, type RuleResult } from './terminal/rules';
