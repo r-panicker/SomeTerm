@@ -1,6 +1,7 @@
 import {
   ByteRing,
   frame,
+  parseEscapes,
   repeatSend,
   sendPaced,
   sendWithEcho,
@@ -153,6 +154,9 @@ export class Session implements TermSource {
   plotFft = $state(false);
   /** Sample rate for the spectrum in Hz; null estimates it from arrival times. */
   plotFs = $state<number | null>(null);
+  /** Terminal mode: the line being typed, and whether to show it (devices that echo make that redundant). */
+  typed = $state('');
+  localEcho = $state(false);
   /** True after a device dropped out on its own, until it returns or the user cancels. */
   waiting = $state(false);
   private userClosing = false;
@@ -319,6 +323,40 @@ export class Session implements TermSource {
       this.userClosing = false;
       this.busy = false;
     }
+  }
+
+  /** Writes bytes immediately, outside any send job; used for keystrokes and auto-replies. */
+  async sendRaw(bytes: Uint8Array): Promise<void> {
+    const t = this.transport;
+    if (!t || this.replay || !bytes.length) return;
+    try {
+      this.capture.tx(bytes, Date.now());
+      await t.write(bytes);
+      this.tx += bytes.length;
+    } catch (e) {
+      this.errors++;
+      this.lastError = `Send: ${(e as Error).message}`;
+    }
+  }
+
+  /**
+   * Terminal mode. Every key goes out at once; the typed line is kept so it can be
+   * echoed locally and, on Enter, logged as one sent line (Monitor, capture view).
+   */
+  typeKeys(bytes: Uint8Array, key: 'text' | 'enter' | 'backspace' | 'other', text = ''): void {
+    if (!this.open || this.player) return;
+    // Enter sends the send-bar line ending; CR when none is set, as most terminals do.
+    if (key === 'enter' && !bytes.length) bytes = parseEscapes(this.sendOptions.eol || '\\r');
+    void this.sendRaw(bytes);
+    if (key === 'text') this.typed += text;
+    else if (key === 'backspace') this.typed = [...this.typed].slice(0, -1).join('');
+    else if (key === 'enter') {
+      const line: TermLine = { dir: 'tx', text: this.typed, via: 'typed', time: now(), offset: -1 };
+      this.typed = '';
+      this.onLine?.(line);
+      if (this.localEcho) this.log.push(line);
+    }
+    this.changed();
   }
 
   cancelWaiting(): void {

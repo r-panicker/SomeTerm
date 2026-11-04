@@ -26,9 +26,14 @@
     rowText: (i: number) => string;
     /** Background for a whole row (colour rules), drawn under selection and find highlights. */
     rowBg?: (i: number) => string | undefined;
+    /** Gets keys first (terminal mode); returning true means handled. */
+    onkey?: (e: KeyboardEvent) => boolean;
+    onpaste?: (text: string) => void;
+    /** Outline the view while it is capturing keys. */
+    typing?: boolean;
     follow?: boolean;
   }
-  let { count, version, row, rowText, rowBg, follow = $bindable(true) }: Props = $props();
+  let { count, version, row, rowText, rowBg, onkey, onpaste, typing = false, follow = $bindable(true) }: Props = $props();
 
   const LINE = 18;
   const PAD = 8;
@@ -161,6 +166,11 @@
   }
 
   function onKey(e: KeyboardEvent) {
+    if (onkey?.(e)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
       sel = { a: 0, b: count - 1 };
       e.preventDefault();
@@ -169,6 +179,14 @@
 
   export function topRow(): number {
     return Math.max(0, Math.floor((scroller.scrollTop - PAD) / LINE));
+  }
+
+  export function focus() {
+    scroller.focus();
+  }
+
+  export function hasSelection(): boolean {
+    return !!sel;
   }
 
   export function scrollToRow(i: number) {
@@ -190,6 +208,8 @@
     onscroll={onScroll}
     onmousedown={down}
     oncopy={onCopy}
+    onpaste={(e) => { if (!onpaste) return; e.preventDefault(); onpaste(e.clipboardData?.getData('text/plain') ?? ''); }}
+    class:typing
     onkeydown={onKey}
     tabindex="0"
     role="log"
@@ -203,4 +223,5 @@
   .wrap { position: relative; flex: 1; min-height: 0; overflow: hidden; }
   canvas { position: absolute; inset: 0; }
   .scroller { position: absolute; inset: 0; overflow: auto; outline: none; cursor: text; }
+  .scroller.typing:focus { box-shadow: inset 0 0 0 2px var(--accent); }
 </style>

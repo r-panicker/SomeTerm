@@ -92,6 +92,8 @@ The ⋯ button holds send options; once any is set, the button shows it instead 
 
 ## Terminal
 
+**Type** turns the terminal into a terminal emulator, as in GTKTerm or TeraTerm: click in it and keys go straight to the device. Enter sends the send bar's line ending (CR if none is set), Backspace sends BS, arrows and Home/End/Delete send the usual VT sequences, and Ctrl+letter sends the control code (Ctrl+C copies instead when lines are selected). Pasting sends the text. App shortcuts still work with Ctrl+Shift (Ctrl+Shift+F to find). Most device shells echo what you type; for one that does not, tick **Local echo while typing** in the ⋯ menu to see your typing in the sent-data colour.
+
 ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCII bytes as `.`. The terminal's ⋯ menu holds the view options: receive **Line ending** (match the device; `Auto` treats CR, LF and CRLF each as one line break), **Timestamps**, **ANSI colours**, **Control characters** (every non-printing byte as `[CR]`, `[LF]`, `[TAB]`, `[NUL]` or hex such as `[FF]`, line endings included, RealTerm style) and **Show sent data**. The ⋯ button is highlighted while any of them differs from the default. Hex, Dec and Bin show the raw received stream with offsets. Num decodes it as 8, 16 or 32-bit integers or 32/64-bit floats, with the raw bytes alongside:
 
 | Control | Use |

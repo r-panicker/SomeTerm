@@ -17,6 +17,8 @@ export interface TermLine {
   src?: number;
   /** Exact bytes of a sent line (terminator included), for showing control characters. */
   bytes?: Uint8Array;
+  /** A sent line typed key by key in terminal mode, or sent by an auto-reply. */
+  via?: 'typed' | 'auto';
 }
 
 /** Bounded list of terminal lines; trims from the front in batches. */

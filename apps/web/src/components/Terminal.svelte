@@ -10,6 +10,48 @@
 
   let { source, onrules, onautoreply }: { source: TermSource; onrules?: () => void; onautoreply?: () => void } = $props();
   let viewMenu = $state(false);
+  /** Terminal mode: keys typed into the view go straight to the device. */
+  let typing = $state(false);
+  const utf8 = new TextEncoder();
+  const CSI = (s: string) => utf8.encode(`\x1b[${s}`);
+  const KEYS: Record<string, Uint8Array> = {
+    Backspace: Uint8Array.of(0x08), Tab: Uint8Array.of(0x09), Escape: Uint8Array.of(0x1b),
+    ArrowUp: CSI('A'), ArrowDown: CSI('B'), ArrowRight: CSI('C'), ArrowLeft: CSI('D'),
+    Home: CSI('H'), End: CSI('F'), Delete: CSI('3~'), PageUp: CSI('5~'), PageDown: CSI('6~'), Insert: CSI('2~'),
+  };
+
+  /** Terminal-mode key mapping. Ctrl+Shift stays with the app; Ctrl+C copies when lines are selected. */
+  function typeKey(e: KeyboardEvent): boolean {
+    if (!typing || !source.typeKeys || e.isComposing || e.altKey || e.metaKey) return false;
+    if (e.ctrlKey && e.shiftKey) return false;
+    if (e.ctrlKey) {
+      const k = e.key.toLowerCase();
+      if (k === 'c' && view.hasSelection()) return false;
+      if (k === 'v') return false;
+      if (k.length === 1 && k >= 'a' && k <= 'z') { source.typeKeys(Uint8Array.of(k.charCodeAt(0) - 96), 'other'); return true; }
+      return false;
+    }
+    if (e.key === 'Enter') { source.typeKeys(new Uint8Array(0), 'enter'); return true; }
+    if (e.key === 'Backspace') { source.typeKeys(KEYS.Backspace!, 'backspace'); return true; }
+    if (KEYS[e.key]) { source.typeKeys(KEYS[e.key]!, 'other'); return true; }
+    if ([...e.key].length === 1) { source.typeKeys(utf8.encode(e.key), 'text', e.key); return true; }
+    return false;
+  }
+
+  function typePaste(text: string) {
+    if (!typing || !source.typeKeys) return;
+    text.split(/\r?\n|\r/).forEach((part, i, all) => {
+      if (part) source.typeKeys!(utf8.encode(part), 'text', part);
+      if (i < all.length - 1) source.typeKeys!(new Uint8Array(0), 'enter');
+    });
+  }
+
+  $effect(() => { if (disp.format !== 'ascii') typing = false; });
+
+  function toggleTyping() {
+    typing = !typing;
+    if (typing) queueMicrotask(() => view.focus());
+  }
   let menuEl: HTMLDivElement | undefined = $state();
   let menuButton: HTMLButtonElement | undefined = $state();
   const TOKEN = RGB_FLAG | 0x5b7fb8;
@@ -17,7 +59,7 @@
   type Format = DisplayFormat;
   const disp = $derived(source.display);
   /** The ⋯ button is highlighted whenever something in its menu is not at its default. */
-  const viewChanged = $derived(disp.stamps || !disp.ansi || disp.ctrl || source.echo === false || (source.newline ?? 'auto') !== 'auto');
+  const viewChanged = $derived(disp.stamps || !disp.ansi || disp.ctrl || source.echo === false || !!source.localEcho || (source.newline ?? 'auto') !== 'auto');
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
   const DUMP: Record<'hex' | 'dec' | 'bin', Dump> = {
     hex: { per: 16, skip: 0, fmt: (b) => toHex(b), width: 16 * 3 - 1, side: (b) => toAscii(b) },
@@ -193,13 +235,15 @@
   const count = $derived.by(() => {
     void source.version;
     if (filtering) return index.hits.length;
-    if (disp.format === 'ascii') return source.log.length + (source.partial ? 1 : 0);
+    if (disp.format === 'ascii') return source.log.length + (source.partial || typing ? 1 : 0);
     if (!source.ring) return 0;
     return Math.max(0, Math.ceil((source.ring.end - dumpStart()) / dump.per));
   });
 
   function asciiLine(i: number) {
-    return i < source.log.length ? source.log.get(i)! : { ...source.partial!, dir: 'rx' as const };
+    if (i < source.log.length) return source.log.get(i)!;
+    // The last row: the partial line, or an empty one to type on.
+    return source.partial ? { ...source.partial, dir: 'rx' as const } : { text: '', time: 0, offset: -1, dir: 'rx' as const };
   }
 
   function row(i: number): Span[] {
@@ -218,9 +262,14 @@
         const tokens = x.tokens.map(([from, to]) => ({ from, to, fg: TOKEN }));
         if (l.dir === 'tx') spans.push(...segments('→ ' + x.text, 'tx', abs, 2, tokens, ruled));
         else spans.push(...segments(x.text, 'fg', abs, 0, tokens, ruled));
-      } else if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, [], ruled));
+      } else if (l.dir === 'tx' && 'via' in l && l.via === 'typed') spans.push(...segments(l.text, 'tx', abs, 0, [], ruled));
+      else if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, [], ruled));
       else if (disp.ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? [], ruled));
       else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, [], ruled));
+      if (typing && li === source.log.length) {
+        if (source.localEcho && source.typed) spans.push({ text: source.typed, tone: 'tx' });
+        spans.push({ text: '▏', tone: 'accent' });
+      }
       return spans;
     }
     const d = dump;
@@ -276,7 +325,7 @@
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
-  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${cur?.abs}:${cur?.k}|${rules.version}`);
+  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${typing}|${source.typed}|${source.localEcho}|${cur?.abs}:${cur?.k}|${rules.version}`);
 
   const rowText = (i: number) => row(i).map((s) => s.text).join('');
 
@@ -337,6 +386,9 @@
       <button onclick={closeFind} title="Close (Esc)">✕</button>
     {:else if disp.format === 'ascii'}
       <button onclick={openFind} title="Find (Ctrl+F)">Find</button>
+      {#if source.typeKeys}
+        <button class="toggle" class:on={typing} onclick={toggleTyping} disabled={!source.open} title={source.open ? 'Type straight to the device, like a terminal. Ctrl+Shift keeps app shortcuts' : 'Connect to type'}>Type</button>
+      {/if}
     {/if}
     {#if !findOpen}<span class="spacer"></span>{/if}
     {#if !follow}<button onclick={() => (follow = true)} title="Scroll to newest">↓ Live</button>{/if}
@@ -356,6 +408,9 @@
             <label class="check"><input type="checkbox" bind:checked={disp.stamps} /> Timestamps</label>
             <label class="check" title="Off: show escape codes as ␛[…"><input type="checkbox" bind:checked={disp.ansi} /> ANSI colours</label>
             <label class="check" title="Show CR, LF, TAB, NUL and every other non-printing byte, line endings included"><input type="checkbox" bind:checked={disp.ctrl} /> Control characters</label>
+            {#if source.typeKeys}
+              <label class="check" title="Show what you type in Type mode; leave off for devices that echo"><input type="checkbox" checked={source.localEcho} onchange={(e) => (source.localEcho = e.currentTarget.checked)} /> Local echo while typing</label>
+            {/if}
             {#if source.echo !== undefined}
               <label class="check" title="Show what you send, as → lines"><input type="checkbox" checked={source.echo} onchange={(e) => (source.echo = e.currentTarget.checked)} /> Show sent data</label>
             {/if}
@@ -367,7 +422,7 @@
       </div>
     {/if}
   </div>
-  <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} bind:follow />
+  <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} onkey={typeKey} onpaste={typing ? typePaste : undefined} {typing} bind:follow />
   {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
 </section>
 
