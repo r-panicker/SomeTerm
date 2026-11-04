@@ -35,6 +35,8 @@ Pick a port, check the settings chip (`115200 8N1`), then Connect. In the browse
 
 Settings a port cannot do are greyed out; hover for the reason.
 
+**⚙** (Ctrl+,) opens every setting of the current tab in one place, grouped as Port, Display, Send, Capture, Plot, Automation (colour rules and auto-replies) and Profiles. These are the same settings the chip, menus and popovers change, so use whichever is closer.
+
 If the device is unplugged or resets its USB connection, the tab waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
 
 DTR and RTS toggle the output lines (green is asserted); a timed **Break** is in the settings chip. Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
@@ -162,6 +164,7 @@ Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as dat
 | Key | Action |
 |---|---|
 | Ctrl+F | Find in terminal |
+| Ctrl+, | Open or close Settings |
 | Ctrl+Tab | Next tab (desktop app; browsers keep this key) |
 | Ctrl+L | Clear terminal, plot and error count |
 | Esc | Close the capture panel, else focus the send box |

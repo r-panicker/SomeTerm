@@ -6,7 +6,7 @@
   import { profiles, settingsOf } from '../lib/profiles.svelte';
   import PortSettings from './settings/PortSettings.svelte';
 
-  let { session, workspace, drawer = $bindable(null) }: { session: Session; workspace: Workspace; drawer?: 'capture' | 'profiles' | 'rules' | 'replies' | null } = $props();
+  let { session, workspace, drawer = $bindable(null) }: { session: Session; workspace: Workspace; drawer?: 'capture' | 'profiles' | 'rules' | 'replies' | 'settings' | null } = $props();
 
   const others = $derived(workspace.sessions.filter((o) => o !== session));
   /** Tooltip naming the tab that already has this port open, or ''. */
@@ -176,6 +176,7 @@
   {/if}
   <span class="spacer"></span>
   <button class="toggle" class:on={drawer === 'capture'} class:rec={session.capture.info?.state === 'running'} onclick={() => (drawer = drawer === 'capture' ? null : 'capture')} title="Capture to file">Capture</button>
+  <button class="toggle gear" class:on={drawer === 'settings'} onclick={() => (drawer = drawer === 'settings' ? null : 'settings')} title="Settings (Ctrl+,)" aria-label="Settings">⚙</button>
   <div class="seg" role="group" aria-label="View">
     {#each [['terminal', 'Terminal'], ['split', 'Split'], ['plot', 'Plot']] as [v, l]}
       <button class:on={session.view === v} onclick={() => session.chooseView(v as View)}>{l}</button>
@@ -206,6 +207,7 @@
   .popover input, .popover select { width: 100%; }
   .rec::before { content: '● '; color: var(--err); }
   .play { width: 30px; padding: 0; }
+  .gear { width: 30px; padding: 0; font-size: 15px; }
   .waiting { animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .55; } }
   @media (prefers-reduced-motion: reduce) { .waiting { animation: none; } }

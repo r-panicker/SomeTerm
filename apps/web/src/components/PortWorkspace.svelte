@@ -10,20 +10,24 @@
   import ProfilesPanel from './ProfilesPanel.svelte';
   import RulesPanel from './RulesPanel.svelte';
   import AutoReplyPanel from './AutoReplyPanel.svelte';
+  import SettingsPanel from './SettingsPanel.svelte';
 
   let { session, workspace, narrow }: { session: Session; workspace: Workspace; narrow: boolean } = $props();
   let terminal: Terminal | undefined = $state();
   let sendBar: SendBar;
   let main: HTMLElement;
   let split = $state(0.5);
-  let drawer = $state<'capture' | 'profiles' | 'rules' | 'replies' | null>(null);
-  const DRAWER_TITLES = { capture: 'Capture', profiles: 'Profiles', rules: 'Colour rules', replies: 'Auto-replies' };
+  let drawer = $state<'capture' | 'profiles' | 'rules' | 'replies' | 'settings' | null>(null);
+  const DRAWER_TITLES = { capture: 'Capture', profiles: 'Profiles', rules: 'Colour rules', replies: 'Auto-replies', settings: 'Settings' };
 
   /** Shortcuts that act on this tab; the app routes keys to the active tab. */
   export function handleKey(e: KeyboardEvent) {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
       e.preventDefault();
       session.clear();
+    } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+      e.preventDefault();
+      drawer = drawer === 'settings' ? null : 'settings';
     } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
       e.preventDefault();
       if (session.view === 'plot') session.chooseView('split');
@@ -65,9 +69,9 @@
     </div>
   {/if}
   {#if drawer}
-    <aside>
+    <aside class:wide={drawer === 'settings'}>
       <div class="head"><strong>{DRAWER_TITLES[drawer]}</strong><button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button></div>
-      {#if drawer === 'capture'}<CapturePanel ctl={session.capture} newline={session.newline} meta={() => ({ port: session.portLabel(), options: $state.snapshot(session.options) })} onstart={() => session.recordSignals()} />{:else if drawer === 'profiles'}<ProfilesPanel {session} />{:else if drawer === 'replies'}<AutoReplyPanel {session} />{:else}<RulesPanel />{/if}
+      {#if drawer === 'capture'}<CapturePanel ctl={session.capture} newline={session.newline} meta={() => ({ port: session.portLabel(), options: $state.snapshot(session.options) })} onstart={() => session.recordSignals()} />{:else if drawer === 'profiles'}<ProfilesPanel {session} />{:else if drawer === 'replies'}<AutoReplyPanel {session} />{:else if drawer === 'settings'}<SettingsPanel {session} {workspace} />{:else}<RulesPanel />{/if}
     </aside>
   {/if}
 </main>
@@ -80,6 +84,7 @@
     position: absolute; top: 0; right: 0; bottom: 0; width: min(340px, 100%); z-index: 5; overflow: auto;
     padding: 10px 12px; background: var(--panel); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgb(0 0 0 / .12);
   }
+  aside.wide { width: min(420px, 100%); }
   aside .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .close { border: 0; background: none; color: var(--muted); }
   main.narrow { flex-direction: column; }
