@@ -63,6 +63,8 @@ export class Workspace {
     this.sessions.splice(i, 1);
     this.wireMonitor();
     if (this.active === s.letter) this.active = this.sessions[Math.max(0, i - 1)]!.letter;
+    // The Monitor disappears with the second-to-last tab; don't leave it selected.
+    else if (this.active === 'monitor' && this.sessions.length < 2) this.active = this.sessions[0]!.letter;
     await s.dispose();
   }
 
