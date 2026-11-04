@@ -23,3 +23,4 @@ export { spectrum, peakFrequency, estimateRate, largestPow2, type Spectrum } fro
 export { parseRecording, encodeHeader, encodeRecord, encodeSignals, decodeSignals, RECORDING_EXT, type Recording, type RecordingMeta, type RecordEntry, type SignalState } from './capture/recording';
 export { ReplayTransport } from './mock/replay';
 export { compileRules, applyRules, type ColorRule, type CompiledRule, type RuleRun, type RuleResult } from './terminal/rules';
+export { findReturningDevice, type PortIdentity } from './reconnect';

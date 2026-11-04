@@ -3,7 +3,8 @@ import type { StyleRun } from '../pipeline/ansi';
 export type Direction = 'rx' | 'tx';
 
 export interface TermLine {
-  dir: Direction;
+  /** sys: a marker the app inserts (device lost, reconnected), not data. */
+  dir: Direction | 'sys';
   text: string;
   /** ANSI styling over `text`. */
   runs?: StyleRun[];
@@ -42,15 +43,15 @@ export class TerminalLog {
   }
 
   /**
-   * Pushes an rx line, placing it before any trailing tx lines that are newer.
-   * Rx lines reach the log after parsing, so a send echoed meanwhile can
-   * otherwise appear ahead of data that arrived before it.
+   * Pushes an rx line, placing it before any trailing tx or marker lines that are
+   * newer. Rx lines reach the log after parsing, so a send echoed (or a marker
+   * added) meanwhile can otherwise appear ahead of data that arrived before it.
    */
   pushRx(line: TermLine): void {
     let i = this.lines.length;
     while (i > 0) {
       const prev = this.lines[i - 1]!;
-      if (prev.dir !== 'tx' || prev.time <= line.time) break;
+      if (prev.dir === 'rx' || prev.time <= line.time) break;
       i--;
     }
     if (i === this.lines.length) this.push(line);

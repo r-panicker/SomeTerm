@@ -37,6 +37,13 @@ describe('TerminalLog', () => {
     expect(Array.from({ length: log.length }, (_, i) => log.get(i)!.text)).toEqual(['0@1', '1@2', '1@3', '0@4', '1@4', '1@5']);
   });
 
+  it('pushRx also slots a late rx line before a newer marker', () => {
+    const log = new TerminalLog();
+    log.push({ dir: 'sys', text: 'device lost', time: 10, offset: -1 });
+    log.pushRx({ dir: 'rx', text: 'last words', time: 8, offset: 0 });
+    expect([log.get(0)!.text, log.get(1)!.text]).toEqual(['last words', 'device lost']);
+  });
+
   it('trims from the front past capacity', () => {
     const log = new TerminalLog(10);
     for (let i = 0; i < 12; i++) log.push(rx(i));
