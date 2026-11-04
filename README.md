@@ -3,7 +3,7 @@
 # SuperSerial
 
 **A modern serial terminal for the lab bench.**
-RealTerm's serial features, Arduino-style live plotting, and a UI you don't have to fight.
+A full-featured serial terminal with Arduino-style live plotting, in the tradition of RealTerm and Tera Term.
 Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, macOS and Linux.
 
 [![Build and release](https://github.com/r-panicker/SuperSerial/actions/workflows/release.yml/badge.svg)](https://github.com/r-panicker/SuperSerial/actions/workflows/release.yml)
@@ -19,7 +19,7 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 
 ## Why SuperSerial
 
-Serial terminals tend to fall into two camps: powerful but dense (RealTerm's wall of tabs), or friendly but shallow (a plotter that only plots). SuperSerial aims for both.
+SuperSerial brings together the depth of established terminals such as RealTerm and Tera Term and the immediacy of the Arduino Serial Plotter, in one app that runs on Windows, macOS and Linux, or straight from a browser with nothing to install.
 
 - **One window, one stream.** The terminal and the plot are fed by the same data. Click a point on the plot to jump to the line that produced it.
 - **Fast.** Parsing runs in a Web Worker, and the terminal and plot are canvas-drawn. It is designed for sustained 921600 baud and up.

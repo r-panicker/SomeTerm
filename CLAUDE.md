@@ -27,7 +27,7 @@ SuperSerial: a cross-platform serial terminal with RealTerm's serial feature par
 - For UI changes, actually drive the page (a live browser check, not just unit tests) before calling it done. Include throughput: a UI change that looks fine at 9600 baud can fall over at 1 Mbaud.
 
 ## UI
-- The bar is "clearly better than RealTerm": modern, uncluttered, keyboard-friendly, dark and light themes, sensible defaults. RealTerm's tab-heavy dense layout is the thing to move away from, not copy.
+- The bar: RealTerm's serial depth with a modern, uncluttered, keyboard-friendly UI, dark and light themes, sensible defaults, cross-platform and runnable from a browser.
 - Don't spend screen space on what a user knows by common sense or after one try: idle status, usage hints. Show state only when it carries information.
 - A label never costs a row. Fit it into a line that already exists, shrinking type or dropping secondary detail before letting a header wrap.
 - Keep the thing being studied next to what identifies it. Explanatory text is secondary; keep it short, and put it after the data, never above it.
@@ -44,6 +44,7 @@ SuperSerial: a cross-platform serial terminal with RealTerm's serial feature par
 - `docs/user-guide.md` is written for a reasonably competent user, e.g. a 3rd-year engineering student: what to do, not a description of the UI or a log of what changed. Don't explain things that are obvious once seen, and don't re-explain the same fact in more than one place. State a cross-cutting fact once and point back to it.
 - Avoid AI-tell prose in user-facing writing: keep em-dashes rare, vary sentence rhythm, use plain punctuation over uniform dash constructions.
 - In-UI copy is not documentation, and unlike documentation it costs vertical space every time it's shown. A control's label plus its `title` tooltip is usually the whole budget. Prefer adding a button to an existing row over giving it a row of its own.
+- When mentioning other tools (RealTerm, Tera Term, GTKTerm, the Arduino plotter), credit their strengths and describe SuperSerial by its own (cross-platform, runs in a browser); never criticise them, in docs, UI, commits or chat. The repo is public and these projects are its inspiration.
 - When editing a document that already exists, write in *its* register: match its sentence length, bullets vs prose, and how much it explains.
 - Prefer tables over paragraphs when they convey the same facts more densely.
 

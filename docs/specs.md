@@ -35,7 +35,7 @@ Notes:
 
 ## RealTerm parity checklist
 
-Serial only. "Better" notes where the UX should deliberately depart from RealTerm. Status column is for tracking.
+Serial only. Notes record where SuperSerial takes a different approach. Status column is for tracking.
 
 ### Port
 | Feature | Notes | Status |
@@ -73,7 +73,7 @@ Serial only. "Better" notes where the UX should deliberately depart from RealTer
 | Append CR/LF/custom, checksum/CRC | Common CRCs | done |
 | Send file, with inter-byte and inter-line delay | Progress, cancel | done |
 | Repeat N / forever, interval | | done |
-| Quick-send buttons / history | Better than RealTerm's per-tab entry | done |
+| Quick-send buttons / history | Buttons above the send bar | done |
 | Local echo | | done |
 | Half-duplex mode (Tx waits for/loops on Rx, RTS-controlled direction) | Behavior spec to confirm | done: echo wait + RTS while sending + local echo |
 | Send with char-by-char echo wait ("handshake") | | done |
@@ -188,3 +188,4 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 | 2026-11-04 | Send file was easy to miss in the middle of the send options; the File row (protocol and **Send file…**) is now first, with a divider under it, in both the send bar's ⋯ popover and Settings → Send (where it follows Line ending). |
 | 2026-11-04 | Credits: README names Rajesh Panicker as author and RealTerm, Tera Term, GTKTerm and the Arduino Serial Plotter as inspiration (independent implementation, no shared code), and credits xterm.js and uPlot. The desktop app's `author` and `copyright` metadata name Rajesh Panicker. |
 | 2026-11-04 | Reset moved from the foot of the Settings panel into its header, left of ✕, with an **All** checkbox (unticked by default, unticked again after each reset) whose tooltip lists what a plain reset keeps. All also clears the tab's auto-replies and quick sends, the app-wide colour rules (new `rules.clear()`) and resets text size and scrollback; profiles are never deleted and port settings stay while connected, in both cases. The confirmation names what will be kept. New **About** tab in Settings, the closest existing pattern for a credits link that is always reachable (the status bar hides while idle): version, author Rajesh Panicker, the inspirations (RealTerm, Tera Term, GTKTerm, Arduino Serial Plotter) with the no-shared-code note, the libraries, and the repository. Release builds get the tag as `VITE_APP_VERSION`; local builds say "development build". Settings tab padding tightened so eight tabs stay on one row in the 420 px drawer. |
+| 2026-11-04 | Wording: README, CLAUDE.md and the specs no longer criticise RealTerm or other tools when citing them; they credit their strengths and describe SuperSerial by its own (cross-platform, runs in a browser). Recorded as a standing rule in CLAUDE.md. |
