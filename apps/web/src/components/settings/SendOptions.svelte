@@ -10,6 +10,17 @@
   const canSend = $derived(session.open && !session.player);
 </script>
 
+{#if onfile}
+  <span>File</span>
+  <span class="pair">
+    <select bind:value={session.sendOptions.fileProtocol} title="Raw sends the bytes as they are, paced by the Delay settings. XMODEM and YMODEM wait for the receiver (a bootloader, U-Boot loadx/loady) to ask, then send checked blocks">
+      <option value="raw">Raw</option>
+      {#each XMODEM_MODES as m}<option value={m.mode}>{m.label}</option>{/each}
+    </select>
+    <button type="button" class="action filebtn" onclick={onfile} disabled={!canSend}>Send file…</button>
+  </span>
+  <hr />
+{/if}
 <label>Checksum
   <select bind:value={session.sendOptions.checksum}>
     {#each CHECKSUMS as c}<option value={c.kind} title={c.detail}>{c.label}</option>{/each}
@@ -28,16 +39,6 @@
     <input type="number" min="0" value={o.lineDelayMs} oninput={(e) => (session.sendOptions.lineDelayMs = num(e.currentTarget.value))} title="Pause after every line ending, ms" /> ms/line
   </span>
 </label>
-{#if onfile}
-  <span>File</span>
-  <span class="pair">
-    <select bind:value={session.sendOptions.fileProtocol} title="Raw sends the bytes as they are, paced by the delays above. XMODEM and YMODEM wait for the receiver (a bootloader, U-Boot loadx/loady) to ask, then send checked blocks">
-      <option value="raw">Raw</option>
-      {#each XMODEM_MODES as m}<option value={m.mode}>{m.label}</option>{/each}
-    </select>
-    <button type="button" class="action filebtn" onclick={onfile} disabled={!canSend}>Send file…</button>
-  </span>
-{/if}
 <label>Echo wait
   <span class="pair">
     <input type="number" min="0" value={o.echoWaitMs} oninput={(e) => (session.sendOptions.echoWaitMs = num(e.currentTarget.value))} title="Send one byte at a time and wait up to this long for the device to echo it; 0 = off" /> ms per byte
