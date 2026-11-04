@@ -50,11 +50,13 @@
     });
     const ro = new ResizeObserver(() => fit?.fit());
     ro.observe(host);
-    const mq = matchMedia('(prefers-color-scheme: dark)');
-    const onTheme = () => { if (term) term.options.theme = theme(); };
-    mq.addEventListener('change', onTheme);
     term.focus();
-    return () => { off(); keys.dispose(); ro.disconnect(); mq.removeEventListener('change', onTheme); term?.dispose(); term = undefined; };
+    return () => { off(); keys.dispose(); ro.disconnect(); term?.dispose(); term = undefined; };
+  });
+
+  $effect(() => {
+    void prefs.dark;
+    if (term) term.options.theme = theme();
   });
 
   $effect(() => {

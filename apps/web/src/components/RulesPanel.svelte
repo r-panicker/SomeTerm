@@ -1,10 +1,11 @@
 <script lang="ts">
   import { RULE_COLOR_NAMES, ruleText, rules } from '../lib/rules.svelte';
+  import { prefs } from '../lib/prefs.svelte';
 
   let picking = $state<string | null>(null);
   let dragFrom = $state<number | null>(null);
   let dropAt = $state<number | null>(null);
-  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = $derived(prefs.dark);
 
   function drop(i: number) {
     if (dragFrom !== null) rules.move(dragFrom, i);

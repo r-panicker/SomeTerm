@@ -57,17 +57,19 @@
     colors = { fg: v('--fg'), muted: v('--muted'), tx: v('--tx'), accent: v('--accent'), bg: v('--panel'), sel: v('--sel'), flash: v('--flash'), match: v('--match'), current: v('--match-current') };
   }
 
+  $effect(() => {
+    void prefs.dark;
+    if (scroller) { readColors(); draw(); }
+  });
+
   onMount(() => {
     readColors();
-    const mq = matchMedia('(prefers-color-scheme: dark)');
-    const onTheme = () => { readColors(); draw(); };
-    mq.addEventListener('change', onTheme);
     const ro = new ResizeObserver(() => {
       width = scroller.clientWidth;
       height = scroller.clientHeight;
     });
     ro.observe(scroller);
-    return () => { mq.removeEventListener('change', onTheme); ro.disconnect(); };
+    return () => ro.disconnect();
   });
 
   $effect(() => {

@@ -4,6 +4,7 @@
   import CanvasView, { type Span } from './CanvasView.svelte';
   import DisplayOptions from './settings/DisplayOptions.svelte';
   import Screen from './Screen.svelte';
+  import { prefs } from '../lib/prefs.svelte';
   import type { Session } from '../lib/session.svelte';
   import { ansiColor } from '../lib/ansi-colors';
   import { rules, ruleText, ruleTint } from '../lib/rules.svelte';
@@ -95,16 +96,10 @@
   let fgColor = '#000';
   let panelColor = '#fff';
   $effect(() => {
-    const mq = matchMedia('(prefers-color-scheme: dark)');
-    const read = () => {
-      dark = mq.matches;
-      const cs = getComputedStyle(document.documentElement);
-      fgColor = cs.getPropertyValue('--fg').trim();
-      panelColor = cs.getPropertyValue('--panel').trim();
-    };
-    read();
-    mq.addEventListener('change', read);
-    return () => mq.removeEventListener('change', read);
+    dark = prefs.dark;
+    const cs = getComputedStyle(document.documentElement);
+    fgColor = cs.getPropertyValue('--fg').trim();
+    panelColor = cs.getPropertyValue('--panel').trim();
   });
 
   let findOpen = $state(false);

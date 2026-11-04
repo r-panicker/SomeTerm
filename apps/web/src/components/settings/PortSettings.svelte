@@ -6,11 +6,12 @@
   /** Rows for a `.form` grid; used by the settings chip and the Settings panel. */
   let { session, workspace }: { session: Session; workspace: Workspace } = $props();
 
-  const BAUDS = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 250000, 460800, 500000, 921600, 1000000, 2000000];
+  const BAUDS = [300, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 74880, 115200, 230400, 250000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 3000000];
   const PARITY = ['none', 'even', 'odd', 'mark', 'space'] as const;
   const FLOW = { none: 'none', rtscts: 'RTS/CTS', dsrdtr: 'DSR/DTR', xonxoff: 'XON/XOFF' } as const;
-  // Unique per instance: the chip popover and the Settings panel can both be open.
-  const listId = `bauds-${Math.random().toString(36).slice(2, 8)}`;
+  /** "Other…" chosen, or a rate that is not in the list: show the box for typing one. */
+  let custom = $state(false);
+  const showCustom = $derived(custom || !BAUDS.includes(session.options.baudRate));
 
   const others = $derived(workspace.sessions.filter((o) => o !== session));
   const locked = $derived(session.open ? 'Disconnect to change port settings' : '');
@@ -20,12 +21,26 @@
   function baudInput(e: Event & { currentTarget: HTMLInputElement }) {
     const n = Number(e.currentTarget.value);
     if (Number.isInteger(n) && n >= 50 && n <= 20_000_000) session.options.baudRate = n;
+    else e.currentTarget.value = String(session.options.baudRate);
+  }
+
+  function baudPick(e: Event & { currentTarget: HTMLSelectElement }) {
+    const v = e.currentTarget.value;
+    custom = v === 'other';
+    if (!custom) session.options.baudRate = Number(v);
   }
 </script>
 
 <label>Baud
-  <input type="text" inputmode="numeric" list={listId} value={session.options.baudRate} onchange={baudInput} disabled={session.open} title={locked} />
-  <datalist id={listId}>{#each BAUDS as b}<option value={b}></option>{/each}</datalist>
+  <span class="pair">
+    <select class="baud" value={showCustom ? 'other' : String(session.options.baudRate)} onchange={baudPick} disabled={session.open} title={locked}>
+      {#each BAUDS as b}<option value={String(b)}>{b}</option>{/each}
+      <option value="other">Other…</option>
+    </select>
+    {#if showCustom}
+      <input class="baud-custom" type="text" inputmode="numeric" value={session.options.baudRate} onchange={baudInput} disabled={session.open} title={locked || 'Any rate from 50 to 20,000,000; the adapter may round it'} aria-label="Custom baud rate" />
+    {/if}
+  </span>
 </label>
 <label>Data bits
   <select bind:value={session.options.dataBits} disabled={session.open} title={locked}>

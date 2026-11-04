@@ -22,7 +22,7 @@
   import ProfilesPanel from './ProfilesPanel.svelte';
   import QuickSendPanel from './QuickSendPanel.svelte';
   import AboutPanel from './AboutPanel.svelte';
-  import { prefs, SCROLLBACK, TEXT_SIZES } from '../lib/prefs.svelte';
+  import { prefs, SCROLLBACK, TEXT_SIZES, type Theme } from '../lib/prefs.svelte';
 
   let { session, workspace }: { session: Session; workspace: Workspace } = $props();
 
@@ -51,6 +51,11 @@
     <div class="form"><PortSettings {session} {workspace} /></div>
   {:else if lastTab === 'display'}
     <div class="form">
+      <label>Theme
+        <select value={prefs.theme} onchange={(e) => prefs.setTheme(e.currentTarget.value as Theme)} title="System follows your operating system's light or dark setting">
+          <option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option>
+        </select>
+      </label>
       <label>Text size
         <select value={prefs.textSize} onchange={(e) => prefs.setTextSize(Number(e.currentTarget.value))} title="Terminal text in every tab; Ctrl+wheel over the terminal changes it too. Ctrl+= and Ctrl+- zoom the whole window">
           {#each TEXT_SIZES as v, i}<option value={v}>{i === 0 ? 'Normal' : `${Math.round((v / TEXT_SIZES[0]) * 100)}%`}</option>{/each}

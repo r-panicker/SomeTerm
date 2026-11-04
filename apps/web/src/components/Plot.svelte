@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { prefs } from '../lib/prefs.svelte';
+  import { onMount, untrack } from 'svelte';
   import uPlot from 'uplot';
   import { compileExpr, decimateMinMax, estimateRate, largestPow2, nearestIndex, peakFrequency, rangeStats, spectrum, type Fn, type Stats } from '@superserial/core';
   import 'uplot/dist/uPlot.min.css';
@@ -377,10 +378,14 @@
   onMount(() => {
     const ro = new ResizeObserver(() => plot?.setSize({ width: host.clientWidth, height: Math.max(80, host.clientHeight - legendHeight()) }));
     ro.observe(host);
-    const mq = matchMedia('(prefers-color-scheme: dark)');
-    const onTheme = () => build();
-    mq.addEventListener('change', onTheme);
-    return () => { ro.disconnect(); mq.removeEventListener('change', onTheme); plot?.destroy(); };
+    return () => { ro.disconnect(); plot?.destroy(); };
+  });
+
+  // Colours are read from CSS when the plot is built, so a theme change rebuilds it.
+  let builtDark = prefs.dark;
+  $effect(() => {
+    const d = prefs.dark;
+    if (d !== builtDark) { builtDark = d; untrack(() => build()); }
   });
 
   function exportCsv() {

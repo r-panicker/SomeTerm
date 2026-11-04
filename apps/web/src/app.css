@@ -5,11 +5,16 @@
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   color-scheme: light dark;
 }
+/* Dark palette: chosen in Settings → Display, or following the system when Theme is System (no data-theme). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #111214; --panel: #18191c; --fg: #e6e6e9; --muted: #8b8b94; --line: #2c2d31;
     --accent: #3b82f6; --tx: #a78bfa; --ok: #22c55e; --err: #f97066; --sel: #1e3a8a; --flash: #4a3f12; --match: #6b5a12; --match-current: #b8560f;
   }
+}
+:root[data-theme='dark'] {
+  --bg: #111214; --panel: #18191c; --fg: #e6e6e9; --muted: #8b8b94; --line: #2c2d31;
+  --accent: #3b82f6; --tx: #a78bfa; --ok: #22c55e; --err: #f97066; --sel: #1e3a8a; --flash: #4a3f12; --match: #6b5a12; --match-current: #b8560f;
 }
 * { box-sizing: border-box; }
 html, body, #app { height: 100%; margin: 0; }

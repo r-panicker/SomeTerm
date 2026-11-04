@@ -43,7 +43,7 @@ To use a port the OS does not list (socat, other virtual ports), start the deskt
 
 ## Connecting
 
-Pick a port, check the settings chip (`115200 8N1`), then Connect. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
+Pick a port, check the settings chip (`115200 8N1`), then Connect. The baud list has the common rates; **Other…** takes any rate the adapter supports, such as 31250 for MIDI. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
 
 Settings a port cannot do are greyed out; hover for the reason.
 
@@ -140,7 +140,7 @@ The magnifier (Ctrl+F) searches the ASCII view, sent and received lines alike. E
 
 ANSI colour codes are shown as colour; other escape sequences (cursor movement, clear screen, titles) are removed rather than acted on, since this is a scrolling log, not a screen. Turn **ANSI colours** off to see the raw codes as `␛[31m`. Coloured numeric lines still plot.
 
-For a projector, Ctrl+= and Ctrl+- zoom the whole window (Ctrl+0 resets), or Ctrl+wheel over the terminal enlarges only the terminal text, in every tab; **Text size** under Settings → Display sets it too.
+**Theme** (Settings → Display) picks Light or Dark, or follows the operating system. For a projector, Ctrl+= and Ctrl+- zoom the whole window (Ctrl+0 resets), or Ctrl+wheel over the terminal enlarges only the terminal text, in every tab; **Text size** under Settings → Display sets it too.
 
 Drag to select lines (a plain click only focuses), Ctrl+A for all, then Ctrl+C; Esc clears the selection. Scrolling up pauses following; **↓ Live** resumes.
 
