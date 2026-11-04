@@ -6,7 +6,6 @@ SuperSerial: a cross-platform serial terminal with RealTerm's serial feature par
 - Sole contributor, single branch. Commit straight to `main`: no feature branches, no PRs.
 - Commit and push without asking once a coherent unit of work is done. Multiple small, honestly-scoped commits are preferred over one large one.
 - Before any risky git operation, check `git status` first; investigate unexpected working-tree state (e.g. files missing without a matching commit) rather than assuming it was intentional.
-- Keep `Prompts/claude_main_prompts.md` current with every prompt the user types, as it happens, not only when asked. It's git-ignored, session-local.
 - Update `docs/specs.md`'s changelog *and* `docs/user-guide.md` as changes are made, not only the specs doc. Same standard either way: the specs entry is free to narrate what changed and why; the user guide only gets a change if it affects what a user should actually do.
 - Learn from corrections automatically. When the user corrects or suggests the same kind of thing more than once, or states a durable, generalizable preference, add it to this file (or the relevant memory file) without being asked, so it survives past the conversation. Keep it lean: a general principle plus why, not a growing pile of every incident. A one-off instruction is not a preference.
 
