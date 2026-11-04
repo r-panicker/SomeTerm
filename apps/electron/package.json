@@ -1,22 +1,73 @@
 {
   "name": "@superserial/electron",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "dist/main.cjs",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "node scripts/build.mjs",
+    "build": "pnpm --filter @superserial/web build && node scripts/build.mjs",
+    "dist": "pnpm run build && electron-builder",
+    "dist:dir": "pnpm run build && electron-builder --dir",
     "typecheck": "tsc -p ."
   },
   "dependencies": {
-    "@superserial/core": "workspace:*",
-    "@superserial/transport-node": "workspace:*",
     "serialport": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
     "electron": "^45.2.1",
-    "esbuild": "^0.28.2"
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2",
+    "@superserial/core": "workspace:*",
+    "@superserial/transport-node": "workspace:*"
+  },
+  "description": "Serial terminal with plotting, capture and replay",
+  "author": "SuperSerial contributors",
+  "build": {
+    "appId": "io.superserial.app",
+    "productName": "SuperSerial",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "web/**",
+      "package.json"
+    ],
+    "npmRebuild": false,
+    "asarUnpack": [
+      "**/node_modules/@serialport/bindings-cpp/**"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Development",
+      "executableName": "superserial"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "executableName": "superserial",
+    "publish": null
   }
 }

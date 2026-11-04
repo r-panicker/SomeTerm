@@ -1,4 +1,5 @@
 import { build } from 'esbuild';
+import { cpSync, existsSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -12,4 +13,16 @@ export async function buildElectron() {
   ]);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) await buildElectron();
+/** Copies the built web app to web/, where main.ts loads it from in production. */
+export function copyWeb() {
+  const from = fileURLToPath(new URL('../../web/dist', import.meta.url));
+  const to = fileURLToPath(new URL('../web', import.meta.url));
+  if (!existsSync(from)) throw new Error('Build the web app first (pnpm --filter @superserial/web build)');
+  rmSync(to, { recursive: true, force: true });
+  cpSync(from, to, { recursive: true });
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await buildElectron();
+  copyWeb();
+}

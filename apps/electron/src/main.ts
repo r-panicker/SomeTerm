@@ -42,7 +42,8 @@ function createWindow(): void {
     if (!DEV_URL || !url.startsWith(DEV_URL)) e.preventDefault();
   });
   if (DEV_URL) void win.loadURL(DEV_URL);
-  else void win.loadFile(path.join(__dirname, '../../web/dist/index.html'));
+  // The build copies the web app next to dist/, both in the repo and inside the package.
+  else void win.loadFile(path.join(__dirname, '../web/index.html'));
   win.on('closed', () => (win = null));
 }
 

@@ -2,3 +2,5 @@ Prompts/
 node_modules/
 dist/
 *.tsbuildinfo
+apps/electron/release/
+apps/electron/web/

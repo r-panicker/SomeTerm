@@ -19,6 +19,14 @@ The browser version uses Web Serial, so other browsers offer only Loopback. The 
 | DSR/DTR flow control | no | no |
 | RI input | yes | no |
 
+To build the desktop app as an installer for the machine you are on:
+
+```bash
+pnpm dist:electron
+```
+
+The result is in `apps/electron/release/`: an AppImage on Linux, an installer `.exe` on Windows, a `.dmg` on macOS. Each OS builds its own; the **Desktop builds** GitHub workflow builds all three when started by hand or for a `v*` tag. Builds are unsigned, so Windows SmartScreen and macOS Gatekeeper ask for confirmation the first time.
+
 To use a port the OS does not list (socat, other virtual ports), start the desktop app with `SUPERSERIAL_EXTRA_PORTS=/dev/pts/5` (several separated by `:`, or `;` on Windows).
 
 ## Connecting

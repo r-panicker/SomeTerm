@@ -1,0 +1,37 @@
+# Desktop installers for each OS, built on that OS. Runs only when started by hand
+# or for a version tag, so ordinary pushes do not use Actions minutes.
+name: Desktop builds
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm dist:electron
+        env:
+          # Unsigned builds; signing needs certificates added as secrets later.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: superserial-${{ matrix.os }}
+          path: |
+            apps/electron/release/*.AppImage
+            apps/electron/release/*.exe
+            apps/electron/release/*.dmg
+          if-no-files-found: error
