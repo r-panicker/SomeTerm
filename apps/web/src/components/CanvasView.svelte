@@ -16,6 +16,7 @@
 </script>
 
 <script lang="ts">
+  import { prefs } from '../lib/prefs.svelte';
   import { onMount } from 'svelte';
 
   interface Props {
@@ -35,9 +36,9 @@
   }
   let { count, version, row, rowText, rowBg, onkey, onpaste, typing = false, follow = $bindable(true) }: Props = $props();
 
-  const LINE = 18;
   const PAD = 8;
-  const FONT = '12.5px ui-monospace, "SF Mono", Menlo, Consolas, monospace';
+  const LINE = $derived(Math.round(prefs.textSize * 1.44));
+  const FONT = $derived(`${prefs.textSize}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`);
 
   let canvas: HTMLCanvasElement;
   let scroller: HTMLDivElement;
@@ -70,7 +71,7 @@
   });
 
   $effect(() => {
-    void version; void width; void height; void sel; void flash;
+    void version; void width; void height; void sel; void flash; void LINE;
     if (count === 0) { follow = true; sel = null; }
     if (follow) scroller.scrollTop = scroller.scrollHeight;
     draw();
@@ -170,6 +171,13 @@
     e.preventDefault();
   }
 
+  /** Ctrl+wheel sizes the terminal text instead of zooming the whole page. */
+  function zoomWheel(e: WheelEvent) {
+    if (!e.ctrlKey || e.deltaY === 0) return;
+    e.preventDefault();
+    prefs.stepTextSize(e.deltaY < 0 ? 1 : -1);
+  }
+
   function onKey(e: KeyboardEvent) {
     if (onkey?.(e)) {
       e.preventDefault();
@@ -220,6 +228,7 @@
     onpaste={(e) => { if (!onpaste) return; e.preventDefault(); onpaste(e.clipboardData?.getData('text/plain') ?? ''); }}
     class:typing
     onkeydown={onKey}
+    onwheel={zoomWheel}
     tabindex="0"
     role="log"
     aria-label="Received data"

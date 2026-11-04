@@ -16,6 +16,7 @@
   import AutoReplyPanel from './AutoReplyPanel.svelte';
   import ProfilesPanel from './ProfilesPanel.svelte';
   import { resetSettings } from '../lib/profiles.svelte';
+  import { prefs, TEXT_SIZES } from '../lib/prefs.svelte';
 
   let { session, workspace }: { session: Session; workspace: Workspace } = $props();
 
@@ -49,6 +50,11 @@
     <div class="form"><PortSettings {session} {workspace} /></div>
   {:else if lastTab === 'display'}
     <div class="form">
+      <label>Text size
+        <select value={prefs.textSize} onchange={(e) => prefs.setTextSize(Number(e.currentTarget.value))} title="Terminal text in every tab; Ctrl+wheel over the terminal changes it too. Ctrl+= and Ctrl+- zoom the whole window">
+          {#each TEXT_SIZES as v, i}<option value={v}>{i === 0 ? 'Normal' : `${Math.round((v / TEXT_SIZES[0]) * 100)}%`}</option>{/each}
+        </select>
+      </label>
       <label>Format
         <select bind:value={disp.format}>
           <option value="ascii">ASCII</option><option value="hex">Hex</option><option value="dec">Dec</option><option value="bin">Bin</option><option value="num">Num</option>

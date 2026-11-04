@@ -134,6 +134,8 @@ The magnifier (Ctrl+F) searches the ASCII view, sent and received lines alike. E
 
 ANSI colour codes are shown as colour; other escape sequences (cursor movement, clear screen, titles) are removed rather than acted on, since this is a scrolling log, not a screen. Turn **ANSI colours** off to see the raw codes as `␛[31m`. Coloured numeric lines still plot.
 
+For a projector, Ctrl+= and Ctrl+- zoom the whole window (Ctrl+0 resets), or Ctrl+wheel over the terminal enlarges only the terminal text, in every tab; **Text size** under Settings → Display sets it too.
+
 Drag to select lines (a plain click only focuses), Ctrl+A for all, then Ctrl+C; Esc clears the selection. Scrolling up pauses following; **↓ Live** resumes.
 
 ## Plotting
@@ -177,6 +179,8 @@ Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as dat
 |---|---|
 | Ctrl+F | Find in terminal |
 | Ctrl+, | Open or close Settings |
+| Ctrl+= / Ctrl+- / Ctrl+0 | Zoom the whole window |
+| Ctrl+wheel over the terminal | Terminal text size |
 | Ctrl+Tab | Next tab (desktop app; browsers keep this key) |
 | Ctrl+L | Clear terminal, plot and error count |
 | Esc | Close the capture panel, else focus the send box |
