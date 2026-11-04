@@ -3,6 +3,8 @@ import {
   frame,
   repeatSend,
   sendPaced,
+  sendWithEcho,
+  EchoMatcher,
   type CancelToken,
   type ChecksumKind,
   FULL_CAPABILITIES,
@@ -77,6 +79,8 @@ export interface SendOptions {
   rtsWhileSending: boolean;
   /** Appended to text sends, as escape text (`\\r\\n`). */
   eol: string;
+  /** Above 0: send byte by byte, waiting up to this long for each byte's echo (half-duplex handshake). */
+  echoWaitMs: number;
 }
 
 export interface PlotTransform {
@@ -164,7 +168,8 @@ export class Session implements TermSource {
   /** The profile last applied or saved here; settings may have changed since. */
   profileId = $state<string | null>(null);
   readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });
-  sendOptions = $state<SendOptions>({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false, eol: '\\r\\n' });
+  sendOptions = $state<SendOptions>({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false, eol: '\\r\\n', echoWaitMs: 0 });
+  private echoes = new EchoMatcher((fn, ms) => { const t = setTimeout(fn, ms); return () => clearTimeout(t); });
   job = $state<SendJob | null>(null);
   private token: CancelToken | null = null;
 
@@ -376,7 +381,7 @@ export class Session implements TermSource {
     const bytes = frame(payload, this.sendOptions.checksum, suffix);
     if (!bytes.length) return;
     const o = this.sendOptions;
-    const paced = o.byteDelayMs > 0 || o.lineDelayMs > 0;
+    const paced = o.byteDelayMs > 0 || o.lineDelayMs > 0 || o.echoWaitMs > 0;
     if (o.repeat === 1) {
       if (paced) await this.runJob({ kind: 'paced', label: 'Sending', done: 0, total: bytes.length }, (t) => this.transmit(bytes, t, (n) => this.progress(n)));
       else await this.transmit(bytes, { cancelled: false });
@@ -437,11 +442,14 @@ export class Session implements TermSource {
     const started = now();
     let sent = 0;
     try {
-      sent = await sendPaced(bytes, o, async (piece) => {
+      const write = async (piece: Uint8Array) => {
         this.capture.tx(piece, Date.now());
         await t.write(piece);
         this.tx += piece.length;
-      }, sleep, token, onProgress);
+      };
+      sent = o.echoWaitMs > 0
+        ? await sendWithEcho(bytes, { ...o, echoTimeoutMs: o.echoWaitMs }, write, this.echoes, sleep, token, onProgress)
+        : await sendPaced(bytes, o, write, sleep, token, onProgress);
     } finally {
       if (rts && t.state === 'open') {
         // write() resolves when the driver has the data, not when it is on the wire.
@@ -570,6 +578,7 @@ export class Session implements TermSource {
     this.ring.push(chunk);
     this.capture.rx(chunk, performance.timeOrigin + ts);
     this.pipeline.data(chunk, ts);
+    this.echoes.feed(chunk);
     const to = this.forwardTo;
     if (to?.open) {
       to.forward(chunk).catch((e: Error) => { to.errors++; to.lastError = `Forward from ${this.letter}: ${e.message}`; });

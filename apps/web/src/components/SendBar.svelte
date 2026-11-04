@@ -33,6 +33,7 @@
       o.checksum !== 'none' && CHECKSUMS.find((c) => c.kind === o.checksum)!.label,
       (o.byteDelayMs || o.lineDelayMs) && 'paced',
       o.rtsWhileSending && 'RTS',
+      o.echoWaitMs > 0 && 'echo',
     ].filter(Boolean).join(' · '),
   );
   const sendLabel = $derived(o.repeat === 1 ? 'Send' : o.repeat === 0 ? 'Send ∞' : `Send ×${o.repeat}`);
@@ -137,6 +138,11 @@
           <span class="pair">
             <input type="number" min="0" value={o.byteDelayMs} oninput={(e) => (session.sendOptions.byteDelayMs = num(e.currentTarget.value))} title="Pause after every byte, ms" /> ms/byte
             <input type="number" min="0" value={o.lineDelayMs} oninput={(e) => (session.sendOptions.lineDelayMs = num(e.currentTarget.value))} title="Pause after every line ending, ms" /> ms/line
+          </span>
+        </label>
+        <label>Echo wait
+          <span class="pair">
+            <input type="number" min="0" value={o.echoWaitMs} oninput={(e) => (session.sendOptions.echoWaitMs = num(e.currentTarget.value))} title="Send one byte at a time and wait up to this long for the device to echo it; 0 = off" /> ms per byte
           </span>
         </label>
         <label>Half duplex

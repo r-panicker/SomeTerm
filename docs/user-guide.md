@@ -85,6 +85,7 @@ The ⋯ button holds send options; once any is set, the button shows it instead 
 | Checksum | Appended after the payload, before the line ending. Hover an entry for its polynomial and byte order |
 | Repeat | Send N times (0 = until **Stop**), interval measured start to start |
 | Delay | Pause after every byte and/or every line ending; also applies to files |
+| Echo wait | Send one byte at a time and wait for the device to echo it; stops and says which byte if the echo is missing or wrong |
 | Half duplex | Raise RTS for each send and restore it afterwards, for RS-485 style direction control |
 
 **File…** sends a file's bytes as-is, paced by the delay settings; **Stop** cancels between writes.

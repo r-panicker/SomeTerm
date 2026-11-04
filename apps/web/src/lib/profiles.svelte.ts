@@ -21,7 +21,7 @@ export interface ProfileSettings {
   newline: NewlineMode;
   echo: boolean;
   display: DisplaySettings;
-  send: Pick<SendOptions, 'eol' | 'checksum' | 'byteDelayMs' | 'lineDelayMs' | 'rtsWhileSending'>;
+  send: Pick<SendOptions, 'eol' | 'checksum' | 'byteDelayMs' | 'lineDelayMs' | 'rtsWhileSending' | 'echoWaitMs'>;
   view: View;
   plotWindow: number;
   plotTransforms: Record<string, PlotTransform>;
@@ -39,7 +39,7 @@ export function settingsOf(s: Session): ProfileSettings {
     newline: s.newline,
     echo: s.echo,
     display: $state.snapshot(s.display),
-    send: { eol: o.eol, checksum: o.checksum, byteDelayMs: o.byteDelayMs, lineDelayMs: o.lineDelayMs, rtsWhileSending: o.rtsWhileSending },
+    send: { eol: o.eol, checksum: o.checksum, byteDelayMs: o.byteDelayMs, lineDelayMs: o.lineDelayMs, rtsWhileSending: o.rtsWhileSending, echoWaitMs: o.echoWaitMs },
     view: s.view,
     plotWindow: s.plotWindow,
     plotTransforms: $state.snapshot(s.plotTransforms),
@@ -125,6 +125,7 @@ export function sanitizeSettings(raw: unknown): ProfileSettings | null {
       byteDelayMs: int(s.byteDelayMs, 0, 60_000, 0),
       lineDelayMs: int(s.lineDelayMs, 0, 60_000, 0),
       rtsWhileSending: bool(s.rtsWhileSending, false),
+      echoWaitMs: int(s.echoWaitMs, 0, 60_000, 0),
     },
     view: pick(r.view, ['terminal', 'split', 'plot'] as const, 'terminal'),
     plotWindow: int(r.plotWindow, 0, 86_400, 30),
