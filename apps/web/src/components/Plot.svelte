@@ -431,7 +431,7 @@
       />
       {#if fftInfo?.peaks.length}
         <span class="peaks" title={fftInfo.peaks.map((p) => `${p.name}: ${hz(p.hz)}`).join('\n')}>
-          peak {#each fftInfo.peaks.slice(0, 2) as pk}<b style:color={pk.color}>{hz(pk.hz)}</b> {/each}
+          peak {#each fftInfo.peaks.slice(0, 2) as pk}<b style:color={pk.color}>{hz(pk.hz)}</b>{/each}
         </span>
       {/if}
     {/if}
@@ -490,6 +490,7 @@
   .readout th { text-align: left; font-weight: 600; padding-right: 12px; white-space: nowrap; }
   .readout td { padding-right: 14px; white-space: nowrap; }
   .fs { width: 8em; height: 23px; font: 12px var(--mono); }
+  .peaks b + b { margin-left: 1ch; }
   .peaks { font: 12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .fx.active { color: var(--accent); border-color: var(--accent); }
   .popover {
