@@ -61,6 +61,13 @@
     if (input === sent && o.repeat === 1) input = '';
   }
 
+  function saveQuick() {
+    const text = input.trim() ? input : '';
+    if (!text) return;
+    const label = [...text].length > 16 ? `${[...text].slice(0, 15).join('')}…` : text;
+    session.quickSends.push({ id: `q${Date.now().toString(36)}`, label, text, hex: mode === 'hex' });
+  }
+
   function key(e: KeyboardEvent) {
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     if (!history.length) return;
@@ -127,6 +134,9 @@
       </div>
     {/if}
   </div>
+  {#if !job}
+    <button type="button" class="star" onclick={saveQuick} disabled={!input.trim()} title="Save as a quick-send button (Alt+1…9 send them)" aria-label="Save as a quick-send button">☆</button>
+  {/if}
   <input bind:this={fileInput} type="file" hidden onchange={pickedFile} />
   <button class="primary" disabled={!canSend}>{job ? 'Stop' : sendLabel}</button>
   {#if error}<span class="err">{error}</span>{:else if preview && !job}<span class="preview">{preview}</span>{/if}

@@ -1,6 +1,6 @@
 import type { SerialOptions } from '@superserial/core';
 import { Monitor } from './monitor.svelte';
-import { sanitizeReplies, sanitizeTransforms } from './profiles.svelte';
+import { sanitizeReplies, sanitizeQuickSends, sanitizeTransforms } from './profiles.svelte';
 import { Session, native, type PortChoice, type SendOptions, type View } from './session.svelte';
 
 const STORAGE_KEY = 'superserial.workspace.v1';
@@ -22,6 +22,7 @@ interface SavedTab {
   plotFft?: boolean;
   plotFs?: number | null;
   autoReplies?: Session['autoReplies'];
+  quickSends?: Session['quickSends'];
   dtr?: boolean;
   rts?: boolean;
   typeToDevice?: boolean;
@@ -105,6 +106,7 @@ export class Workspace {
       plotFft: s.plotFft,
       plotFs: s.plotFs,
       autoReplies: $state.snapshot(s.autoReplies),
+      quickSends: $state.snapshot(s.quickSends),
       dtr: s.dtr,
       rts: s.rts,
     }));
@@ -153,6 +155,7 @@ export class Workspace {
       if (typeof t.plotFs === 'number' && t.plotFs > 0) s.plotFs = t.plotFs;
       // Your own tabs keep their on/off state; only imported files arrive switched off.
       if (t.autoReplies) s.autoReplies = sanitizeReplies(t.autoReplies, true);
+      if (t.quickSends) s.quickSends = sanitizeQuickSends(t.quickSends);
       if (t.dtr !== undefined) s.dtr = t.dtr;
       if (t.rts !== undefined) s.rts = t.rts;
       if (t.newline !== s.newline) s.setNewline(t.newline);

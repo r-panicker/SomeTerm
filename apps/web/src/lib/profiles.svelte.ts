@@ -12,7 +12,7 @@ import {
   type AutoReply,
 } from '@superserial/core';
 import { defaultDisplay, type DisplaySettings } from './source';
-import { defaultSendOptions, defaultSerialOptions, type PlotTransform, type SendOptions, type Session, type View } from './session.svelte';
+import { defaultSendOptions, defaultSerialOptions, type PlotTransform, type QuickSend, type SendOptions, type Session, type View } from './session.svelte';
 
 /** What a profile carries. Repeat count and interval are left out: they describe one job, not a device. */
 export interface ProfileSettings {
@@ -30,6 +30,7 @@ export interface ProfileSettings {
   plotFft: boolean;
   plotFs: number | null;
   autoReplies: AutoReply[];
+  quickSends: QuickSend[];
 }
 
 export function settingsOf(s: Session): ProfileSettings {
@@ -49,6 +50,7 @@ export function settingsOf(s: Session): ProfileSettings {
     plotFft: s.plotFft,
     plotFs: s.plotFs,
     autoReplies: $state.snapshot(s.autoReplies),
+    quickSends: $state.snapshot(s.quickSends),
   };
 }
 
@@ -74,6 +76,7 @@ export function resetSettings(s: Session): void {
     plotFft: false,
     plotFs: null,
     autoReplies: s.autoReplies,
+    quickSends: s.quickSends,
   });
   s.sendOptions.repeat = send.repeat;
   s.sendOptions.intervalMs = send.intervalMs;
@@ -96,6 +99,7 @@ export function applySettings(s: Session, p: ProfileSettings): void {
   s.plotFft = p.plotFft;
   s.plotFs = p.plotFs;
   s.autoReplies = p.autoReplies.map((r) => ({ ...r }));
+  s.quickSends = p.quickSends.map((q) => ({ ...q }));
 }
 
 /**
@@ -114,6 +118,20 @@ export function sanitizeReplies(raw: unknown, keepEnabled = false): AutoReply[] 
       regex: r.regex === true,
       reply: r.reply.slice(0, 1000),
       delayMs: Number.isInteger(r.delayMs) && (r.delayMs as number) >= 0 && (r.delayMs as number) <= 60_000 ? (r.delayMs as number) : 0,
+    }];
+  });
+}
+
+/** Quick sends only send when clicked, so imported ones need no switch-off; this only bounds their shape. */
+export function sanitizeQuickSends(raw: unknown): QuickSend[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 64).flatMap((q: Record<string, unknown>) => {
+    if (!q || typeof q.text !== 'string') return [];
+    return [{
+      id: typeof q.id === 'string' ? q.id : `q${Math.random().toString(36).slice(2, 9)}`,
+      label: typeof q.label === 'string' ? q.label.slice(0, 40) : '',
+      text: q.text.slice(0, 2000),
+      hex: q.hex === true,
     }];
   });
 }
@@ -189,6 +207,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
     plotX: ((x: unknown) => (typeof x === 'string' && x.length <= 64 ? x : null))((raw as Record<string, unknown>).plotX),
     plotFft: bool(r.plotFft, false),
     autoReplies: sanitizeReplies((raw as Record<string, unknown>).autoReplies, trusted),
+    quickSends: sanitizeQuickSends((raw as Record<string, unknown>).quickSends),
     plotFs: ((x: unknown) => (typeof x === 'number' && x > 0 && x <= 10_000_000 ? x : null))((raw as Record<string, unknown>).plotFs),
   };
 }

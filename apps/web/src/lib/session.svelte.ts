@@ -2,6 +2,7 @@ import {
   ByteRing,
   frame,
   parseEscapes,
+  parseHexBytes,
   AutoReplier,
   type AutoReply,
   repeatSend,
@@ -71,6 +72,15 @@ export interface Player {
 /** Bytes a fast-forward or Max-speed replay delivers per frame, so the view keeps drawing. */
 const REPLAY_FRAME_BUDGET = 256 * 1024;
 export type View = 'terminal' | 'split' | 'plot';
+
+/** A one-click send above the send bar. */
+export interface QuickSend {
+  id: string;
+  label: string;
+  /** Send-box text (escapes allowed), or hex bytes when `hex`. */
+  text: string;
+  hex: boolean;
+}
 
 export interface SendOptions {
   checksum: ChecksumKind;
@@ -164,6 +174,7 @@ export class Session implements TermSource {
   plotFs = $state<number | null>(null);
   /** Pattern → reply rules for this tab; kept in profiles. */
   autoReplies = $state<AutoReply[]>([]);
+  quickSends = $state<QuickSend[]>([]);
   private replier = new AutoReplier(now);
   /** Terminal mode: the line being typed, and whether to show it (devices that echo make that redundant). */
   typed = $state('');
@@ -453,13 +464,14 @@ export class Session implements TermSource {
   }
 
   /** Sends payload + checksum + suffix, honouring repeat, pacing and RTS options. */
-  async sendMessage(payload: Uint8Array, suffix: Uint8Array): Promise<void> {
+  /** `once` ignores the repeat setting (quick sends); checksum and pacing still apply. */
+  async sendMessage(payload: Uint8Array, suffix: Uint8Array, once = false): Promise<void> {
     if (!this.transport || this.job || this.replay) return;
     const bytes = frame(payload, this.sendOptions.checksum, suffix);
     if (!bytes.length) return;
     const o = this.sendOptions;
     const paced = o.byteDelayMs > 0 || o.lineDelayMs > 0 || o.echoWaitMs > 0;
-    if (o.repeat === 1) {
+    if (o.repeat === 1 || once) {
       if (paced) await this.runJob({ kind: 'paced', label: 'Sending', done: 0, total: bytes.length }, (t) => this.transmit(bytes, t, (n) => this.progress(n)));
       else await this.transmit(bytes, { cancelled: false });
       return;
@@ -467,6 +479,19 @@ export class Session implements TermSource {
     await this.runJob({ kind: 'repeat', label: 'Repeat', done: 0, total: o.repeat }, (t) =>
       repeatSend(o.repeat, o.intervalMs, () => this.transmit(bytes, t), sleep, now, t, (n) => this.progress(n)).then(() => {}),
     );
+  }
+
+  /** Text quick sends get the line ending, as from the send box; hex ones are sent as given. */
+  async sendQuick(q: QuickSend): Promise<void> {
+    let payload: Uint8Array;
+    try {
+      payload = q.hex ? parseHexBytes(q.text) : parseEscapes(q.text);
+    } catch (e) {
+      this.errors++;
+      this.lastError = `Quick send “${q.label || q.text}”: ${(e as Error).message}`;
+      return;
+    }
+    await this.sendMessage(payload, q.hex ? new Uint8Array(0) : parseEscapes(this.sendOptions.eol), true);
   }
 
   async sendFile(file: File): Promise<void> {

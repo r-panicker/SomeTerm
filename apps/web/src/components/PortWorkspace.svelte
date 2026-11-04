@@ -10,7 +10,8 @@
   import ProfilesPanel from './ProfilesPanel.svelte';
   import RulesPanel from './RulesPanel.svelte';
   import AutoReplyPanel from './AutoReplyPanel.svelte';
-  import SettingsPanel from './SettingsPanel.svelte';
+  import SettingsPanel, { showSettingsTab } from './SettingsPanel.svelte';
+  import QuickSendStrip from './QuickSendStrip.svelte';
 
   let { session, workspace, narrow }: { session: Session; workspace: Workspace; narrow: boolean } = $props();
   let terminal: Terminal | undefined = $state();
@@ -32,6 +33,10 @@
       e.preventDefault();
       if (session.view === 'plot') session.chooseView('split');
       queueMicrotask(() => terminal?.openFind());
+    } else if (e.altKey && !e.ctrlKey && !e.metaKey && /^Digit[1-9]$/.test(e.code)) {
+      // e.code, not e.key: Alt+digit types a symbol on some layouts (macOS).
+      const q = session.quickSends[Number(e.code.slice(5)) - 1];
+      if (q) { e.preventDefault(); void session.sendQuick(q); }
     } else if (e.key === 'Escape' && !(e.target instanceof HTMLSelectElement)) {
       if (drawer) drawer = null;
       else sendBar.focus();
@@ -75,6 +80,7 @@
     </aside>
   {/if}
 </main>
+{#if session.quickSends.length}<QuickSendStrip {session} onedit={() => { showSettingsTab('send'); drawer = 'settings'; }} />{/if}
 <SendBar bind:this={sendBar} {session} />
 <StatusBar {session} onCapture={() => (drawer = 'capture')} />
 

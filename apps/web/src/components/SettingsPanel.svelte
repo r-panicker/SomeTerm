@@ -1,6 +1,11 @@
 <script lang="ts" module>
   // Reopening Settings returns to the tab used last, across port tabs.
   let lastTab = $state<string>('port');
+
+  /** Opens on a given tab next time (e.g. the quick-send ✎ goes to Send). */
+  export function showSettingsTab(id: string): void {
+    lastTab = id;
+  }
 </script>
 
 <script lang="ts">
@@ -15,6 +20,7 @@
   import RulesPanel from './RulesPanel.svelte';
   import AutoReplyPanel from './AutoReplyPanel.svelte';
   import ProfilesPanel from './ProfilesPanel.svelte';
+  import QuickSendPanel from './QuickSendPanel.svelte';
   import { resetSettings } from '../lib/profiles.svelte';
   import { prefs, SCROLLBACK, TEXT_SIZES } from '../lib/prefs.svelte';
 
@@ -101,6 +107,8 @@
         </select>
       </label>
     </div>
+    <h4>Quick-send buttons <span>Alt+1…9</span></h4>
+    <QuickSendPanel {session} />
     <input bind:this={fileInput} type="file" hidden onchange={() => { const f = fileInput?.files?.[0]; if (fileInput) fileInput.value = ''; if (f) session.sendFile(f); }} />
   {:else if lastTab === 'capture'}
     <CapturePanel ctl={session.capture} newline={session.newline} meta={() => ({ port: session.portLabel(), options: $state.snapshot(session.options) })} onstart={() => session.recordSignals()} />

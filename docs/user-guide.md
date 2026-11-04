@@ -112,6 +112,8 @@ The ⋯ button holds send options; once any is set, the button shows it instead 
 
 **Send file…** (in the ⋯ options) sends a file's bytes as-is, paced by the delay settings; **Stop** cancels between writes.
 
+**☆** in the send bar saves what you've typed as a quick-send button. The buttons sit above the send bar; click one, or press Alt+1…9 for the first nine. A text button gets the line ending and checksum like a normal send; a hex one is sent as given. Each sends once, whatever **Repeat** says. **✎** at the end of the row edits them (Settings → Send): rename, reorder, switch to hex or delete. They are saved with the tab and in profiles.
+
 ## Auto-replies
 
 **Auto-replies…** in the terminal's ⋯ menu answers patterns automatically, for login prompts, handshakes or keep-alives. **+** adds one: a pattern (text, or a regular expression with **.\***; `$1`…`$9` in the reply insert its groups), the reply (send-box escapes) and an optional delay. A rule answers each matching line once, including a prompt that has no newline yet such as `Password:`. Replies show as `↩` lines, and while any rule is on the toolbar shows `↩ N`. A rule that fires more than 10 times a second (usually a reply that matches itself through an echo) is switched off and reported. Auto-replies are kept with the tab and in profiles; ones imported from a profile file arrive switched off.
@@ -181,6 +183,7 @@ Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as dat
 |---|---|
 | Ctrl+F | Find in terminal |
 | Ctrl+, | Open or close Settings |
+| Alt+1…9 | Quick-send buttons 1–9 |
 | Ctrl+= / Ctrl+- / Ctrl+0 | Zoom the whole window |
 | Ctrl+wheel over the terminal | Terminal text size |
 | Ctrl+Tab | Next tab (desktop app; browsers keep this key) |
