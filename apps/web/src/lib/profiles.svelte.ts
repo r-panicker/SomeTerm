@@ -22,7 +22,7 @@ export interface ProfileSettings {
   newline: NewlineMode;
   echo: boolean;
   display: DisplaySettings;
-  send: Pick<SendOptions, 'eol' | 'checksum' | 'byteDelayMs' | 'lineDelayMs' | 'rtsWhileSending' | 'echoWaitMs' | 'backspace'>;
+  send: Pick<SendOptions, 'eol' | 'checksum' | 'byteDelayMs' | 'lineDelayMs' | 'rtsWhileSending' | 'echoWaitMs' | 'backspace' | 'fileProtocol'>;
   view: View;
   plotWindow: number;
   plotTransforms: Record<string, PlotTransform>;
@@ -42,7 +42,7 @@ export function settingsOf(s: Session): ProfileSettings {
     newline: s.newline,
     echo: s.echo,
     display: $state.snapshot(s.display),
-    send: { eol: o.eol, checksum: o.checksum, byteDelayMs: o.byteDelayMs, lineDelayMs: o.lineDelayMs, rtsWhileSending: o.rtsWhileSending, echoWaitMs: o.echoWaitMs, backspace: o.backspace },
+    send: { eol: o.eol, checksum: o.checksum, byteDelayMs: o.byteDelayMs, lineDelayMs: o.lineDelayMs, rtsWhileSending: o.rtsWhileSending, echoWaitMs: o.echoWaitMs, backspace: o.backspace, fileProtocol: o.fileProtocol },
     view: s.view,
     plotWindow: s.plotWindow,
     plotTransforms: $state.snapshot(s.plotTransforms),
@@ -200,6 +200,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
       rtsWhileSending: bool(s.rtsWhileSending, false),
       echoWaitMs: int(s.echoWaitMs, 0, 60_000, 0),
       backspace: pick(s.backspace, ['bs', 'del'] as const, 'bs'),
+      fileProtocol: pick(s.fileProtocol, ['raw', 'xmodem', 'xmodem1k', 'ymodem'] as const, 'raw'),
     },
     view: pick(r.view, ['terminal', 'split', 'plot'] as const, 'terminal'),
     plotWindow: int(r.plotWindow, 0, 86_400, 30),

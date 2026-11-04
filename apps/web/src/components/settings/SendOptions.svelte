@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CHECKSUMS } from '@superserial/core';
+  import { CHECKSUMS, XMODEM_MODES } from '@superserial/core';
   import type { Session } from '../../lib/session.svelte';
 
   /** Rows for a `.form` grid; used by the send bar's ⋯ options and the Settings panel. */
@@ -30,7 +30,13 @@
 </label>
 {#if onfile}
   <span>File</span>
-  <button type="button" class="action filebtn" onclick={onfile} disabled={!canSend} title="Send a file's bytes as they are, paced by the delays above">Send file…</button>
+  <span class="pair">
+    <select bind:value={session.sendOptions.fileProtocol} title="Raw sends the bytes as they are, paced by the delays above. XMODEM and YMODEM wait for the receiver (a bootloader, U-Boot loadx/loady) to ask, then send checked blocks">
+      <option value="raw">Raw</option>
+      {#each XMODEM_MODES as m}<option value={m.mode}>{m.label}</option>{/each}
+    </select>
+    <button type="button" class="action filebtn" onclick={onfile} disabled={!canSend}>Send file…</button>
+  </span>
 {/if}
 <label>Echo wait
   <span class="pair">

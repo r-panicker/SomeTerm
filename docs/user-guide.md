@@ -110,7 +110,7 @@ The ⋯ button holds send options; once any is set, the button shows it instead 
 | Echo wait | Send one byte at a time and wait for the device to echo it; stops and says which byte if the echo is missing or wrong |
 | Half duplex | Raise RTS for each send and restore it afterwards, for RS-485 style direction control |
 
-**Send file…** (in the ⋯ options) sends a file's bytes as-is, paced by the delay settings; **Stop** cancels between writes.
+**Send file…** (in the ⋯ options) sends a file's bytes as-is, paced by the delay settings; **Stop** cancels between writes. To upload firmware to a bootloader, pick **XMODEM**, **XMODEM-1K** or **YMODEM** beside it first, matching what the receiver expects (U-Boot: `loadx` for XMODEM, `loady` for YMODEM). Start the receiver before or after choosing the file: the transfer waits up to a minute for it to ask, and the device's messages stay visible until the first block goes out. Its result is marked in the terminal; **Stop** cancels and tells the receiver.
 
 **☆** in the send bar saves what you've typed as a quick-send button. The buttons sit above the send bar; click one, or press Alt+1…9 for the first nine. A text button gets the line ending and checksum like a normal send; a hex one is sent as given. Each sends once, whatever **Repeat** says. **✎** at the end of the row edits them (Settings → Send): rename, reorder, switch to hex or delete. They are saved with the tab and in profiles.
 

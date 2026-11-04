@@ -3,6 +3,11 @@ import {
   frame,
   parseEscapes,
   parseHexBytes,
+  xmodemSend,
+  ByteQueue,
+  XmodemError,
+  XMODEM_MODES,
+  type XmodemMode,
   AutoReplier,
   type AutoReply,
   repeatSend,
@@ -97,6 +102,8 @@ export interface SendOptions {
   echoWaitMs: number;
   /** What the Backspace key sends when typing to the device: BS (0x08) or DEL (0x7F). */
   backspace: 'bs' | 'del';
+  /** How Send file sends: the bytes as they are, or an XMODEM/YMODEM transfer. */
+  fileProtocol: 'raw' | XmodemMode;
 }
 
 export interface PlotTransform {
@@ -125,7 +132,7 @@ const now = () => performance.now();
  * redraw per frame rather than per chunk.
  */
 export const defaultSerialOptions = (): SerialOptions => ({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
-export const defaultSendOptions = (): SendOptions => ({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false, eol: '\\r\\n', echoWaitMs: 0, backspace: 'bs' });
+export const defaultSendOptions = (): SendOptions => ({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false, eol: '\\r\\n', echoWaitMs: 0, backspace: 'bs', fileProtocol: 'raw' });
 
 export class Session implements TermSource {
   /** Received data is also written to this port when set (RealTerm's echo port). */
@@ -199,6 +206,8 @@ export class Session implements TermSource {
   sendOptions = $state<SendOptions>(defaultSendOptions());
   private echoes = new EchoMatcher((fn, ms) => { const t = setTimeout(fn, ms); return () => clearTimeout(t); });
   job = $state<SendJob | null>(null);
+  /** Receives incoming bytes instead of the line parser during an XMODEM/YMODEM transfer. */
+  private protocolTap: ((chunk: Uint8Array, ts: number) => void) | null = null;
   private token: CancelToken | null = null;
 
   readonly log = new TerminalLog(() => prefs.scrollback);
@@ -497,9 +506,46 @@ export class Session implements TermSource {
   async sendFile(file: File): Promise<void> {
     if (!this.transport || this.job || this.replay) return;
     const bytes = new Uint8Array(await file.arrayBuffer());
+    const proto = this.sendOptions.fileProtocol;
+    if (proto !== 'raw') return this.sendXmodem(file.name, bytes, proto);
     await this.runJob({ kind: 'file', label: file.name, done: 0, total: bytes.length }, (t) =>
       this.transmit(bytes, t, (n) => this.progress(n), `⟨${file.name}, ${bytes.length} B⟩`),
     );
+  }
+
+  /**
+   * Received bytes go to the transfer (and still to counters, capture and the raw
+   * views). Until the first block is written they also reach the terminal, so the
+   * device's own "ready for download" text stays visible; after that they are the
+   * receiver's protocol replies and are kept out of it.
+   */
+  private async sendXmodem(name: string, bytes: Uint8Array, mode: XmodemMode): Promise<void> {
+    const t = this.transport!;
+    const label = XMODEM_MODES.find((m) => m.mode === mode)!.label;
+    const queue = new ByteQueue();
+    let result = '';
+    this.marker(`${label}: waiting for the receiver to start ${name}`);
+    await this.runJob({ kind: 'file', label: `${label} · ${name}`, done: 0, total: bytes.length }, async (token) => {
+      let started = false;
+      this.protocolTap = (c, ts) => { queue.push(c); if (!started) this.pipeline.data(c, ts); };
+      try {
+        await xmodemSend(bytes, name, mode, {
+          write: async (b) => { started = true; this.capture.tx(b, Date.now()); await t.write(b); this.tx += b.length; },
+          read: (ms) => queue.read(ms),
+          flush: () => queue.flush(),
+          cancelled: () => token.cancelled || t.state !== 'open',
+        }, (n) => this.progress(n));
+        result = `${label}: sent ${name}, ${bytes.length} B`;
+      } catch (e) {
+        if (!(e instanceof XmodemError)) throw e;
+        result = `${label}: ${name} not sent: ${e.message}`;
+        this.errors++;
+        this.lastError = result;
+      } finally {
+        this.protocolTap = null;
+      }
+    });
+    if (result) this.marker(result);
   }
 
   cancelJob(): void {
@@ -679,6 +725,7 @@ export class Session implements TermSource {
     this.rx += chunk.length;
     this.ring.push(chunk);
     this.capture.rx(chunk, performance.timeOrigin + ts);
+    if (this.protocolTap) { this.protocolTap(chunk, ts); return; }
     this.pipeline.data(chunk, ts);
     this.echoes.feed(chunk);
     const to = this.forwardTo;
