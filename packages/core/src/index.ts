@@ -24,3 +24,4 @@ export { parseRecording, encodeHeader, encodeRecord, encodeSignals, decodeSignal
 export { ReplayTransport } from './mock/replay';
 export { compileRules, applyRules, type ColorRule, type CompiledRule, type RuleRun, type RuleResult } from './terminal/rules';
 export { findReturningDevice, type PortIdentity } from './reconnect';
+export { rangeStats, nearestIndex, type Stats } from './plot/stats';
