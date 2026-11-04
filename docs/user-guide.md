@@ -142,7 +142,7 @@ ANSI colour codes are shown as colour; other escape sequences (cursor movement, 
 
 **Theme** (Settings → Display) picks Light or Dark, or follows the operating system. For a projector, Ctrl+= and Ctrl+- zoom the whole window (Ctrl+0 resets), or Ctrl+wheel over the terminal enlarges only the terminal text, in every tab; **Text size** under Settings → Display sets it too.
 
-Drag to select lines (a plain click only focuses), Ctrl+A for all, then Ctrl+C; Esc clears the selection. Scrolling up pauses following; **↓ Live** resumes.
+Drag to select lines (a plain click only focuses), Ctrl+A for all, then Ctrl+C; Esc clears the selection. In the desktop app, right-click also offers Copy and Paste. Scrolling up pauses following; **↓ Live** resumes.
 
 ## Plotting
 

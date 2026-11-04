@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, shell, type MenuItemConstructorOptions } from 'electron';
 import path from 'node:path';
 import { listNodePorts, serveSerialBridge } from '@superserial/transport-node';
 
@@ -37,6 +37,14 @@ function createWindow(): void {
     if (url.startsWith('blob:')) return { action: 'allow' };
     if (/^https?:/.test(url)) void shell.openExternal(url);
     return { action: 'deny' };
+  });
+  // Electron has no right-click menu of its own. Copy and Paste raise the page's copy and
+  // paste events, so the terminal copies its selected lines and pastes into the device.
+  win.webContents.on('context-menu', (_e, params) => {
+    const items: MenuItemConstructorOptions[] = params.isEditable
+      ? [{ role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { type: 'separator' }, { role: 'selectAll' }]
+      : [{ role: 'copy' }, { role: 'paste' }];
+    if (win) Menu.buildFromTemplate(items).popup({ window: win });
   });
   win.webContents.on('will-navigate', (e, url) => {
     if (!DEV_URL || !url.startsWith(DEV_URL)) e.preventDefault();

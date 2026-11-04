@@ -7,6 +7,8 @@
     mark?: Mark;
     /** Explicit colours (ANSI) override the tone. */
     color?: string;
+    /** Drawn but not part of the text (the typing caret): left out of copies. */
+    decor?: boolean;
     bg?: string;
     bold?: boolean;
     italic?: boolean;
@@ -169,6 +171,8 @@
     const hi = Math.max(sel.a, sel.b);
     const lines: string[] = [];
     for (let i = lo; i <= hi && i < count; i++) lines.push(rowText(i));
+    // The empty last row exists to type on; it is not a line of data.
+    if (hi >= count - 1 && lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
     e.clipboardData?.setData('text/plain', lines.join('\n'));
     e.preventDefault();
   }

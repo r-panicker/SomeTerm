@@ -276,7 +276,7 @@
       else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, [], ruled));
       if (typing && li === source.log.length) {
         if (source.localEcho && source.typed) spans.push({ text: source.typed, tone: 'tx' });
-        spans.push({ text: '▏', tone: 'accent' });
+        spans.push({ text: '▏', tone: 'accent', decor: true });
       }
       return spans;
     }
@@ -336,7 +336,7 @@
   /** Anything that changes what rows look like must force a redraw, not only new data. */
   const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${per}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${typing}|${source.typed}|${source.localEcho}|${cur?.abs}:${cur?.k}|${rules.version}`);
 
-  const rowText = (i: number) => row(i).map((s) => s.text).join('');
+  const rowText = (i: number) => row(i).filter((s) => !s.decor).map((s) => s.text).join('');
 
   /** Scrolls to the line containing a stream offset, switching to ASCII if needed. */
   export function jumpToOffset(offset: number) {
