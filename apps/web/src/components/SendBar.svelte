@@ -140,6 +140,8 @@
             <input type="number" min="0" value={o.lineDelayMs} oninput={(e) => (session.sendOptions.lineDelayMs = num(e.currentTarget.value))} title="Pause after every line ending, ms" /> ms/line
           </span>
         </label>
+        <span>File</span>
+        <button type="button" class="filebtn" onclick={() => { optionsOpen = false; fileInput.click(); }} disabled={!canSend} title="Send a file's bytes as they are, paced by the delays above">Send file…</button>
         <label>Echo wait
           <span class="pair">
             <input type="number" min="0" value={o.echoWaitMs} oninput={(e) => (session.sendOptions.echoWaitMs = num(e.currentTarget.value))} title="Send one byte at a time and wait up to this long for the device to echo it; 0 = off" /> ms per byte
@@ -155,7 +157,6 @@
     {/if}
   </div>
   <input bind:this={fileInput} type="file" hidden onchange={pickedFile} />
-  <button type="button" onclick={() => fileInput.click()} disabled={!canSend || !!job} title="Send a file, using the delay settings">File…</button>
   <button class="primary" disabled={!canSend}>{job ? 'Stop' : sendLabel}</button>
   {#if error}<span class="err">{error}</span>{:else if preview && !job}<span class="preview">{preview}</span>{/if}
 </form>
@@ -177,6 +178,7 @@
     box-shadow: 0 6px 24px rgb(0 0 0 / .18); width: max-content; color: var(--muted);
   }
   .popover label { display: contents; }
+  .filebtn { justify-self: start; }
   .pair { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
   .pair input[type='number'] { width: 5.5em; }
 </style>

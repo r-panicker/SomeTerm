@@ -123,7 +123,7 @@
   </select>
   <div class="anchor">
     <button bind:this={chip} class="chip" onclick={() => (settingsOpen = !settingsOpen)} title={`${profile ? `Profile: ${profile.name}${dirty ? ' (changed since applied)' : ''}` : 'Port settings'}`}>
-      {#if profile}<span class="pname">{profile.name}</span><span class="sep">·</span>{/if}{summary}{#if dirty}<span class="dirty">•</span>{/if}
+      {#if profile}<span class="pname">{profile.name}</span><span class="sep">·</span>{/if}{summary}{#if session.forwardTo}<span class="sep">→{session.forwardTo.letter}</span>{/if}{#if dirty}<span class="dirty">•</span>{/if}
     </button>
     {#if settingsOpen}
       <div class="popover" bind:this={popover}>
@@ -174,6 +174,24 @@
             {#each Object.entries(FLOW) as [f, l]}<option value={f} disabled={!!why({ flowControl: f as 'none' })} title={why({ flowControl: f as 'none' })}>{l || 'none'}</option>{/each}
           </select>
         </label>
+        {#if (session.open && session.capabilities.sendBreak && !session.player) || others.length}<hr />{/if}
+        {#if session.open && session.capabilities.sendBreak && !session.player}
+          <span>Break</span>
+          <button class="action" onclick={() => session.sendBreak()} title="Hold the line in the break state for 250 ms">Send 250 ms break</button>
+        {/if}
+        {#if others.length}
+          <label>Forward
+            <select
+              class="fwd"
+              value={session.forwardTo?.letter ?? ''}
+              onchange={(e) => (session.forwardTo = others.find((o) => o.letter === e.currentTarget.value) ?? null)}
+              title="Write everything received on this port out of another port"
+            >
+              <option value="">none</option>
+              {#each others as o (o.id)}<option value={o.letter}>to {o.letter} ({o.portLabel()})</option>{/each}
+            </select>
+          </label>
+        {/if}
       </div>
     {/if}
   </div>
@@ -200,18 +218,6 @@
     {@const noLines = session.lineControl ? '' : 'This port has no modem control lines'}
     <button class="line" class:on={session.dtr && session.lineControl} onclick={() => session.setLine('dtr', !session.dtr)} disabled={!!noLines} title={noLines || 'DTR output'}>DTR</button>
     <button class="line" class:on={session.rts && session.lineControl} onclick={() => session.setLine('rts', !session.rts)} disabled={!!noLines} title={noLines || 'RTS output'}>RTS</button>
-    {#if session.capabilities.sendBreak}<button onclick={() => session.sendBreak()} title="Send a 250 ms break">Break</button>{/if}
-  {/if}
-  {#if others.length}
-    <select
-      class="fwd"
-      value={session.forwardTo?.letter ?? ''}
-      onchange={(e) => (session.forwardTo = others.find((o) => o.letter === e.currentTarget.value) ?? null)}
-      title="Write everything received on this port out of another port"
-    >
-      <option value="">→ none</option>
-      {#each others as o (o.id)}<option value={o.letter}>→ {o.letter}</option>{/each}
-    </select>
   {/if}
   <span class="spacer"></span>
   <button class="toggle" class:on={drawer === 'capture'} class:rec={session.capture.info?.state === 'running'} onclick={() => (drawer = drawer === 'capture' ? null : 'capture')} title="Capture to file">Capture</button>
@@ -231,6 +237,7 @@
   @media (max-width: 760px) { .pname { max-width: 6ch; } .sep { margin: 0 .25em; } }
   @media (max-width: 660px) { .pname, .sep { display: none; } }
   .dirty { margin-left: .3em; color: var(--accent); }
+  .popover .action { justify-self: start; }
   .popover hr { grid-column: 1 / -1; width: 100%; border: 0; border-top: 1px solid var(--line); margin: 2px 0; }
   .pair { display: flex; gap: 6px; align-items: center; }
   .pair select { flex: 1; min-width: 0; }

@@ -29,7 +29,7 @@ Settings a port cannot do are greyed out; hover for the reason.
 
 If the device is unplugged or resets its USB connection, the tab waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
 
-DTR and RTS toggle the output lines (green is asserted). Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
+DTR and RTS toggle the output lines (green is asserted); a timed **Break** is in the settings chip. Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
 
 ## Recording and replay
 
@@ -65,7 +65,7 @@ The chip then reads `ESP32 · 115200 8N1`; a • means the settings have changed
 | Port tabs | Each is a full terminal, plot, send bar and capture for one port |
 | **Monitor** | Every port's sent and received lines on one timeline, tagged `A›`, `B›`. For spying on a link with two adapters, connect one to each wire. Its Capture writes the merged timeline as text |
 
-**→ B** in a port's top bar forwards everything that port receives out of port B, to sit between two devices (set it on both tabs for both directions). Forwarded bytes count as sent on B but are not echoed there, and the Monitor shows them once, as received on the source port. Do not forward through a loopback plug in both directions: the data circulates forever.
+**Forward** in a port's settings chip forwards everything that port receives out of another port (the chip then shows `→B`), to sit between two devices (set it on both tabs for both directions). Forwarded bytes count as sent on B but are not echoed there, and the Monitor shows them once, as received on the source port. Do not forward through a loopback plug in both directions: the data circulates forever.
 
 Tabs, port choices and settings are restored on the next launch, but ports are not reopened: opening a port toggles DTR, which resets many boards. In the browser a port is only restored if exactly one granted port has its USB IDs.
 
@@ -88,7 +88,7 @@ The ⋯ button holds send options; once any is set, the button shows it instead 
 | Echo wait | Send one byte at a time and wait for the device to echo it; stops and says which byte if the echo is missing or wrong |
 | Half duplex | Raise RTS for each send and restore it afterwards, for RS-485 style direction control |
 
-**File…** sends a file's bytes as-is, paced by the delay settings; **Stop** cancels between writes.
+**Send file…** (in the ⋯ options) sends a file's bytes as-is, paced by the delay settings; **Stop** cancels between writes.
 
 ## Auto-replies
 
