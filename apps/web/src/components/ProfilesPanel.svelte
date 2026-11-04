@@ -61,7 +61,7 @@
     </div>
   </div>
 {:else}
-  <p class="empty">No profiles yet. Save one from the port settings chip.</p>
+  <p class="empty">None yet: choose Profile → Save as… above.</p>
 {/each}
 
 <style>

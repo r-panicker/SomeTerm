@@ -47,11 +47,22 @@ Pick a port, check the settings chip (`115200 8N1`), then Connect. The baud list
 
 Settings a port cannot do are greyed out; hover for the reason.
 
-**⚙** (Ctrl+,) opens every setting of the current tab in one place, grouped as Port, Display, Send, Capture, Plot, Automation (colour rules and auto-replies) and Profiles. These are the same settings the chip, menus and popovers change, so use whichever is closer. **Reset** in its header puts the tab's settings back to defaults, keeping colour rules, auto-replies, quick-send buttons, text size and scrollback; tick **All** first to reset those too. Profiles are never deleted by a reset, and port settings stay while connected. **About** shows the version and credits.
+All settings live in one panel, **⚙** (Ctrl+,), in six sections:
+
+| Section | Holds | Also opened by |
+|---|---|---|
+| Connection | Profile, baud and framing, Break, Forward, saved profiles | the settings chip (`115200 8N1`) |
+| Terminal | View options, bytes per row, colour rules | ⋯ on the terminal toolbar |
+| Send | File, checksum, pacing, repeat, Backspace key, quick sends, auto-replies | ⋯ in the send bar, ✎ on the quick-send row |
+| Plot | Conversions (ƒx) | **ƒx** on the plot toolbar |
+| Capture | Capture to file or memory | **Capture**, or REC in the status bar |
+| App | Theme, text size, scrollback, version and credits | |
+
+What you change while working stays on the toolbars instead: the format buttons, the plot's window and axis, and the send bar's Text/Hex and line ending. **Reset** in the panel's header puts the tab's settings back to defaults, keeping colour rules, auto-replies, quick-send buttons, text size and scrollback; tick **All** first to reset those too. Profiles are never deleted by a reset, and port settings stay while connected.
 
 If the device is unplugged or resets its USB connection, the tab waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
 
-DTR and RTS toggle the output lines (green is asserted); a timed **Break** is in the settings chip. Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
+DTR and RTS toggle the output lines (green is asserted); a timed **Break** is under Connection. Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
 
 ## Recording and replay
 
@@ -72,11 +83,11 @@ A recording from a crashed session still opens, up to its last complete record.
 
 A profile stores a device's settings: port settings, DTR/RTS, receive line ending, echo, the terminal display (including Num type and byte order, timestamps, ANSI), send line ending, checksum and delays, view, and plot window.
 
-Save one from the settings chip: **Profile → Save as…**. With **Apply to … automatically** ticked, choosing that device's port applies the profile by itself; nothing is sent to the device, only the settings change. A profile saved in the desktop app also records the board's serial number, so it matches that one board rather than every board of the model.
+Save one under Connection: **Profile → Save as…**. With **Apply to … automatically** ticked, choosing that device's port applies the profile by itself; nothing is sent to the device, only the settings change. A profile saved in the desktop app also records the board's serial number, so it matches that one board rather than every board of the model.
 
 The chip then reads `ESP32 · 115200 8N1`; a • means the settings have changed since, and **Update** saves them into the profile. Profiles can be applied only while disconnected.
 
-**Manage…** renames, deletes, exports and imports profiles. An exported `.superserial.json` file leaves out serial numbers, so a profile shared for a lab matches every student's board of that model. Tabs restored on launch keep their own settings; profiles apply when you choose a port.
+**Saved profiles**, below, renames, deletes, exports and imports them. An exported `.superserial.json` file leaves out serial numbers, so a profile shared for a lab matches every student's board of that model. Tabs restored on launch keep their own settings; profiles apply when you choose a port.
 
 ## Several ports
 
@@ -85,9 +96,9 @@ The chip then reads `ESP32 · 115200 8N1`; a • means the settings have changed
 | Tab | Use |
 |---|---|
 | Port tabs | Each is a full terminal, plot, send bar and capture for one port |
-| **Monitor** | Every port's sent and received lines on one timeline, tagged `A›`, `B›`. For spying on a link with two adapters, connect one to each wire. Its Capture writes the merged timeline as text |
+| **Monitor** | Every port's sent and received lines on one timeline, tagged `A›`, `B›`. For spying on a link with two adapters, connect one to each wire. Its Capture writes the merged timeline as text; its ⚙ holds its own view options and capture |
 
-**Forward** in a port's settings chip forwards everything that port receives out of another port (the chip then shows `→B`), to sit between two devices (set it on both tabs for both directions). Forwarded bytes count as sent on B but are not echoed there, and the Monitor shows them once, as received on the source port. Do not forward through a loopback plug in both directions: the data circulates forever.
+**Forward** (Connection) forwards everything that port receives out of another port (the chip then shows `→B`), to sit between two devices (set it on both tabs for both directions). Forwarded bytes count as sent on B but are not echoed there, and the Monitor shows them once, as received on the source port. Do not forward through a loopback plug in both directions: the data circulates forever.
 
 Tabs, port choices and settings are restored on the next launch, but ports are not reopened: opening a port toggles DTR, which resets many boards. In the browser a port is only restored if exactly one granted port has its USB IDs.
 
@@ -98,9 +109,9 @@ Tabs, port choices and settings are restored on the next launch, but ports are n
 | Text | Escapes `\r \n \t \0 \\ \xNN`; the selected line ending is appended | `AT\r` |
 | Hex | Bytes separated by spaces or commas, optional `0x` | `0D 0A 41` |
 
-↑ and ↓ recall earlier sends. Tick **Show sent data** in the terminal's ⋯ menu to see what you send as → lines.
+↑ and ↓ recall earlier sends. Tick **Show sent data** under Terminal to see what you send as → lines.
 
-The ⋯ button holds send options; once any is set, the button shows it instead (`CRC-16/MODBUS · paced`).
+The send bar's ⋯ opens the Send settings; once a send option is set, the button shows it instead (`CRC-16/MODBUS · paced`).
 
 | Option | Effect |
 |---|---|
@@ -110,19 +121,19 @@ The ⋯ button holds send options; once any is set, the button shows it instead 
 | Echo wait | Send one byte at a time and wait for the device to echo it; stops and says which byte if the echo is missing or wrong |
 | Half duplex | Raise RTS for each send and restore it afterwards, for RS-485 style direction control |
 
-**Send file…** (in the ⋯ options) sends a file's bytes as-is, paced by the delay settings; **Stop** cancels between writes. To upload firmware to a bootloader, pick **XMODEM**, **XMODEM-1K** or **YMODEM** beside it first, matching what the receiver expects (U-Boot: `loadx` for XMODEM, `loady` for YMODEM). Start the receiver before or after choosing the file: the transfer waits up to a minute for it to ask, and the device's messages stay visible until the first block goes out. Its result is marked in the terminal; **Stop** cancels and tells the receiver.
+**Send file…** (Send settings) sends a file's bytes as-is, paced by the delay settings; **Stop** cancels between writes. To upload firmware to a bootloader, pick **XMODEM**, **XMODEM-1K** or **YMODEM** beside it first, matching what the receiver expects (U-Boot: `loadx` for XMODEM, `loady` for YMODEM). Start the receiver before or after choosing the file: the transfer waits up to a minute for it to ask, and the device's messages stay visible until the first block goes out. Its result is marked in the terminal; **Stop** cancels and tells the receiver.
 
-**☆** in the send bar saves what you've typed as a quick-send button. The buttons sit above the send bar; click one, or press Alt+1…9 for the first nine. A text button gets the line ending and checksum like a normal send; a hex one is sent as given. Each sends once, whatever **Repeat** says. **✎** at the end of the row edits them (Settings → Send): rename, reorder, switch to hex or delete. They are saved with the tab and in profiles.
+**☆** in the send bar saves what you've typed as a quick-send button. The buttons sit above the send bar; click one, or press Alt+1…9 for the first nine. A text button gets the line ending and checksum like a normal send; a hex one is sent as given. Each sends once, whatever **Repeat** says. **✎** at the end of the row edits them (Send settings): rename, reorder, switch to hex or delete. They are saved with the tab and in profiles.
 
 ## Auto-replies
 
-**Auto-replies…** in the terminal's ⋯ menu answers patterns automatically, for login prompts, handshakes or keep-alives. **+** adds one: a pattern (text, or a regular expression with **.\***; `$1`…`$9` in the reply insert its groups), the reply (send-box escapes) and an optional delay. A rule answers each matching line once, including a prompt that has no newline yet such as `Password:`. Replies show as `↩` lines, and while any rule is on the toolbar shows `↩ N`. A rule that fires more than 10 times a second (usually a reply that matches itself through an echo) is switched off and reported. Auto-replies are kept with the tab and in profiles; ones imported from a profile file arrive switched off.
+**Auto-replies** (Send settings) answer patterns automatically, for login prompts, handshakes or keep-alives. **+** adds one: a pattern (text, or a regular expression with **.\***; `$1`…`$9` in the reply insert its groups), the reply (send-box escapes) and an optional delay. A rule answers each matching line once, including a prompt that has no newline yet such as `Password:`. Replies show as `↩` lines, and while any rule is on the toolbar shows `↩ N`. A rule that fires more than 10 times a second (usually a reply that matches itself through an echo) is switched off and reported. Auto-replies are kept with the tab and in profiles; ones imported from a profile file arrive switched off.
 
 ## Terminal
 
-While connected, the ASCII terminal works like GTKTerm or TeraTerm: click in it (a blue frame shows it has the keyboard) and keys go straight to the device. Enter sends the send bar's line ending (CR if none is set), Backspace sends BS (or DEL, set under Settings → Send; many Linux consoles want DEL), Esc sends ESC, arrows, Home/End/Delete and F1–F12 send the usual VT sequences, and Ctrl+letter sends the control code. Ctrl+A, Ctrl+F and Ctrl+L stay with the app (select all, find, clear), and Ctrl+C copies instead of sending when lines are selected; send those codes from the send bar as `\x01` and so on if the device needs them. Pasting sends the text. Most device shells echo what you type; for one that does not, tick **Local echo** in the ⋯ menu to see your typing in the sent-data colour. Untick **Keyboard to device** there to make the terminal read-only.
+While connected, the ASCII terminal works like GTKTerm or TeraTerm: click in it (a blue frame shows it has the keyboard) and keys go straight to the device. Enter sends the send bar's line ending (CR if none is set), Backspace sends BS (or DEL, set under Send settings; many Linux consoles want DEL), Esc sends ESC, arrows, Home/End/Delete and F1–F12 send the usual VT sequences, and Ctrl+letter sends the control code. Ctrl+A, Ctrl+F and Ctrl+L stay with the app (select all, find, clear), and Ctrl+C copies instead of sending when lines are selected; send those codes from the send bar as `\x01` and so on if the device needs them. Pasting sends the text. Most device shells echo what you type; for one that does not, tick **Local echo** under Terminal settings to see your typing in the sent-data colour. Untick **Keyboard to device** there to make the terminal read-only.
 
-ASCII shows lines as a terminal would draw them: UTF-8 text such as `°C` and `µA` is decoded, Backspace and carriage return edit the line (a shell's echoed Backspace erases, a `10%` → `100%` counter updates in place), other control characters appear as symbols such as ␀, and bytes that are not valid UTF-8 show as `.`. The terminal's ⋯ menu holds the view options: **Received line ending** (match the device; `Auto` treats CR, LF and CRLF each as one line break, except that once the device has sent an LF, a CR on its own returns to the start of the line instead), **Timestamps**, **Wrap long lines** (continue a long line on the next row instead of scrolling sideways; copying still gives one line), **ANSI colours**, **Control characters** (every non-printing byte as `[CR]`, `[LF]`, `[TAB]`, `[NUL]` or hex such as `[FF]`, line endings included, RealTerm style) and **Show sent data**. Only ANSI colours (and Keyboard to device) are on by default, and the ⋯ button is highlighted while anything differs from that. Hex, Dec and Bin show the raw received stream with offsets. Num decodes it as 8, 16 or 32-bit integers or 32/64-bit floats, with the raw bytes alongside:
+ASCII shows lines as a terminal would draw them: UTF-8 text such as `°C` and `µA` is decoded, Backspace and carriage return edit the line (a shell's echoed Backspace erases, a `10%` → `100%` counter updates in place), other control characters appear as symbols such as ␀, and bytes that are not valid UTF-8 show as `.`. Terminal settings (⋯ on its toolbar) hold the view options: **Received line ending** (match the device; `Auto` treats CR, LF and CRLF each as one line break, except that once the device has sent an LF, a CR on its own returns to the start of the line instead), **Timestamps**, **Wrap long lines** (continue a long line on the next row instead of scrolling sideways; copying still gives one line), **ANSI colours**, **Control characters** (every non-printing byte as `[CR]`, `[LF]`, `[TAB]`, `[NUL]` or hex such as `[FF]`, line endings included, RealTerm style) and **Show sent data**. Only ANSI colours (and Keyboard to device) are on by default, and the ⋯ button is highlighted while anything differs from that. Hex, Dec and Bin show the raw received stream with offsets. Num decodes it as 8, 16 or 32-bit integers or 32/64-bit floats, with the raw bytes alongside:
 
 | Control | Use |
 |---|---|
@@ -130,17 +141,17 @@ ASCII shows lines as a terminal would draw them: UTF-8 text such as `°C` and `�
 | LE / BE | Byte order of the sender (most microcontrollers are LE) |
 | +0 … +7 | Skip bytes until values line up with the sender's framing |
 
-Settings → Display sets **Bytes per row** for these views (8, 16 or 32; Bin shows half as many) and **Scrollback**, the lines each terminal keeps (10,000 to 500,000; older lines leave the view, not a capture).
+Terminal settings set **Bytes per row** for these views (8, 16 or 32; Bin shows half as many) and **Scrollback**, the lines each terminal keeps (10,000 to 500,000; older lines leave the view, not a capture).
 
 **Screen** shows the port as a full-screen terminal (VT100/xterm), for anything that draws with the cursor rather than printing lines: boot menus, `top`, `vi`, `nano`. Keys go straight to the device, including Esc and Ctrl+L; use Ctrl+Shift for app shortcuts. It opens showing the last 64 kB received, and the line log, plot and capture carry on underneath.
 
 The magnifier (Ctrl+F) searches the ASCII view, sent and received lines alike. Enter and Shift+Enter step through matches; **Aa** matches case, **.\*** takes a regular expression, and **Filter** hides lines without a match. New data is searched as it arrives. Esc closes find.
 
-**Colour rules** (in the ⋯ menu) keep patterns coloured all the time, in every tab and the Monitor: **Line** tints the whole line, **Match** colours the matched text in bold over any ANSI colour. Earlier rules win where they overlap; drag ⋮⋮ to reorder. **Add common rules** gives errors red, warnings amber and OK/pass green. In the find bar, **+ Rule** turns the current search into a rule. Rules only change how lines look; capture, copy and find are unaffected.
+**Colour rules** (Terminal settings) keep patterns coloured all the time, in every tab and the Monitor: **Line** tints the whole line, **Match** colours the matched text in bold over any ANSI colour. Earlier rules win where they overlap; drag ⋮⋮ to reorder. **Add common rules** gives errors red, warnings amber and OK/pass green. In the find bar, **+ Rule** turns the current search into a rule. Rules only change how lines look; capture, copy and find are unaffected.
 
 ANSI colour codes are shown as colour; other escape sequences (cursor movement, clear screen, titles) are removed rather than acted on, since this is a scrolling log, not a screen. Turn **ANSI colours** off to see the raw codes as `␛[31m`. Coloured numeric lines still plot.
 
-**Theme** (Settings → Display) picks Light or Dark, or follows the operating system. For a projector, Ctrl+= and Ctrl+- zoom the whole window (Ctrl+0 resets), or Ctrl+wheel over the terminal enlarges only the terminal text, in every tab; **Text size** under Settings → Display sets it too.
+**Theme** (App settings) picks Light or Dark, or follows the operating system. For a projector, Ctrl+= and Ctrl+- zoom the whole window (Ctrl+0 resets), or Ctrl+wheel over the terminal enlarges only the terminal text, in every tab; **Text size** in App settings sets it too.
 
 Drag to select lines (a plain click only focuses), Ctrl+A for all, then Ctrl+C; Esc clears the selection. In the desktop app, right-click also offers Copy and Paste. Scrolling up pauses following; **↓ Live** resumes.
 
@@ -165,7 +176,7 @@ CSV exports everything plotted since the last Clear, converted, with units in th
 
 ## Capture
 
-**Capture** in the top bar opens the capture panel. Capture is independent of the connection: it keeps running across disconnects until you stop it or a limit is reached.
+**Capture** in the top bar opens the Capture settings (on a narrow window, use ⚙). Capture is independent of the connection: it keeps running across disconnects until you stop it or a limit is reached.
 
 | Format | One record per | Use for |
 |---|---|---|
@@ -190,4 +201,4 @@ Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as dat
 | Ctrl+wheel over the terminal | Terminal text size |
 | Ctrl+Tab | Next tab (desktop app; browsers keep this key) |
 | Ctrl+L | Clear terminal, plot and error count |
-| Esc | Close the capture panel, else focus the send box |
+| Esc | Close Settings, else focus the send box |

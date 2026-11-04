@@ -5,9 +5,8 @@
   import { compileExpr, decimateMinMax, estimateRate, largestPow2, nearestIndex, peakFrequency, rangeStats, spectrum, type Fn, type Stats } from '@superserial/core';
   import 'uplot/dist/uPlot.min.css';
   import type { Session } from '../lib/session.svelte';
-  import PlotTransforms from './settings/PlotTransforms.svelte';
 
-  let { session, onpick }: { session: Session; onpick: (offset: number) => void } = $props();
+  let { session, onpick, onsettings }: { session: Session; onpick: (offset: number) => void; onsettings?: () => void } = $props();
 
   const PALETTE = ['#2f7ed8', '#e8590c', '#2b9348', '#c2255c', '#7048e8', '#0c8599', '#b08900', '#5c7cfa'];
   const WINDOWS = [[5, '5 s'], [10, '10 s'], [30, '30 s'], [60, '1 min'], [300, '5 min'], [0, 'All']] as const;
@@ -39,9 +38,6 @@
   let cursorX = $state<[number | null, number | null]>([null, null]);
   let nextCursor = 0;
   let statsRows = $state<{ name: string; color: string; s: Stats }[]>([]);
-  let fxOpen = $state(false);
-  let fxPopover: HTMLDivElement | undefined = $state();
-  let fxButton: HTMLButtonElement | undefined = $state();
 
   /** Compiled transforms; an invalid expression is reported and leaves its series raw. */
   const compiled = $derived.by(() => {
@@ -55,11 +51,6 @@
   const maps = () => session.series.names.map((n) => compiled[n]?.fn ?? null);
   const label = (n: string) => (session.plotTransforms[n]?.unit ? `${n} [${session.plotTransforms[n]!.unit}]` : n);
   const fxActive = $derived(Object.values(compiled).some((c) => c.fn) || Object.values(session.plotTransforms).some((t) => t.unit));
-
-
-  function outsideFx(e: MouseEvent) {
-    if (fxOpen && !fxPopover?.contains(e.target as Node) && !fxButton?.contains(e.target as Node)) fxOpen = false;
-  }
 
   function css(n: string) {
     return getComputedStyle(host).getPropertyValue(n).trim();
@@ -440,14 +431,7 @@
         </span>
       {/if}
     {/if}
-    <div class="anchor">
-      <button bind:this={fxButton} class="fx" class:active={fxActive} onclick={() => (fxOpen = !fxOpen)} title="Scale or convert series (e.g. ADC counts to volts)">ƒx</button>
-      {#if fxOpen}
-        <div class="popover" bind:this={fxPopover}>
-          <PlotTransforms {session} colors={PALETTE} />
-        </div>
-      {/if}
-    </div>
+    {#if onsettings}<button class="fx" class:active={fxActive} onclick={onsettings} title={fxActive ? 'Conversions are on: scale or convert series (e.g. ADC counts to volts)' : 'Scale or convert series (e.g. ADC counts to volts)'}>ƒx</button>{/if}
     <span class="spacer"></span>
     {#if hasData && !session.plotFft && !(session.plotX && seriesNames.includes(session.plotX))}
       <button class="toggle" class:on={statsOn} onclick={() => { statsOn = !statsOn; computeStats(); }} title="Min, max, mean and standard deviation of what is visible">Σ</button>
@@ -484,10 +468,8 @@
   {#if !hasData}<p class="idle">No numeric lines yet</p>{/if}
 </section>
 
-<svelte:window onmousedown={outsideFx} onkeydown={(e) => e.key === 'Escape' && (fxOpen = false)} />
 
 <style>
-  .anchor { position: relative; }
   .fx { font-style: italic; }
   .readout { padding: 4px 8px 6px; border-top: 1px solid var(--line); font: 12px var(--mono); color: var(--muted); overflow-x: auto; }
   .readout .rhead { color: var(--fg); white-space: pre; margin-bottom: 2px; }
@@ -498,10 +480,6 @@
   .peaks b + b { margin-left: 1ch; }
   .peaks { font: 12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .fx.active { color: var(--accent); border-color: var(--accent); }
-  .popover {
-    position: absolute; top: calc(100% + 4px); left: 0; z-index: 10; padding: 10px; min-width: 300px; background: var(--panel); border: 1px solid var(--line);
-    border-radius: 8px; box-shadow: 0 6px 24px rgb(0 0 0 / .18);
-  }
   .plot { flex: 1; min-height: 0; overflow: hidden; padding: 4px 4px 0; }
   .plot :global(.u-legend) { font: 12px ui-monospace, Menlo, Consolas, monospace; color: var(--fg); text-align: left; padding: 0 4px; }
   .plot :global(.u-legend .u-series:first-child) { display: none; }

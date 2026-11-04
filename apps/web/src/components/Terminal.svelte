@@ -2,7 +2,6 @@
   import { FindIndex, type StyleRun, NUM_TYPES, decodeNumbers, formatNumber, numInfo, toAscii, toBinary, toHex, type NewlineMode, type NumType } from '@superserial/core';
   import { untrack } from 'svelte';
   import CanvasView, { type Span } from './CanvasView.svelte';
-  import DisplayOptions from './settings/DisplayOptions.svelte';
   import Screen from './Screen.svelte';
   import { WrapMap, sliceSpans } from '../lib/wrap';
   import { prefs } from '../lib/prefs.svelte';
@@ -13,8 +12,8 @@
   import { expandBytes, expandPictures, type Expanded } from '../lib/ctrl';
   import type { DisplayFormat, TermSource } from '../lib/source';
 
-  let { source, onrules, onautoreply }: { source: TermSource; onrules?: () => void; onautoreply?: () => void } = $props();
-  let viewMenu = $state(false);
+  /** `onsettings` opens the settings section that owns this view's options. */
+  let { source, onsettings }: { source: TermSource; onsettings?: (section: 'terminal' | 'send') => void } = $props();
   const utf8 = new TextEncoder();
   const CSI = (s: string) => utf8.encode(`\x1b[${s}`);
   const KEYS: Record<string, Uint8Array> = {
@@ -61,8 +60,6 @@
     });
   }
 
-  let menuEl: HTMLDivElement | undefined = $state();
-  let menuButton: HTMLButtonElement | undefined = $state();
   const TOKEN = RGB_FLAG | 0x5b7fb8;
 
   type Format = DisplayFormat;
@@ -71,7 +68,7 @@
   const typing = $derived(!!source.typeKeys && !!source.typeToDevice && !!source.open && disp.format === 'ascii');
   /** Auto-replies send on their own, so while any is on the toolbar says so. */
   const replyCount = $derived(source.autoReplies?.filter((r) => r.enabled).length ?? 0);
-  /** The ⋯ button is highlighted whenever something in its menu is not at its default. */
+  /** The ⋯ button is highlighted whenever a terminal setting is not at its default. */
   const viewChanged = $derived(disp.stamps || disp.wrap || !disp.ansi || disp.ctrl || !!source.echo || !!source.localEcho || source.typeToDevice === false || (source.newline ?? 'auto') !== 'auto');
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
   const per = $derived(disp.perRow || 16);
@@ -278,7 +275,7 @@
     const li = filtering ? index.hits[i]!.abs - source.log.dropped : i;
     const l = asciiLine(li);
     const tag = l.src !== undefined ? source.sources?.[l.src] : undefined;
-    let n = (tag ? tag.label.length + 2 : 0) + (disp.stamps ? STAMP_LEN : 0);
+    let n = (tag ? tag.label.length + 2 : 0) + (disp.stamps && !(li === source.log.length && !source.partial) ? STAMP_LEN : 0);
     const pre = l.dir === 'tx' && !('via' in l && l.via === 'typed') ? 2 : 0;
     if (l.dir === 'sys') n += l.text.length;
     else if (disp.ctrl) n += (l.dir === 'tx' ? pre : 0) + expanded(l).text.length;
@@ -316,7 +313,8 @@
       const spans: Span[] = [];
       const tag = l.src !== undefined ? source.sources?.[l.src] : undefined;
       if (tag) spans.push({ text: `${tag.label}› `, tone: 'fg', color: tag.color, bold: true });
-      if (disp.stamps) spans.push({ text: stamp(l.time), tone: 'muted' });
+      // The empty row to type on has no time of its own.
+      if (disp.stamps && !(li === source.log.length && !source.partial)) spans.push({ text: stamp(l.time), tone: 'muted' });
       const ruled = applyRules(rules.compiled, shownText(l)).runs;
       if (l.dir === 'sys') spans.push(...segments(l.text, 'muted', abs, 0, [], ruled));
       else if (disp.ctrl) {
@@ -374,9 +372,6 @@
     return expandPictures(shown);
   }
 
-  function outsideMenu(e: MouseEvent) {
-    if (viewMenu && !menuEl?.contains(e.target as Node) && !menuButton?.contains(e.target as Node)) viewMenu = false;
-  }
 
   function rowBg(r: number): string | undefined {
     if (disp.format !== 'ascii' || !rules.compiled.length) return undefined;
@@ -389,7 +384,7 @@
   function promoteToRule() {
     if (!query || index.error) return;
     rules.add({ pattern: query, caseSensitive, regex, mode: 'match' });
-    onrules?.();
+    onsettings?.('terminal');
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
@@ -408,7 +403,6 @@
   }
 </script>
 
-<svelte:window onmousedown={outsideMenu} onkeydown={(e) => e.key === 'Escape' && (viewMenu = false)} />
 
 <section class="pane">
   <div class="toolbar">
@@ -447,7 +441,7 @@
       <button class="toggle" class:on={caseSensitive} onclick={() => (caseSensitive = !caseSensitive)} title="Match case">Aa</button>
       <button class="toggle" class:on={regex} onclick={() => (regex = !regex)} title="Regular expression">.*</button>
       <button class="toggle" class:on={filter} onclick={() => (filter = !filter)} title="Show only matching lines">Filter</button>
-      {#if onrules}<button onclick={promoteToRule} disabled={!query || !!index.error} title="Keep colouring this search as a rule">+ Rule</button>{/if}
+      {#if onsettings}<button onclick={promoteToRule} disabled={!query || !!index.error} title="Keep colouring this search as a rule">+ Rule</button>{/if}
       {#if query}
         <span class="count">{(void findRev, index.total) ? `${position || '–'}/${index.total}` : 'none'}</span>
       {/if}
@@ -456,7 +450,7 @@
       <button onclick={closeFind} title="Close (Esc)">✕</button>
     {:else if disp.format === 'ascii'}
       {#if replyCount}
-        <button class="active" onclick={onautoreply} title="{replyCount} auto-repl{replyCount === 1 ? 'y is' : 'ies are'} on and will send data">↩ {replyCount}</button>
+        <button class="active" onclick={() => onsettings?.('send')} title="{replyCount} auto-repl{replyCount === 1 ? 'y is' : 'ies are'} on and will send data">↩ {replyCount}</button>
       {/if}
     {/if}
     {#if !findOpen}<span class="spacer"></span>{/if}
@@ -467,18 +461,8 @@
       </button>
     {/if}
     {#if !findOpen}<button onclick={() => { source.clear(); screen?.reset(); }} title="Clear (Ctrl+L)">Clear</button>{/if}
-    {#if !findOpen && disp.format === 'ascii'}
-      <div class="anchor">
-        <button bind:this={menuButton} class:active={viewChanged} onclick={() => (viewMenu = !viewMenu)} title="View options" aria-expanded={viewMenu}>⋯</button>
-        {#if viewMenu}
-          <div class="menu" bind:this={menuEl}>
-            <DisplayOptions {source} />
-            {#if onrules || onautoreply}<hr />{/if}
-            {#if onrules}<button class="link" onclick={() => { viewMenu = false; onrules?.(); }}>Colour rules…{rules.list.length ? ` (${rules.list.length})` : ''}</button>{/if}
-            {#if onautoreply}<button class="link" onclick={() => { viewMenu = false; onautoreply?.(); }}>Auto-replies…</button>{/if}
-          </div>
-        {/if}
-      </div>
+    {#if !findOpen && onsettings}
+      <button class:active={viewChanged} onclick={() => onsettings?.('terminal')} title={viewChanged ? 'Terminal settings (some differ from the defaults)' : 'Terminal settings'} aria-label="Terminal settings">⋯</button>
     {/if}
   </div>
   {#if disp.format === 'screen' && screenSource}
@@ -495,12 +479,4 @@
   .count { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
   button.active { color: var(--accent); border-color: var(--accent); }
   button.icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; padding: 0; }
-  .anchor { position: relative; }
-  .menu {
-    position: absolute; top: calc(100% + 4px); right: 0; z-index: 10; display: flex; flex-direction: column; gap: 6px; min-width: 210px;
-    padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 24px rgb(0 0 0 / .18); font-size: 12px;
-  }
-  .menu hr { width: 100%; border: 0; border-top: 1px solid var(--line); margin: 2px 0; }
-  .menu .link { border: 0; background: none; text-align: left; padding: 2px 0; height: auto; font-size: 12px; color: var(--fg); }
-  .menu .link:hover { color: var(--accent); }
 </style>

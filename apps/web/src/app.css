@@ -55,3 +55,5 @@ button.toggle.on { background: var(--fg); color: var(--bg); border-color: var(--
 .form .action { justify-self: start; }
 .form .pair { display: flex; gap: 6px; align-items: center; white-space: nowrap; color: var(--muted); }
 .form .pair input[type='number'] { width: 5.5em; }
+.form .pair > select { flex: 1; min-width: 0; }
+.form .pair > .baud-custom { width: 8em; }

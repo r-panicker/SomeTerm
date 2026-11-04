@@ -76,10 +76,10 @@ SuperSerial brings together the depth of established terminals such as RealTerm 
 | Rotation | Split into numbered files every N MB or N minutes for long unattended logs |
 | Record and replay | Save a session as `.ssrec` and play it back later, at speed or instantly, with seeking. Handy for marking and demos with no hardware |
 
-### Settings, your way
-Every setting is next to the thing it affects, and also gathered in one tabbed **Settings** panel (⚙ or Ctrl+,) for when you'd rather see everything at once.
+### One place for settings
+Everything you set lives in one **Settings** panel (⚙ or Ctrl+,): Connection, Terminal, Send, Plot, Capture and App. The buttons beside each part of the screen (the port chip, ⋯, ƒx, Capture) open it at the right section, and the controls you flip while working stay on their toolbars. Light, dark or system theme; on a phone the panel fills the screen.
 
-<img src="docs/images/settings-light.png" alt="The Settings panel open on its Display tab beside the terminal and plot" width="900">
+<img src="docs/images/settings-light.png" alt="The Settings panel open on its Terminal section beside the terminal and plot" width="900">
 
 ## Get it
 

@@ -6,11 +6,7 @@
   import Plot from './Plot.svelte';
   import SendBar from './SendBar.svelte';
   import StatusBar from './StatusBar.svelte';
-  import CapturePanel from './CapturePanel.svelte';
-  import ProfilesPanel from './ProfilesPanel.svelte';
-  import RulesPanel from './RulesPanel.svelte';
-  import AutoReplyPanel from './AutoReplyPanel.svelte';
-  import SettingsPanel, { showSettingsTab } from './SettingsPanel.svelte';
+  import SettingsPanel, { showSettingsTab, type SettingsSection } from './SettingsPanel.svelte';
   import { resetSettings } from '../lib/profiles.svelte';
   import QuickSendStrip from './QuickSendStrip.svelte';
 
@@ -19,8 +15,12 @@
   let sendBar: SendBar;
   let main: HTMLElement;
   let split = $state(0.5);
-  let drawer = $state<'capture' | 'profiles' | 'rules' | 'replies' | 'settings' | null>(null);
-  const DRAWER_TITLES = { capture: 'Capture', profiles: 'Profiles', rules: 'Colour rules', replies: 'Auto-replies', settings: 'Settings' };
+  /** Settings is the only drawer; every shortcut (chip, ⋯, ƒx, Capture, ✎) opens it at its section. */
+  let settingsOpen = $state(false);
+  function openSettings(section?: SettingsSection) {
+    if (section) showSettingsTab(section);
+    settingsOpen = true;
+  }
 
   let resetAll = $state(false);
 
@@ -44,7 +44,7 @@
       session.clear();
     } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
       e.preventDefault();
-      drawer = drawer === 'settings' ? null : 'settings';
+      settingsOpen = !settingsOpen;
     } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
       e.preventDefault();
       if (session.view === 'plot') session.chooseView('split');
@@ -54,7 +54,7 @@
       const q = session.quickSends[Number(e.code.slice(5)) - 1];
       if (q) { e.preventDefault(); void session.sendQuick(q); }
     } else if (e.key === 'Escape' && !(e.target instanceof HTMLSelectElement)) {
-      if (drawer) drawer = null;
+      if (settingsOpen) settingsOpen = false;
       else sendBar.focus();
     }
   }
@@ -76,46 +76,45 @@
 </script>
 
 
-<TopBar {session} {workspace} bind:drawer />
+<TopBar {session} {workspace} {settingsOpen} onsettings={(s) => (s || !settingsOpen ? openSettings(s) : (settingsOpen = false))} />
 <main bind:this={main} class:narrow>
   {#if showTerm}
-    <div class="slot" style:flex={showPlot ? `${split} 1 0` : '1 1 0'}><Terminal bind:this={terminal} source={session} onrules={() => (drawer = 'rules')} onautoreply={() => (drawer = 'replies')} /></div>
+    <div class="slot" style:flex={showPlot ? `${split} 1 0` : '1 1 0'}><Terminal bind:this={terminal} source={session} onsettings={openSettings} /></div>
   {/if}
   {#if showTerm && showPlot}
     <div class="handle" role="separator" aria-orientation={narrow ? 'horizontal' : 'vertical'} onpointerdown={drag}></div>
   {/if}
   {#if showPlot}
     <div class="slot" style:flex={showTerm ? `${1 - split} 1 0` : '1 1 0'}>
-      <Plot {session} onpick={(off) => { if (session.view === 'plot') session.chooseView('split'); queueMicrotask(() => terminal?.jumpToOffset(off)); }} />
+      <Plot {session} onsettings={() => openSettings('plot')} onpick={(off) => { if (session.view === 'plot') session.chooseView('split'); queueMicrotask(() => terminal?.jumpToOffset(off)); }} />
     </div>
   {/if}
-  {#if drawer}
-    <aside class:wide={drawer === 'settings'}>
+  {#if settingsOpen}
+    <aside>
       <div class="head">
-        <strong>{DRAWER_TITLES[drawer]}</strong>
+        <strong>Settings</strong>
         <span class="tools">
-          {#if drawer === 'settings'}
-            <label class="all" title="Also reset what Reset normally keeps: colour rules, auto-replies, quick-send buttons, text size and scrollback. Profiles are never deleted here, and port settings stay while connected"><input type="checkbox" bind:checked={resetAll} /> All</label>
-            <button class="reset" onclick={reset} title="This tab's settings back to their defaults; profiles, colour rules, auto-replies and quick-send buttons are kept unless All is ticked">Reset</button>
-          {/if}
-          <button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button>
+          <label class="all" title="Also reset what Reset normally keeps: colour rules, auto-replies, quick-send buttons, text size and scrollback. Profiles are never deleted here, and port settings stay while connected"><input type="checkbox" bind:checked={resetAll} /> All</label>
+          <button class="reset" onclick={reset} title="This tab's settings back to their defaults; profiles, colour rules, auto-replies and quick-send buttons are kept unless All is ticked">Reset</button>
+          <button class="close" onclick={() => (settingsOpen = false)} title="Close (Esc)">✕</button>
         </span>
       </div>
-      {#if drawer === 'capture'}<CapturePanel ctl={session.capture} newline={session.newline} meta={() => ({ port: session.portLabel(), options: $state.snapshot(session.options) })} onstart={() => session.recordSignals()} />{:else if drawer === 'profiles'}<ProfilesPanel {session} />{:else if drawer === 'replies'}<AutoReplyPanel {session} />{:else if drawer === 'settings'}<SettingsPanel {session} {workspace} />{:else}<RulesPanel />{/if}
+      <SettingsPanel {session} {workspace} />
     </aside>
   {/if}
 </main>
-{#if session.quickSends.length}<QuickSendStrip {session} onedit={() => { showSettingsTab('send'); drawer = 'settings'; }} />{/if}
-<SendBar bind:this={sendBar} {session} />
-<StatusBar {session} onCapture={() => (drawer = 'capture')} />
+{#if session.quickSends.length}<QuickSendStrip {session} onedit={() => openSettings('send')} />{/if}
+<SendBar bind:this={sendBar} {session} onsettings={() => openSettings('send')} />
+<StatusBar {session} onCapture={() => openSettings('capture')} />
 
 <style>
   main { flex: 1; min-height: 0; display: flex; position: relative; }
   aside {
-    position: absolute; top: 0; right: 0; bottom: 0; width: min(340px, 100%); z-index: 5; overflow: auto;
+    position: absolute; top: 0; right: 0; bottom: 0; width: min(420px, 100%); z-index: 5; overflow: auto;
     padding: 10px 12px; background: var(--panel); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgb(0 0 0 / .12);
   }
-  aside.wide { width: min(420px, 100%); }
+  /* On a phone the drawer covers the workspace rather than squeezing it. */
+  @media (max-width: 700px) { aside { width: 100%; border-left: 0; } }
   aside .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .tools { display: flex; align-items: center; gap: 8px; }
   .all { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); cursor: pointer; }

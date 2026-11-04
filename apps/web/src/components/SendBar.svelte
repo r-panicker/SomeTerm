@@ -1,22 +1,18 @@
 <script lang="ts">
   import { CHECKSUMS, parseEscapes, parseHexBytes, toHex } from '@superserial/core';
   import type { Session } from '../lib/session.svelte';
-  import SendOptions from './settings/SendOptions.svelte';
   import { formatBytes } from '../lib/format';
 
-  let { session }: { session: Session } = $props();
+  /** `onsettings` opens Settings → Send, which holds every send option. */
+  let { session, onsettings }: { session: Session; onsettings?: () => void } = $props();
 
   const HISTORY_MAX = 100;
   let mode = $state<'text' | 'hex'>('text');
   let input = $state('');
   let error = $state('');
-  let optionsOpen = $state(false);
   let history: string[] = [];
   let cursor = -1;
   let field: HTMLInputElement | undefined = $state();
-  let fileInput: HTMLInputElement;
-  let popover: HTMLDivElement | undefined = $state();
-  let optionsButton: HTMLButtonElement | undefined = $state();
 
   const o = $derived(session.sendOptions);
   /** A recording being replayed has nothing to send to. */
@@ -76,17 +72,6 @@
     input = cursor < 0 ? '' : history[cursor]!;
   }
 
-  function pickedFile() {
-    const f = fileInput.files?.[0];
-    fileInput.value = '';
-    if (f) session.sendFile(f);
-  }
-
-  function outside(e: MouseEvent) {
-    if (optionsOpen && !popover?.contains(e.target as Node) && !optionsButton?.contains(e.target as Node)) optionsOpen = false;
-  }
-
-  const num = (v: string, min = 0) => Math.max(min, Math.floor(Number(v) || 0));
 
   function progressText(j: NonNullable<typeof job>): string {
     if (j.kind === 'repeat') return j.total === 0 ? `Repeating · ${j.done} sent` : `Repeating · ${j.done} / ${j.total}`;
@@ -95,7 +80,6 @@
   }
 </script>
 
-<svelte:window onmousedown={outside} />
 
 <form onsubmit={send}>
   <div class="seg" role="group" aria-label="Send as">
@@ -126,18 +110,10 @@
       <option value={'\\r\\n'}>+CR+LF</option><option value={'\\n'}>+LF</option><option value={'\\r'}>+CR</option><option value="">none</option>
     </select>
   {/if}
-  <div class="anchor">
-    <button type="button" bind:this={optionsButton} class:active={!!summary} onclick={() => (optionsOpen = !optionsOpen)} disabled={!!job} title="Checksum, pacing, repeat">{summary || '⋯'}</button>
-    {#if optionsOpen && !job}
-      <div class="popover form" bind:this={popover}>
-        <SendOptions {session} onfile={() => { optionsOpen = false; fileInput.click(); }} />
-      </div>
-    {/if}
-  </div>
+  {#if onsettings}<button type="button" class="opts" class:active={!!summary} onclick={onsettings} title={summary ? `Send settings: ${summary}` : 'Send settings: file, checksum, pacing, repeat, quick sends, auto-replies'}>{summary || '⋯'}</button>{/if}
   {#if !job}
     <button type="button" class="star" onclick={saveQuick} disabled={!input.trim()} title="Save as a quick-send button (Alt+1…9 send them)" aria-label="Save as a quick-send button">☆</button>
   {/if}
-  <input bind:this={fileInput} type="file" hidden onchange={pickedFile} />
   <button class="primary" disabled={!canSend}>{job ? 'Stop' : sendLabel}</button>
   {#if error}<span class="err">{error}</span>{:else if preview && !job}<span class="preview">{preview}</span>{/if}
 </form>
@@ -145,17 +121,12 @@
 <style>
   form { display: flex; gap: 6px; align-items: center; padding: 6px 8px; background: var(--panel); border-top: 1px solid var(--line); }
   input:not([type]) { flex: 1; min-width: 8em; font-family: var(--mono); }
+  @media (max-width: 520px) { form { gap: 4px; padding: 6px; } input:not([type]) { min-width: 3em; } }
   input.bad { border-color: var(--err); }
   .preview { font: 12px var(--mono); color: var(--muted); }
   .err { font-size: 12px; color: var(--err); }
   .progress { flex: 1; position: relative; height: 26px; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; display: flex; align-items: center; padding: 0 8px; font: 12px var(--mono); }
   .progress .bar { position: absolute; inset: 0 auto 0 0; background: var(--sel); }
   .progress span { position: relative; }
-  .anchor { position: relative; }
-  .anchor > button.active { color: var(--accent); border-color: var(--accent); font-size: 12px; }
-  .popover {
-    position: absolute; bottom: calc(100% + 6px); right: 0; z-index: 10; display: grid; grid-template-columns: auto 1fr; gap: 8px 10px;
-    align-items: center; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
-    box-shadow: 0 6px 24px rgb(0 0 0 / .18); width: max-content; color: var(--muted);
-  }
+  .opts.active { color: var(--accent); border-color: var(--accent); font-size: 12px; }
 </style>
