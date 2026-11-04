@@ -41,3 +41,12 @@ button.toggle.on { background: var(--fg); color: var(--bg); border-color: var(--
   .toolbar { gap: 3px; padding: 3px 4px; }
   .toolbar select, .toolbar button { padding: 1px 4px; font-size: 11px; }
 }
+
+/* Settings forms: label column and control column. Used by popovers and the Settings panel. */
+.form { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; }
+.form > label { display: contents; color: var(--muted); }
+.form > label > input:not([type='checkbox']), .form > label > select { width: 100%; min-width: 0; }
+.form > hr { grid-column: 1 / -1; width: 100%; border: 0; border-top: 1px solid var(--line); margin: 2px 0; }
+.form .action { justify-self: start; }
+.form .pair { display: flex; gap: 6px; align-items: center; white-space: nowrap; color: var(--muted); }
+.form .pair input[type='number'] { width: 5.5em; }

@@ -4,6 +4,7 @@
   import { compileExpr, decimateMinMax, estimateRate, largestPow2, nearestIndex, peakFrequency, rangeStats, spectrum, type Fn, type Stats } from '@superserial/core';
   import 'uplot/dist/uPlot.min.css';
   import type { Session } from '../lib/session.svelte';
+  import PlotTransforms from './settings/PlotTransforms.svelte';
 
   let { session, onpick }: { session: Session; onpick: (offset: number) => void } = $props();
 
@@ -54,11 +55,6 @@
   const label = (n: string) => (session.plotTransforms[n]?.unit ? `${n} [${session.plotTransforms[n]!.unit}]` : n);
   const fxActive = $derived(Object.values(compiled).some((c) => c.fn) || Object.values(session.plotTransforms).some((t) => t.unit));
 
-  function setTransform(name: string, patch: Partial<{ expr: string; unit: string }>) {
-    const t = { expr: '', unit: '', ...session.plotTransforms[name], ...patch };
-    if (!t.expr.trim() && !t.unit.trim()) delete session.plotTransforms[name];
-    else session.plotTransforms[name] = t;
-  }
 
   function outsideFx(e: MouseEvent) {
     if (fxOpen && !fxPopover?.contains(e.target as Node) && !fxButton?.contains(e.target as Node)) fxOpen = false;
@@ -443,22 +439,7 @@
       <button bind:this={fxButton} class="fx" class:active={fxActive} onclick={() => (fxOpen = !fxOpen)} title="Scale or convert series (e.g. ADC counts to volts)">ƒx</button>
       {#if fxOpen}
         <div class="popover" bind:this={fxPopover}>
-          {#each session.series.names as n, i (n)}
-            {@const err = compiled[n]?.error}
-            <span class="sname" style:color={PALETTE[i % PALETTE.length]}>{n}</span>
-            <input
-              class="expr"
-              class:bad={!!err}
-              value={session.plotTransforms[n]?.expr ?? ''}
-              oninput={(e) => setTransform(n, { expr: e.currentTarget.value })}
-              placeholder="x"
-              title={err || 'Expression in x, e.g. x*3.3/4095 or (x-500)/10. Functions: abs sqrt exp ln log sin cos tan min max pow round'}
-              spellcheck="false"
-            />
-            <input class="unit" value={session.plotTransforms[n]?.unit ?? ''} oninput={(e) => setTransform(n, { unit: e.currentTarget.value })} placeholder="unit" maxlength="16" />
-          {:else}
-            <span class="none">No series yet</span>
-          {/each}
+          <PlotTransforms {session} colors={PALETTE} />
         </div>
       {/if}
     </div>
@@ -512,14 +493,9 @@
   .peaks { font: 12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .fx.active { color: var(--accent); border-color: var(--accent); }
   .popover {
-    position: absolute; top: calc(100% + 4px); left: 0; z-index: 10; display: grid; grid-template-columns: auto 1fr 5em;
-    gap: 6px 8px; align-items: center; padding: 10px; min-width: 300px; background: var(--panel); border: 1px solid var(--line);
+    position: absolute; top: calc(100% + 4px); left: 0; z-index: 10; padding: 10px; min-width: 300px; background: var(--panel); border: 1px solid var(--line);
     border-radius: 8px; box-shadow: 0 6px 24px rgb(0 0 0 / .18);
   }
-  .sname { font: 600 12px var(--mono); max-width: 12ch; overflow: hidden; text-overflow: ellipsis; }
-  .popover input { height: 24px; font: 12px var(--mono); min-width: 0; }
-  .expr.bad { border-color: var(--err); }
-  .none { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
   .plot { flex: 1; min-height: 0; overflow: hidden; padding: 4px 4px 0; }
   .plot :global(.u-legend) { font: 12px ui-monospace, Menlo, Consolas, monospace; color: var(--fg); text-align: left; padding: 0 4px; }
   .plot :global(.u-legend .u-series:first-child) { display: none; }

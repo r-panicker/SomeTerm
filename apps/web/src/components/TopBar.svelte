@@ -4,6 +4,7 @@
   import { native, type PortChoice, type Session, type View } from '../lib/session.svelte';
   import type { Workspace } from '../lib/workspace.svelte';
   import { profiles, settingsOf } from '../lib/profiles.svelte';
+  import PortSettings from './settings/PortSettings.svelte';
 
   let { session, workspace, drawer = $bindable(null) }: { session: Session; workspace: Workspace; drawer?: 'capture' | 'profiles' | 'rules' | 'replies' | null } = $props();
 
@@ -14,7 +15,6 @@
     return h ? `Open in tab ${h.letter}` : '';
   };
 
-  const BAUDS = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 250000, 460800, 500000, 921600, 1000000, 2000000];
   const PARITY = { none: 'N', even: 'E', odd: 'O', mark: 'M', space: 'S' } as const;
   const FLOW = { none: '', rtscts: 'RTS/CTS', dsrdtr: 'DSR/DTR', xonxoff: 'XON/XOFF' } as const;
   const hasWebSerial = !native && isWebSerialAvailable();
@@ -108,10 +108,6 @@
     if (settingsOpen && !popover?.contains(e.target as Node) && !chip?.contains(e.target as Node)) settingsOpen = false;
   }
 
-  function baudInput(e: Event & { currentTarget: HTMLInputElement }) {
-    const n = Number(e.currentTarget.value);
-    if (Number.isInteger(n) && n >= 50 && n <= 20_000_000) session.options.baudRate = n;
-  }
 </script>
 
 <svelte:window onmousedown={outside} onkeydown={(e) => e.key === 'Escape' && (settingsOpen = false)} />
@@ -126,7 +122,7 @@
       {#if profile}<span class="pname">{profile.name}</span><span class="sep">·</span>{/if}{summary}{#if session.forwardTo}<span class="sep">→{session.forwardTo.letter}</span>{/if}{#if dirty}<span class="dirty">•</span>{/if}
     </button>
     {#if settingsOpen}
-      <div class="popover" bind:this={popover}>
+      <div class="popover form" bind:this={popover}>
         <label>Profile
           <span class="pair">
             <select value={session.profileId ?? ''} onchange={profilePick}>
@@ -150,48 +146,7 @@
           <span class="pair"><button class="primary" onclick={saveNew}>Save</button><button onclick={() => (saving = false)}>Cancel</button></span>
         {/if}
         <hr />
-        <label>Baud
-          <input type="text" inputmode="numeric" list="bauds" value={o.baudRate} onchange={baudInput} disabled={session.open} title={locked} />
-          <datalist id="bauds">{#each BAUDS as b}<option value={b}></option>{/each}</datalist>
-        </label>
-        <label>Data bits
-          <select bind:value={session.options.dataBits} disabled={session.open} title={locked}>
-            {#each [5, 6, 7, 8] as d}<option value={d} disabled={!!why({ dataBits: d as 8 })} title={why({ dataBits: d as 8 })}>{d}</option>{/each}
-          </select>
-        </label>
-        <label>Parity
-          <select bind:value={session.options.parity} disabled={session.open} title={locked}>
-            {#each Object.keys(PARITY) as p}<option value={p} disabled={!!why({ parity: p as 'none' })} title={why({ parity: p as 'none' })}>{p}</option>{/each}
-          </select>
-        </label>
-        <label>Stop bits
-          <select bind:value={session.options.stopBits} disabled={session.open} title={locked}>
-            {#each [1, 1.5, 2] as s}<option value={s} disabled={!!why({ stopBits: s as 1 })} title={why({ stopBits: s as 1 })}>{s}</option>{/each}
-          </select>
-        </label>
-        <label>Flow
-          <select bind:value={session.options.flowControl} disabled={session.open} title={locked}>
-            {#each Object.entries(FLOW) as [f, l]}<option value={f} disabled={!!why({ flowControl: f as 'none' })} title={why({ flowControl: f as 'none' })}>{l || 'none'}</option>{/each}
-          </select>
-        </label>
-        {#if (session.open && session.capabilities.sendBreak && !session.player) || others.length}<hr />{/if}
-        {#if session.open && session.capabilities.sendBreak && !session.player}
-          <span>Break</span>
-          <button class="action" onclick={() => session.sendBreak()} title="Hold the line in the break state for 250 ms">Send 250 ms break</button>
-        {/if}
-        {#if others.length}
-          <label>Forward
-            <select
-              class="fwd"
-              value={session.forwardTo?.letter ?? ''}
-              onchange={(e) => (session.forwardTo = others.find((o) => o.letter === e.currentTarget.value) ?? null)}
-              title="Write everything received on this port out of another port"
-            >
-              <option value="">none</option>
-              {#each others as o (o.id)}<option value={o.letter}>to {o.letter} ({o.portLabel()})</option>{/each}
-            </select>
-          </label>
-        {/if}
+        <PortSettings {session} {workspace} />
       </div>
     {/if}
   </div>
@@ -237,7 +192,6 @@
   @media (max-width: 760px) { .pname { max-width: 6ch; } .sep { margin: 0 .25em; } }
   @media (max-width: 660px) { .pname, .sep { display: none; } }
   .dirty { margin-left: .3em; color: var(--accent); }
-  .popover .action { justify-self: start; }
   .popover hr { grid-column: 1 / -1; width: 100%; border: 0; border-top: 1px solid var(--line); margin: 2px 0; }
   .pair { display: flex; gap: 6px; align-items: center; }
   .pair select { flex: 1; min-width: 0; }

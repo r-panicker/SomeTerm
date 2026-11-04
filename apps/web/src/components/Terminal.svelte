@@ -2,6 +2,7 @@
   import { FindIndex, type StyleRun, NUM_TYPES, decodeNumbers, formatNumber, numInfo, toAscii, toBinary, toHex, type NewlineMode, type NumType } from '@superserial/core';
   import { untrack } from 'svelte';
   import CanvasView, { type Span } from './CanvasView.svelte';
+  import DisplayOptions from './settings/DisplayOptions.svelte';
   import { ansiColor } from '../lib/ansi-colors';
   import { rules, ruleText, ruleTint } from '../lib/rules.svelte';
   import { applyRules, RGB_FLAG, type RuleRun, type TermLine } from '@superserial/core';
@@ -407,22 +408,7 @@
         <button bind:this={menuButton} class:active={viewChanged} onclick={() => (viewMenu = !viewMenu)} title="View options" aria-expanded={viewMenu}>⋯</button>
         {#if viewMenu}
           <div class="menu" bind:this={menuEl}>
-            {#if source.setNewline}
-              <label class="row">Line ending
-                <select value={source.newline} onchange={(e) => source.setNewline?.(e.currentTarget.value as NewlineMode)} title="Auto: CR, LF or CRLF each end a line">
-                  <option value="auto">Auto</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CRLF</option>
-                </select>
-              </label>
-            {/if}
-            <label class="check"><input type="checkbox" bind:checked={disp.stamps} /> Timestamps</label>
-            <label class="check" title="Off: show escape codes as ␛[…"><input type="checkbox" bind:checked={disp.ansi} /> ANSI colours</label>
-            <label class="check" title="Show CR, LF, TAB, NUL and every other non-printing byte, line endings included"><input type="checkbox" bind:checked={disp.ctrl} /> Control characters</label>
-            {#if source.typeKeys}
-              <label class="check" title="Show what you type in Type mode; leave off for devices that echo"><input type="checkbox" checked={source.localEcho} onchange={(e) => (source.localEcho = e.currentTarget.checked)} /> Local echo while typing</label>
-            {/if}
-            {#if source.echo !== undefined}
-              <label class="check" title="Show what you send, as → lines"><input type="checkbox" checked={source.echo} onchange={(e) => (source.echo = e.currentTarget.checked)} /> Show sent data</label>
-            {/if}
+            <DisplayOptions {source} />
             {#if onrules || onautoreply}<hr />{/if}
             {#if onrules}<button class="link" onclick={() => { viewMenu = false; onrules?.(); }}>Colour rules…{rules.list.length ? ` (${rules.list.length})` : ''}</button>{/if}
             {#if onautoreply}<button class="link" onclick={() => { viewMenu = false; onautoreply?.(); }}>Auto-replies…</button>{/if}
@@ -445,8 +431,6 @@
     position: absolute; top: calc(100% + 4px); right: 0; z-index: 10; display: flex; flex-direction: column; gap: 6px; min-width: 210px;
     padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 24px rgb(0 0 0 / .18); font-size: 12px;
   }
-  .menu .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); }
-  .menu .check { display: flex; align-items: center; gap: 6px; cursor: pointer; }
   .menu hr { width: 100%; border: 0; border-top: 1px solid var(--line); margin: 2px 0; }
   .menu .link { border: 0; background: none; text-align: left; padding: 2px 0; height: auto; font-size: 12px; color: var(--fg); }
   .menu .link:hover { color: var(--accent); }

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { CHECKSUMS, parseEscapes, parseHexBytes, toHex } from '@superserial/core';
   import type { Session } from '../lib/session.svelte';
+  import SendOptions from './settings/SendOptions.svelte';
   import { formatBytes } from '../lib/format';
 
   let { session }: { session: Session } = $props();
@@ -121,38 +122,8 @@
   <div class="anchor">
     <button type="button" bind:this={optionsButton} class:active={!!summary} onclick={() => (optionsOpen = !optionsOpen)} disabled={!!job} title="Checksum, pacing, repeat">{summary || '⋯'}</button>
     {#if optionsOpen && !job}
-      <div class="popover" bind:this={popover}>
-        <label>Checksum
-          <select bind:value={session.sendOptions.checksum}>
-            {#each CHECKSUMS as c}<option value={c.kind} title={c.detail}>{c.label}</option>{/each}
-          </select>
-        </label>
-        <label>Repeat
-          <span class="pair">
-            <input type="number" min="0" value={o.repeat} oninput={(e) => (session.sendOptions.repeat = num(e.currentTarget.value))} title="Times to send; 0 = until stopped" />
-            every
-            <input type="number" min="0" value={o.intervalMs} oninput={(e) => (session.sendOptions.intervalMs = num(e.currentTarget.value))} disabled={o.repeat === 1} title="Milliseconds from the start of one send to the next" /> ms
-          </span>
-        </label>
-        <label>Delay
-          <span class="pair">
-            <input type="number" min="0" value={o.byteDelayMs} oninput={(e) => (session.sendOptions.byteDelayMs = num(e.currentTarget.value))} title="Pause after every byte, ms" /> ms/byte
-            <input type="number" min="0" value={o.lineDelayMs} oninput={(e) => (session.sendOptions.lineDelayMs = num(e.currentTarget.value))} title="Pause after every line ending, ms" /> ms/line
-          </span>
-        </label>
-        <span>File</span>
-        <button type="button" class="filebtn" onclick={() => { optionsOpen = false; fileInput.click(); }} disabled={!canSend} title="Send a file's bytes as they are, paced by the delays above">Send file…</button>
-        <label>Echo wait
-          <span class="pair">
-            <input type="number" min="0" value={o.echoWaitMs} oninput={(e) => (session.sendOptions.echoWaitMs = num(e.currentTarget.value))} title="Send one byte at a time and wait up to this long for the device to echo it; 0 = off" /> ms per byte
-          </span>
-        </label>
-        <label>Half duplex
-          <span class="pair">
-            <input type="checkbox" bind:checked={session.sendOptions.rtsWhileSending} disabled={!session.capabilities.lineSignals || !session.lineControl} title={session.lineControl ? '' : 'This port has no modem control lines'} />
-            raise RTS while sending
-          </span>
-        </label>
+      <div class="popover form" bind:this={popover}>
+        <SendOptions {session} onfile={() => { optionsOpen = false; fileInput.click(); }} />
       </div>
     {/if}
   </div>
@@ -177,8 +148,4 @@
     align-items: center; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
     box-shadow: 0 6px 24px rgb(0 0 0 / .18); width: max-content; color: var(--muted);
   }
-  .popover label { display: contents; }
-  .filebtn { justify-self: start; }
-  .pair { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-  .pair input[type='number'] { width: 5.5em; }
 </style>
