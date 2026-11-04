@@ -99,6 +99,23 @@ Serial only. "Better" notes where the UX should deliberately depart from RealTer
 | Export PNG/CSV | | partial: CSV only |
 | Click point to jump to raw bytes | | done |
 
+### Gaps found in the 2026-11-04 review (RealTerm and TeraTerm, serial only)
+Checked live over Loopback where possible. Ordered by value to the lab audience.
+| Feature | Seen in | Today | Status |
+|---|---|---|---|
+| Backspace and lone CR edit the current line (shell echo `x\b \b`, `10%\r55%` progress) | TeraTerm | shown as `␈` and as separate lines | todo |
+| UTF-8 text (`°C`, `µA`) | TeraTerm | non-ASCII bytes shown as `.` | todo |
+| Quick-send buttons / macros | RealTerm, TeraTerm (TTL) | history only | todo |
+| Text zoom (Ctrl+= / Ctrl+-), for projectors | TeraTerm | fixed size | todo |
+| XMODEM/YMODEM send for bootloaders | TeraTerm | no | todo |
+| Split rows on a sync pattern, fixed byte count or idle gap | RealTerm | newline modes only | todo |
+| Function keys F1–F12, Backspace as BS or DEL | TeraTerm | F-keys not sent; BS only | todo |
+| Scrollback size and hex bytes-per-row settings | RealTerm, TeraTerm | fixed | todo |
+| Paced or confirmed multi-line paste | TeraTerm | sent at once | todo |
+| Plot PNG export | (beyond both) | CSV only | todo |
+| Full-screen VT100 (cursor addressing for menus, `top`, `vi`) | TeraTerm | cursor moves dropped; line log by design | undecided |
+| ZMODEM/Kermit, TTL scripting, bit invert / 7-bit mask | TeraTerm, RealTerm | no | not planned |
+
 ### Layout (decided: single workspace)
 | Region | Contents |
 |---|---|
