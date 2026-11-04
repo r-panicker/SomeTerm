@@ -26,3 +26,4 @@ export { compileRules, applyRules, type ColorRule, type CompiledRule, type RuleR
 export { findReturningDevice, type PortIdentity } from './reconnect';
 export { rangeStats, nearestIndex, type Stats } from './plot/stats';
 export { EchoMatcher, sendWithEcho, type SetTimer } from './send/echo';
+export { AutoReplier, type AutoReply, type ReplyAction, type ReplyResult } from './send/autoreply';
