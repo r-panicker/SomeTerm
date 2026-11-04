@@ -6,7 +6,7 @@ export interface CaptureInfo {
   kind: 'file' | 'memory' | 'folder';
   /** Files written so far, for a capture split across a folder. */
   files?: number;
-  state: 'running' | 'paused' | 'stopped';
+  state: 'armed' | 'running' | 'paused' | 'stopped';
   captured: number;
   written: number;
   startedAt: number;

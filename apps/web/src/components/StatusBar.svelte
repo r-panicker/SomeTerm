@@ -22,7 +22,7 @@
     {#if session.capture.info}
       {@const c = session.capture.info}
       <button class="cap" class:rec={c.state === 'running'} onclick={onCapture} title="Capture: {c.name}">
-        {c.state === 'running' ? '● REC' : c.state === 'paused' ? '❚❚ REC' : c.kind === 'memory' ? 'Capture' : 'Saved'} {bytes(c.captured)}
+        {c.state === 'running' ? '● REC' : c.state === 'armed' ? '◌ ARMED' : c.state === 'paused' ? '❚❚ REC' : c.kind === 'memory' ? 'Capture' : 'Saved'} {bytes(c.captured)}
       </button>
     {/if}
     <span title="Received">↓ {bytes(session.rx)}{session.open ? ` · ${bytes(Math.round(session.rate))}/s` : ''}</span>

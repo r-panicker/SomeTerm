@@ -137,6 +137,8 @@ CSV exports everything plotted since the last Clear, converted, with units in th
 | Raw bytes | byte, exactly as received | binary data, replay |
 | Hex, timestamped chunks | chunk as it arrived | timing and framing questions |
 
+**More options** holds the rest: **Start after** N bytes or a piece of text (escapes allowed; the text itself is captured, and the capture shows ◌ ARMED until it appears), **Stop after** N bytes or seconds, and **Split every**. It stays open while any of these is set.
+
 **Split every** N MB and/or N min writes a numbered series (`…-001.txt`, `…-002.txt`) into a folder you choose, for long unattended logs. A line or hex chunk is never split across two files, and an idle link does not create empty files.
 
 Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as data arrives (Chrome and Edge); **Memory** keeps it until you View, Download or Discard. Leave a limit empty for no limit.
