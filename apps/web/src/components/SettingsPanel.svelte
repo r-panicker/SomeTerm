@@ -15,6 +15,7 @@
   import RulesPanel from './RulesPanel.svelte';
   import AutoReplyPanel from './AutoReplyPanel.svelte';
   import ProfilesPanel from './ProfilesPanel.svelte';
+  import { resetSettings } from '../lib/profiles.svelte';
 
   let { session, workspace }: { session: Session; workspace: Workspace } = $props();
 
@@ -25,6 +26,11 @@
   const size = $derived(numInfo(disp.numType).size);
   const seriesNames = $derived.by(() => (void session.version, [...session.series.names]));
   let fileInput: HTMLInputElement | undefined = $state();
+
+  function reset() {
+    const kept = session.open ? 'Port settings are kept while connected. ' : '';
+    if (confirm(`Reset this tab's settings to defaults? ${kept}Profiles, colour rules and auto-replies are kept.`)) resetSettings(session);
+  }
 
   function axisChange(v: string) {
     session.plotFft = v === '\u0001fft';
@@ -105,12 +111,18 @@
   {/if}
 </div>
 
+
+<div class="foot">
+  <button onclick={reset} title="Every setting of this tab back to its default; profiles, colour rules and auto-replies are kept">Reset to defaults</button>
+</div>
+
 <style>
   .tabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--line); margin: 0 -12px 10px; padding: 0 8px; }
   .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; height: 28px; padding: 0 7px; font-size: 12px; color: var(--muted); }
   .tabs button.on { color: var(--fg); border-bottom-color: var(--accent); }
   .tabs button:hover { color: var(--fg); }
   .list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; font-size: 12px; }
+  .foot { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--line); }
   h4 { margin: 14px 0 8px; font-size: 12px; font-weight: 600; }
   h4:first-child { margin-top: 0; }
   h4 span { font-weight: 400; color: var(--muted); margin-left: 6px; }

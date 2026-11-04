@@ -11,8 +11,6 @@
 
   let { source, onrules, onautoreply }: { source: TermSource; onrules?: () => void; onautoreply?: () => void } = $props();
   let viewMenu = $state(false);
-  /** Terminal mode: keys typed into the view go straight to the device. */
-  let typing = $state(false);
   const utf8 = new TextEncoder();
   const CSI = (s: string) => utf8.encode(`\x1b[${s}`);
   const KEYS: Record<string, Uint8Array> = {
@@ -25,8 +23,11 @@
   function typeKey(e: KeyboardEvent): boolean {
     if (!typing || !source.typeKeys || e.isComposing || e.altKey || e.metaKey) return false;
     if (e.ctrlKey && e.shiftKey) return false;
+    if (e.key === 'Escape' && view.hasSelection()) return false;
     if (e.ctrlKey) {
       const k = e.key.toLowerCase();
+      // Select all, find and clear stay with the app; \x01, \x06 and \x0c can still be sent from the send bar.
+      if (k === 'a' || k === 'f' || k === 'l') return false;
       if (k === 'c' && view.hasSelection()) return false;
       if (k === 'v') return false;
       if (k.length === 1 && k >= 'a' && k <= 'z') { source.typeKeys(Uint8Array.of(k.charCodeAt(0) - 96), 'other'); return true; }
@@ -47,22 +48,18 @@
     });
   }
 
-  $effect(() => { if (disp.format !== 'ascii') typing = false; });
-
-  function toggleTyping() {
-    typing = !typing;
-    if (typing) queueMicrotask(() => view.focus());
-  }
   let menuEl: HTMLDivElement | undefined = $state();
   let menuButton: HTMLButtonElement | undefined = $state();
   const TOKEN = RGB_FLAG | 0x5b7fb8;
 
   type Format = DisplayFormat;
   const disp = $derived(source.display);
+  /** Terminal mode: keys pressed in the focused ASCII view go straight to the device. */
+  const typing = $derived(!!source.typeKeys && !!source.typeToDevice && !!source.open && disp.format === 'ascii');
   /** Auto-replies send on their own, so while any is on the toolbar says so. */
   const replyCount = $derived(source.autoReplies?.filter((r) => r.enabled).length ?? 0);
   /** The ⋯ button is highlighted whenever something in its menu is not at its default. */
-  const viewChanged = $derived(disp.stamps || !disp.ansi || disp.ctrl || source.echo === false || !!source.localEcho || (source.newline ?? 'auto') !== 'auto');
+  const viewChanged = $derived(disp.stamps || !disp.ansi || disp.ctrl || !!source.echo || !!source.localEcho || source.typeToDevice === false || (source.newline ?? 'auto') !== 'auto');
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
   const DUMP: Record<'hex' | 'dec' | 'bin', Dump> = {
     hex: { per: 16, skip: 0, fmt: (b) => toHex(b), width: 16 * 3 - 1, side: (b) => toAscii(b) },
@@ -392,16 +389,17 @@
       <button onclick={() => step(1)} disabled={!(void findRev, index.total)} title="Next (Enter)">↓</button>
       <button onclick={closeFind} title="Close (Esc)">✕</button>
     {:else if disp.format === 'ascii'}
-      <button onclick={openFind} title="Find (Ctrl+F)">Find</button>
       {#if replyCount}
         <button class="active" onclick={onautoreply} title="{replyCount} auto-repl{replyCount === 1 ? 'y is' : 'ies are'} on and will send data">↩ {replyCount}</button>
-      {/if}
-      {#if source.typeKeys}
-        <button class="toggle" class:on={typing} onclick={toggleTyping} disabled={!source.open} title={source.open ? 'Type straight to the device, like a terminal. Ctrl+Shift keeps app shortcuts' : 'Connect to type'}>Type</button>
       {/if}
     {/if}
     {#if !findOpen}<span class="spacer"></span>{/if}
     {#if !follow}<button onclick={() => (follow = true)} title="Scroll to newest">↓ Live</button>{/if}
+    {#if !findOpen && disp.format === 'ascii'}
+      <button class="icon" onclick={openFind} title="Find (Ctrl+F)" aria-label="Find">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M10 10l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+      </button>
+    {/if}
     {#if !findOpen}<button onclick={() => source.clear()} title="Clear (Ctrl+L)">Clear</button>{/if}
     {#if !findOpen && disp.format === 'ascii'}
       <div class="anchor">
@@ -426,6 +424,7 @@
   .find.bad { border-color: var(--err); }
   .count { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
   button.active { color: var(--accent); border-color: var(--accent); }
+  button.icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; padding: 0; }
   .anchor { position: relative; }
   .menu {
     position: absolute; top: calc(100% + 4px); right: 0; z-index: 10; display: flex; flex-direction: column; gap: 6px; min-width: 210px;

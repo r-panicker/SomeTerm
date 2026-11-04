@@ -36,6 +36,7 @@ export interface TermSource {
   /** Typed but not yet entered, shown inline when local echo is on. */
   readonly typed?: string;
   localEcho?: boolean;
+  typeToDevice?: boolean;
   /** Auto-reply rules, for the toolbar indicator; absent where nothing can be sent. */
   readonly autoReplies?: readonly { enabled: boolean }[];
   /** Labels and colours for `TermLine.src`, in views that merge ports. */

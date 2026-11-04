@@ -142,16 +142,21 @@
     return Math.max(0, Math.min(count - 1, Math.floor((e.clientY - r.top + scroller.scrollTop - PAD) / LINE)));
   }
 
+  /** Row a plain press started on; -1 for a shift-click, which extends the selection. */
+  let pressed = -1;
   function down(e: MouseEvent) {
     if (e.button !== 0 || e.offsetX > scroller.clientWidth || e.offsetY > scroller.clientHeight) return;
     const i = rowAt(e);
     sel = e.shiftKey && sel ? { a: sel.a, b: i } : { a: i, b: i };
     dragging = true;
+    pressed = e.shiftKey ? -1 : i;
   }
   function move(e: MouseEvent) {
     if (dragging && sel) sel = { a: sel.a, b: rowAt(e) };
   }
   function up() {
+    // While typing, a plain click only focuses, as in a terminal emulator; dragging still selects.
+    if (dragging && typing && sel && pressed === sel.a && sel.a === sel.b) sel = null;
     dragging = false;
   }
 
@@ -171,10 +176,14 @@
       e.stopPropagation();
       return;
     }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
       sel = { a: 0, b: count - 1 };
       e.preventDefault();
-    } else if (e.key === 'Escape') sel = null;
+    } else if (e.key === 'Escape' && sel) {
+      // Clearing a selection is all this Esc does; it must not also move focus to the send box.
+      sel = null;
+      e.stopPropagation();
+    }
   }
 
   export function topRow(): number {

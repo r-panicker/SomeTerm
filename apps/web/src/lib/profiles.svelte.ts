@@ -11,8 +11,8 @@ import {
   compileExpr,
   type AutoReply,
 } from '@superserial/core';
-import type { DisplaySettings } from './source';
-import type { PlotTransform, SendOptions, Session, View } from './session.svelte';
+import { defaultDisplay, type DisplaySettings } from './source';
+import { defaultSendOptions, defaultSerialOptions, type PlotTransform, type SendOptions, type Session, type View } from './session.svelte';
 
 /** What a profile carries. Repeat count and interval are left out: they describe one job, not a device. */
 export interface ProfileSettings {
@@ -50,6 +50,35 @@ export function settingsOf(s: Session): ProfileSettings {
     plotFs: s.plotFs,
     autoReplies: $state.snapshot(s.autoReplies),
   };
+}
+
+/**
+ * Back to defaults for one tab. User-made content (auto-replies, colour rules,
+ * profiles) and the view are kept, and so are the port settings while the port
+ * is open, since they cannot change on a live connection.
+ */
+export function resetSettings(s: Session): void {
+  const send = defaultSendOptions();
+  applySettings(s, {
+    options: s.open ? $state.snapshot(s.options) : defaultSerialOptions(),
+    dtr: true,
+    rts: true,
+    newline: 'auto',
+    echo: false,
+    display: defaultDisplay(),
+    send,
+    view: s.view,
+    plotWindow: 30,
+    plotTransforms: {},
+    plotX: null,
+    plotFft: false,
+    plotFs: null,
+    autoReplies: s.autoReplies,
+  });
+  s.sendOptions.repeat = send.repeat;
+  s.sendOptions.intervalMs = send.intervalMs;
+  s.typeToDevice = true;
+  s.localEcho = false;
 }
 
 export function applySettings(s: Session, p: ProfileSettings): void {

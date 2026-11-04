@@ -18,7 +18,10 @@
 <label class="check" title="Off: show escape codes as ␛[…"><input type="checkbox" bind:checked={disp.ansi} /> ANSI colours</label>
 <label class="check" title="Show CR, LF, TAB, NUL and every other non-printing byte, line endings included"><input type="checkbox" bind:checked={disp.ctrl} /> Control characters</label>
 {#if source.typeKeys}
-  <label class="check" title="Show what you type in Type mode; leave off for devices that echo"><input type="checkbox" checked={source.localEcho} onchange={(e) => (source.localEcho = e.currentTarget.checked)} /> Local echo while typing</label>
+  <label class="check" title="Keys pressed in the terminal go to the device, like a terminal emulator. Ctrl+Shift keeps app shortcuts"><input type="checkbox" checked={source.typeToDevice} onchange={(e) => (source.typeToDevice = e.currentTarget.checked)} /> Keyboard to device</label>
+  {#if source.typeToDevice}
+    <label class="check indent" title="Show what you type; leave off for devices that echo"><input type="checkbox" checked={source.localEcho} onchange={(e) => (source.localEcho = e.currentTarget.checked)} /> Local echo</label>
+  {/if}
 {/if}
 {#if source.echo !== undefined}
   <label class="check" title="Show what you send, as → lines"><input type="checkbox" checked={source.echo} onchange={(e) => (source.echo = e.currentTarget.checked)} /> Show sent data</label>
@@ -27,4 +30,5 @@
 <style>
   .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); }
   .check { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .indent { margin-left: 22px; }
 </style>

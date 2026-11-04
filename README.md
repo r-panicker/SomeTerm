@@ -44,7 +44,7 @@ Serial terminals tend to fall into two camps: powerful but dense (RealTerm's wal
 | Terminal | Timestamps, ANSI colours, RealTerm-style `[CR]` `[LF]` control-character display, sent data inline |
 | Find | Live search with regex, case matching and a filter mode |
 | Colour rules | Keep errors red and OK/PASS green across every tab; one click turns a search into a rule |
-| Terminal mode | **Type** sends keystrokes straight to the device, like GTKTerm or TeraTerm, with optional coloured local echo |
+| Terminal mode | Click in the terminal and type: keys go straight to the device, like GTKTerm or TeraTerm, with optional coloured local echo |
 
 ### Plot
 | | |

@@ -111,6 +111,9 @@ const now = () => performance.now();
  * series) is plain, not reactive; `version` ticks at most once per frame so views
  * redraw per frame rather than per chunk.
  */
+export const defaultSerialOptions = (): SerialOptions => ({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+export const defaultSendOptions = (): SendOptions => ({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false, eol: '\\r\\n', echoWaitMs: 0 });
+
 export class Session implements TermSource {
   /** Received data is also written to this port when set (RealTerm's echo port). */
   forwardTo = $state<Session | null>(null);
@@ -123,7 +126,7 @@ export class Session implements TermSource {
     readonly letter = 'A',
   ) {}
 
-  options = $state<SerialOptions>({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+  options = $state<SerialOptions>(defaultSerialOptions());
   // Raw, not deep state: a choice holds a SerialPort or a whole recording, and is only ever replaced.
   choice = $state.raw<PortChoice>(!native && isWebSerialAvailable() ? { kind: 'add' } : { kind: 'loopback' });
   granted = $state.raw<SerialPort[]>([]);
@@ -143,7 +146,7 @@ export class Session implements TermSource {
   lineControl = $state(true);
   signals = $state<InputSignals | null>(null);
   view = $state<View>('terminal');
-  echo = $state(true);
+  echo = $state(false);
   newline = $state<NewlineMode>('auto');
   display = $state<DisplaySettings>(defaultDisplay());
   /** Plot time window in seconds; 0 shows everything. */
@@ -162,6 +165,8 @@ export class Session implements TermSource {
   /** Terminal mode: the line being typed, and whether to show it (devices that echo make that redundant). */
   typed = $state('');
   localEcho = $state(false);
+  /** Keys pressed in the focused ASCII view go to the device. */
+  typeToDevice = $state(true);
   /** True after a device dropped out on its own, until it returns or the user cancels. */
   waiting = $state(false);
   private userClosing = false;
@@ -177,7 +182,7 @@ export class Session implements TermSource {
   /** The profile last applied or saved here; settings may have changed since. */
   profileId = $state<string | null>(null);
   readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });
-  sendOptions = $state<SendOptions>({ checksum: 'none', byteDelayMs: 0, lineDelayMs: 0, repeat: 1, intervalMs: 1000, rtsWhileSending: false, eol: '\\r\\n', echoWaitMs: 0 });
+  sendOptions = $state<SendOptions>(defaultSendOptions());
   private echoes = new EchoMatcher((fn, ms) => { const t = setTimeout(fn, ms); return () => clearTimeout(t); });
   job = $state<SendJob | null>(null);
   private token: CancelToken | null = null;

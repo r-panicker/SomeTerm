@@ -47,7 +47,7 @@ Pick a port, check the settings chip (`115200 8N1`), then Connect. In the browse
 
 Settings a port cannot do are greyed out; hover for the reason.
 
-**⚙** (Ctrl+,) opens every setting of the current tab in one place, grouped as Port, Display, Send, Capture, Plot, Automation (colour rules and auto-replies) and Profiles. These are the same settings the chip, menus and popovers change, so use whichever is closer.
+**⚙** (Ctrl+,) opens every setting of the current tab in one place, grouped as Port, Display, Send, Capture, Plot, Automation (colour rules and auto-replies) and Profiles. These are the same settings the chip, menus and popovers change, so use whichever is closer. **Reset to defaults** at the bottom puts the tab's settings back; profiles, colour rules and auto-replies are kept, and so are the port settings while connected.
 
 If the device is unplugged or resets its USB connection, the tab waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
 
@@ -98,7 +98,7 @@ Tabs, port choices and settings are restored on the next launch, but ports are n
 | Text | Escapes `\r \n \t \0 \\ \xNN`; the selected line ending is appended | `AT\r` |
 | Hex | Bytes separated by spaces or commas, optional `0x` | `0D 0A 41` |
 
-↑ and ↓ recall earlier sends. What you send appears in the terminal as → lines (turn off with **Show sent data** in the terminal's ⋯ menu).
+↑ and ↓ recall earlier sends. Tick **Show sent data** in the terminal's ⋯ menu to see what you send as → lines.
 
 The ⋯ button holds send options; once any is set, the button shows it instead (`CRC-16/MODBUS · paced`).
 
@@ -118,9 +118,9 @@ The ⋯ button holds send options; once any is set, the button shows it instead 
 
 ## Terminal
 
-**Type** turns the terminal into a terminal emulator, as in GTKTerm or TeraTerm: click in it and keys go straight to the device. Enter sends the send bar's line ending (CR if none is set), Backspace sends BS, arrows and Home/End/Delete send the usual VT sequences, and Ctrl+letter sends the control code (Ctrl+C copies instead when lines are selected). Pasting sends the text. App shortcuts still work with Ctrl+Shift (Ctrl+Shift+F to find). Most device shells echo what you type; for one that does not, tick **Local echo while typing** in the ⋯ menu to see your typing in the sent-data colour.
+While connected, the ASCII terminal works like GTKTerm or TeraTerm: click in it (a blue frame shows it has the keyboard) and keys go straight to the device. Enter sends the send bar's line ending (CR if none is set), Backspace sends BS, Esc sends ESC, arrows and Home/End/Delete send the usual VT sequences, and Ctrl+letter sends the control code. Ctrl+A, Ctrl+F and Ctrl+L stay with the app (select all, find, clear), and Ctrl+C copies instead of sending when lines are selected; send those codes from the send bar as `\x01` and so on if the device needs them. Pasting sends the text. Most device shells echo what you type; for one that does not, tick **Local echo** in the ⋯ menu to see your typing in the sent-data colour. Untick **Keyboard to device** there to make the terminal read-only.
 
-ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCII bytes as `.`. The terminal's ⋯ menu holds the view options: receive **Line ending** (match the device; `Auto` treats CR, LF and CRLF each as one line break), **Timestamps**, **ANSI colours**, **Control characters** (every non-printing byte as `[CR]`, `[LF]`, `[TAB]`, `[NUL]` or hex such as `[FF]`, line endings included, RealTerm style) and **Show sent data**. The ⋯ button is highlighted while any of them differs from the default. Hex, Dec and Bin show the raw received stream with offsets. Num decodes it as 8, 16 or 32-bit integers or 32/64-bit floats, with the raw bytes alongside:
+ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCII bytes as `.`. The terminal's ⋯ menu holds the view options: receive **Line ending** (match the device; `Auto` treats CR, LF and CRLF each as one line break), **Timestamps**, **ANSI colours**, **Control characters** (every non-printing byte as `[CR]`, `[LF]`, `[TAB]`, `[NUL]` or hex such as `[FF]`, line endings included, RealTerm style) and **Show sent data**. Only ANSI colours (and Keyboard to device) are on by default, and the ⋯ button is highlighted while anything differs from that. Hex, Dec and Bin show the raw received stream with offsets. Num decodes it as 8, 16 or 32-bit integers or 32/64-bit floats, with the raw bytes alongside:
 
 | Control | Use |
 |---|---|
@@ -128,13 +128,13 @@ ASCII shows lines; control characters appear as symbols such as ␀ and non-ASCI
 | LE / BE | Byte order of the sender (most microcontrollers are LE) |
 | +0 … +7 | Skip bytes until values line up with the sender's framing |
 
-**Find** (Ctrl+F) searches the ASCII view, sent and received lines alike. Enter and Shift+Enter step through matches; **Aa** matches case, **.\*** takes a regular expression, and **Filter** hides lines without a match. New data is searched as it arrives. Esc closes find.
+The magnifier (Ctrl+F) searches the ASCII view, sent and received lines alike. Enter and Shift+Enter step through matches; **Aa** matches case, **.\*** takes a regular expression, and **Filter** hides lines without a match. New data is searched as it arrives. Esc closes find.
 
 **Colour rules** (in the ⋯ menu) keep patterns coloured all the time, in every tab and the Monitor: **Line** tints the whole line, **Match** colours the matched text in bold over any ANSI colour. Earlier rules win where they overlap; drag ⋮⋮ to reorder. **Add common rules** gives errors red, warnings amber and OK/pass green. In the find bar, **+ Rule** turns the current search into a rule. Rules only change how lines look; capture, copy and find are unaffected.
 
 ANSI colour codes are shown as colour; other escape sequences (cursor movement, clear screen, titles) are removed rather than acted on, since this is a scrolling log, not a screen. Turn **ANSI colours** off to see the raw codes as `␛[31m`. Coloured numeric lines still plot.
 
-Drag to select lines, Ctrl+A for all, then Ctrl+C. Scrolling up pauses following; **↓ Live** resumes.
+Drag to select lines (a plain click only focuses), Ctrl+A for all, then Ctrl+C; Esc clears the selection. Scrolling up pauses following; **↓ Live** resumes.
 
 ## Plotting
 

@@ -24,6 +24,8 @@ interface SavedTab {
   autoReplies?: Session['autoReplies'];
   dtr?: boolean;
   rts?: boolean;
+  typeToDevice?: boolean;
+  localEcho?: boolean;
 }
 
 interface Saved {
@@ -89,6 +91,8 @@ export class Workspace {
       sendOptions: $state.snapshot(s.sendOptions),
       view: s.view,
       echo: s.echo,
+      typeToDevice: s.typeToDevice,
+      localEcho: s.localEcho,
       newline: s.newline,
       forwardTo: s.forwardTo?.letter ?? null,
       profileId: s.profileId,
@@ -137,6 +141,8 @@ export class Workspace {
       Object.assign(s.options, t.options);
       Object.assign(s.sendOptions, t.sendOptions);
       s.echo = t.echo;
+      if (typeof t.typeToDevice === 'boolean') s.typeToDevice = t.typeToDevice;
+      if (typeof t.localEcho === 'boolean') s.localEcho = t.localEcho;
       if (t.display) Object.assign(s.display, t.display);
       if (t.plotWindow !== undefined) s.plotWindow = t.plotWindow;
       if (t.plotTransforms) s.plotTransforms = sanitizeTransforms(t.plotTransforms);
