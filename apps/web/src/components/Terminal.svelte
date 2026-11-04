@@ -204,7 +204,8 @@
       if (tag) spans.push({ text: `${tag.label}› `, tone: 'fg', color: tag.color, bold: true });
       if (disp.stamps) spans.push({ text: stamp(l.time), tone: 'muted' });
       const ruled = applyRules(rules.compiled, shownText(l)).runs;
-      if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, [], ruled));
+      if (l.dir === 'sys') spans.push(...segments(l.text, 'muted', abs, 0, [], ruled));
+      else if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, [], ruled));
       else if (disp.ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? [], ruled));
       else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, [], ruled));
       return spans;

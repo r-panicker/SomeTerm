@@ -20,6 +20,8 @@ import {
   type DeviceId,
   matchProfile,
   ReplayTransport,
+  findReturningDevice,
+  type PortIdentity,
   type Recording,
   type SignalState,
 } from '@superserial/core';
@@ -115,8 +117,9 @@ export class Session implements TermSource {
   ) {}
 
   options = $state<SerialOptions>({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
-  choice = $state<PortChoice>(!native && isWebSerialAvailable() ? { kind: 'add' } : { kind: 'loopback' });
-  granted = $state<SerialPort[]>([]);
+  // Raw, not deep state: a choice holds a SerialPort or a whole recording, and is only ever replaced.
+  choice = $state.raw<PortChoice>(!native && isWebSerialAvailable() ? { kind: 'add' } : { kind: 'loopback' });
+  granted = $state.raw<SerialPort[]>([]);
   nativePorts = $state<NativePortSummary[]>([]);
   private portChosen = false;
   open = $state(false);
@@ -146,6 +149,11 @@ export class Session implements TermSource {
   plotFft = $state(false);
   /** Sample rate for the spectrum in Hz; null estimates it from arrival times. */
   plotFs = $state<number | null>(null);
+  /** True after a device dropped out on its own, until it returns or the user cancels. */
+  waiting = $state(false);
+  private userClosing = false;
+  private identity: PortIdentity | null = null;
+  private waitTimer: ReturnType<typeof setInterval> | undefined;
   /** Present while a recording is open in this tab. */
   player = $state<Player | null>(null);
   private replay: ReplayTransport | null = null;
@@ -246,7 +254,8 @@ export class Session implements TermSource {
     this.viewChosen = true;
   }
 
-  async connect(): Promise<void> {
+  /** `silent` is for reconnect attempts, which fail routinely until the device is back. */
+  async connect(silent = false): Promise<void> {
     this.busy = true;
     try {
       let t: SerialTransport;
@@ -284,9 +293,10 @@ export class Session implements TermSource {
         this.clockOffset = this.replay.recording.meta.created - (performance.timeOrigin + this.replay.timeOrigin);
         this.runPlayer();
       } else if (!this.t0) this.t0 = now();
+      this.identity = { id: this.deviceId(), ...(this.choice.kind === 'native' && { path: this.choice.path }) };
       this.startTimers();
     } catch (e) {
-      if (!(e instanceof DOMException && e.name === 'NotFoundError')) {
+      if (!silent && !(e instanceof DOMException && e.name === 'NotFoundError')) {
         this.errors++;
         this.lastError = (e as Error).message;
       }
@@ -297,11 +307,67 @@ export class Session implements TermSource {
 
   async disconnect(): Promise<void> {
     this.busy = true;
+    this.userClosing = true;
     try {
       await this.transport?.close();
     } finally {
+      this.userClosing = false;
       this.busy = false;
     }
+  }
+
+  cancelWaiting(): void {
+    clearInterval(this.waitTimer);
+    this.waitTimer = undefined;
+    this.waiting = false;
+  }
+
+  /** A line in the terminal (and Monitor) marking an event, not data. */
+  private marker(text: string): void {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, '0');
+    const line: TermLine = { dir: 'sys', text: `── ${text} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} ──`, time: now(), offset: -1 };
+    this.log.push(line);
+    this.onLine?.(line);
+    this.changed();
+  }
+
+  private beginWaiting(): void {
+    this.waiting = true;
+    this.marker('device lost');
+    let trying = false;
+    const attempt = async () => {
+      if (trying || !this.waiting || this.open) return;
+      trying = true;
+      try {
+        const c = await this.returningPort();
+        if (!c || !this.waiting) return;
+        this.choice = c;
+        await this.connect(true);
+        if (this.open) {
+          this.cancelWaiting();
+          this.marker('reconnected');
+        }
+      } finally {
+        trying = false;
+      }
+    };
+    this.waitTimer = setInterval(attempt, 1000);
+    void attempt();
+  }
+
+  /** The port that is the lost device, if it has come back. */
+  private async returningPort(): Promise<PortChoice | null> {
+    if (!this.identity) return null;
+    await this.refreshPorts();
+    if (native) {
+      const cands = this.nativePorts.map((p) => ({ id: this.deviceId({ kind: 'native', ...p }), path: p.path }));
+      const i = findReturningDevice(this.identity, cands);
+      return i < 0 ? null : { kind: 'native', ...this.nativePorts[i]! };
+    }
+    const cands = this.granted.map((port) => ({ id: this.deviceId({ kind: 'webserial', port }) }));
+    const i = findReturningDevice(this.identity, cands);
+    return i < 0 ? null : { kind: 'webserial', port: this.granted[i]! };
   }
 
   /** Sends payload + checksum + suffix, honouring repeat, pacing and RTS options. */
@@ -530,6 +596,7 @@ export class Session implements TermSource {
   }
 
   async dispose(): Promise<void> {
+    this.cancelWaiting();
     await this.capture.stop();
     if (this.open) await this.disconnect();
     this.pipeline.dispose();
@@ -563,6 +630,9 @@ export class Session implements TermSource {
     this.player = null;
     this.seekTarget = null;
     this.clockOffset = 0;
+    // Only a device that dropped out on its own is waited for; Disconnect and recordings are final.
+    const kind = this.choice.kind;
+    if (!this.userClosing && (kind === 'native' || kind === 'webserial') && !this.waiting) this.beginWaiting();
   }
 
   private startTimers(): void {

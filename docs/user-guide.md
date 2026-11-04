@@ -25,7 +25,9 @@ To use a port the OS does not list (socat, other virtual ports), start the deskt
 
 Pick a port, check the settings chip (`115200 8N1`), then Connect. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
 
-Settings a port cannot do are greyed out; hover for the reason. Disconnect to change settings.
+Settings a port cannot do are greyed out; hover for the reason.
+
+If the device is unplugged or resets its USB connection, the tab waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
 
 DTR and RTS toggle the output lines (green is asserted). Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
 

@@ -117,7 +117,7 @@
 <svelte:window onmousedown={outside} onkeydown={(e) => e.key === 'Escape' && (settingsOpen = false)} />
 
 <header>
-  <select bind:this={portSelect} value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={session.open || session.busy} title="Port">
+  <select bind:this={portSelect} value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={session.open || session.busy || session.waiting} title="Port">
     {#each choices as x (x.key)}<option value={x.key} disabled={!!heldBy(x.c)} title={heldBy(x.c)}>{session.portLabel(x.c)}</option>{/each}
     <option value="open-rec">Open recording…</option>
   </select>
@@ -177,9 +177,13 @@
       </div>
     {/if}
   </div>
-  <button class="primary" onclick={() => (session.open ? session.disconnect() : session.connect())} disabled={session.busy || (!session.open && !!heldBy(session.choice))} title={session.open ? '' : heldBy(session.choice)}>
-    {session.open ? 'Disconnect' : 'Connect'}
-  </button>
+  {#if session.waiting && !session.open}
+    <button class="primary waiting" onclick={() => session.cancelWaiting()} title="The device was unplugged or reset; it reconnects when it comes back. Click to stop waiting.">Waiting…</button>
+  {:else}
+    <button class="primary" onclick={() => (session.open ? session.disconnect() : session.connect())} disabled={session.busy || (!session.open && !!heldBy(session.choice))} title={session.open ? '' : heldBy(session.choice)}>
+      {session.open ? 'Disconnect' : 'Connect'}
+    </button>
+  {/if}
   <input bind:this={recInput} type="file" accept=".ssrec" hidden onchange={openRecording} />
   {#if session.player}
     {@const pl = session.player}
@@ -241,6 +245,9 @@
   .popover input, .popover select { width: 100%; }
   .rec::before { content: '● '; color: var(--err); }
   .play { width: 30px; padding: 0; }
+  .waiting { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .55; } }
+  @media (prefers-reduced-motion: reduce) { .waiting { animation: none; } }
   .speed { width: 4.2em; }
   select[title='Port'] { max-width: 170px; }
   .seekbar { flex: 1 1 80px; min-width: 60px; max-width: 260px; height: 20px; padding: 0; border: 0; background: none; }
