@@ -164,4 +164,10 @@ All serial I/O goes through one `SerialTransport` interface, so the core never k
 
 Usable and actively developed. Serial parity with RealTerm is close: see the [parity checklist](docs/specs.md#realterm-parity-checklist) for what's done. Not planned for now: protocol decoders (Modbus, SLIP, COBS), I2C and other non-serial RealTerm features, and mobile.
 
-SuperSerial is an independent implementation written from scratch. It is not affiliated with RealTerm and shares no code with it.
+## Credits
+
+Created by **Rajesh Panicker**.
+
+Inspired by [RealTerm](https://realterm.sourceforge.io/), [Tera Term](https://teratermproject.github.io/), GTKTerm and the Arduino Serial Plotter. SuperSerial is an independent implementation written from scratch; it is not affiliated with those projects and shares no code with them.
+
+The Screen view uses [xterm.js](https://xtermjs.org/), and plotting uses [uPlot](https://github.com/leeoniya/uPlot).

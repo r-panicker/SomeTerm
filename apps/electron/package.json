@@ -23,10 +23,11 @@
     "@superserial/transport-node": "workspace:*"
   },
   "description": "Serial terminal with plotting, capture and replay",
-  "author": "SuperSerial contributors",
+  "author": "Rajesh Panicker",
   "build": {
     "appId": "io.superserial.app",
     "productName": "SuperSerial",
+    "copyright": "Copyright © 2026 Rajesh Panicker",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release"
