@@ -45,6 +45,9 @@ Serial terminals tend to fall into two camps: powerful but dense (RealTerm's wal
 | Find | Live search with regex, case matching and a filter mode |
 | Colour rules | Keep errors red and OK/PASS green across every tab; one click turns a search into a rule |
 | Terminal mode | Click in the terminal and type: keys go straight to the device, like GTKTerm or TeraTerm, with optional coloured local echo |
+| Screen | Full-screen VT100/xterm view for boot menus, `top` and editors |
+| Quick sends | Buttons for the commands you send most, Alt+1…9 |
+| File upload | Raw, XMODEM, XMODEM-1K or YMODEM, for bootloaders and U-Boot |
 
 ### Plot
 | | |

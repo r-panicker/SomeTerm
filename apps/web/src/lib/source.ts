@@ -1,6 +1,6 @@
 import type { ByteRing, NewlineMode, NumType, RxBatch, TerminalLog } from '@superserial/core';
 
-export type DisplayFormat = 'ascii' | 'hex' | 'dec' | 'bin' | 'num';
+export type DisplayFormat = 'ascii' | 'hex' | 'dec' | 'bin' | 'num' | 'screen';
 
 /** How the terminal draws a source; owned by the source so profiles and restore can set it. */
 export interface DisplaySettings {

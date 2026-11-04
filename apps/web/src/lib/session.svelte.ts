@@ -208,6 +208,7 @@ export class Session implements TermSource {
   job = $state<SendJob | null>(null);
   /** Receives incoming bytes instead of the line parser during an XMODEM/YMODEM transfer. */
   private protocolTap: ((chunk: Uint8Array, ts: number) => void) | null = null;
+  private rawListeners = new Set<(chunk: Uint8Array) => void>();
   private token: CancelToken | null = null;
 
   readonly log = new TerminalLog(() => prefs.scrollback);
@@ -381,6 +382,12 @@ export class Session implements TermSource {
       this.errors++;
       this.lastError = `Auto-reply “${e.rule.pattern}”: ${e.message}`;
     }
+  }
+
+  /** Every received chunk as it arrives, for the Screen view; returns the unsubscribe. */
+  onRaw(fn: (chunk: Uint8Array) => void): () => void {
+    this.rawListeners.add(fn);
+    return () => this.rawListeners.delete(fn);
   }
 
   /** Writes bytes immediately, outside any send job; used for keystrokes and auto-replies. */
@@ -725,6 +732,7 @@ export class Session implements TermSource {
     this.rx += chunk.length;
     this.ring.push(chunk);
     this.capture.rx(chunk, performance.timeOrigin + ts);
+    for (const fn of this.rawListeners) fn(chunk);
     if (this.protocolTap) { this.protocolTap(chunk, ts); return; }
     this.pipeline.data(chunk, ts);
     this.echoes.feed(chunk);

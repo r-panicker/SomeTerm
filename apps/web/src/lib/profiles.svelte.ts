@@ -183,7 +183,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
     newline: pick(r.newline, ['auto', 'lf', 'cr', 'crlf'] as const, 'auto'),
     echo: bool(r.echo, false),
     display: {
-      format: pick(d.format, ['ascii', 'hex', 'dec', 'bin', 'num'] as const, 'ascii'),
+      format: pick(d.format, ['ascii', 'hex', 'dec', 'bin', 'num', 'screen'] as const, 'ascii'),
       numType: pick(d.numType, NUM_TYPES.map((n) => n.type), 'int16'),
       littleEndian: bool(d.littleEndian, true),
       align: int(d.align, 0, 7, 0),

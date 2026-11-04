@@ -132,6 +132,8 @@ ASCII shows lines as a terminal would draw them: UTF-8 text such as `°C` and `�
 
 Settings → Display sets **Bytes per row** for these views (8, 16 or 32; Bin shows half as many) and **Scrollback**, the lines each terminal keeps (10,000 to 500,000; older lines leave the view, not a capture).
 
+**Screen** shows the port as a full-screen terminal (VT100/xterm), for anything that draws with the cursor rather than printing lines: boot menus, `top`, `vi`, `nano`. Keys go straight to the device, including Esc and Ctrl+L; use Ctrl+Shift for app shortcuts. It opens showing the last 64 kB received, and the line log, plot and capture carry on underneath.
+
 The magnifier (Ctrl+F) searches the ASCII view, sent and received lines alike. Enter and Shift+Enter step through matches; **Aa** matches case, **.\*** takes a regular expression, and **Filter** hides lines without a match. New data is searched as it arrives. Esc closes find.
 
 **Colour rules** (in the ⋯ menu) keep patterns coloured all the time, in every tab and the Monitor: **Line** tints the whole line, **Match** colours the matched text in bold over any ANSI colour. Earlier rules win where they overlap; drag ⋮⋮ to reorder. **Add common rules** gives errors red, warnings amber and OK/pass green. In the find bar, **+ Rule** turns the current search into a rule. Rules only change how lines look; capture, copy and find are unaffected.

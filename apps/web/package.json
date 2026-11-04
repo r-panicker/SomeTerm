@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@superserial/core": "workspace:*",
+    "@superserial/transport-node": "workspace:*",
     "@superserial/transport-webserial": "workspace:*",
-    "uplot": "1.6.31",
-    "@superserial/transport-node": "workspace:*"
+    "@xterm/addon-fit": "0.10.0",
+    "@xterm/xterm": "5.5.0",
+    "uplot": "1.6.31"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.1.1",

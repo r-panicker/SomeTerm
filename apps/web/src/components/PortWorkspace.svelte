@@ -23,6 +23,8 @@
 
   /** Shortcuts that act on this tab; the app routes keys to the active tab. */
   export function handleKey(e: KeyboardEvent) {
+    // In the Screen view keys belong to the device (Esc for vi, Ctrl+L to redraw); Ctrl+Shift keeps app shortcuts.
+    if (e.target instanceof Element && e.target.closest('.xterm') && !(e.ctrlKey && e.shiftKey)) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
       e.preventDefault();
       session.clear();

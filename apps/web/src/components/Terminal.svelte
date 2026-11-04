@@ -3,6 +3,8 @@
   import { untrack } from 'svelte';
   import CanvasView, { type Span } from './CanvasView.svelte';
   import DisplayOptions from './settings/DisplayOptions.svelte';
+  import Screen from './Screen.svelte';
+  import type { Session } from '../lib/session.svelte';
   import { ansiColor } from '../lib/ansi-colors';
   import { rules, ruleText, ruleTint } from '../lib/rules.svelte';
   import { applyRules, RGB_FLAG, type RuleRun, type TermLine } from '@superserial/core';
@@ -26,12 +28,12 @@
   function typeKey(e: KeyboardEvent): boolean {
     if (!typing || !source.typeKeys || e.isComposing || e.altKey || e.metaKey) return false;
     if (e.ctrlKey && e.shiftKey) return false;
-    if (e.key === 'Escape' && view.hasSelection()) return false;
+    if (e.key === 'Escape' && view?.hasSelection()) return false;
     if (e.ctrlKey) {
       const k = e.key.toLowerCase();
       // Select all, find and clear stay with the app; \x01, \x06 and \x0c can still be sent from the send bar.
       if (k === 'a' || k === 'f' || k === 'l') return false;
-      if (k === 'c' && view.hasSelection()) return false;
+      if (k === 'c' && view?.hasSelection()) return false;
       if (k === 'v') return false;
       if (k.length === 1 && k >= 'a' && k <= 'z') { source.typeKeys(Uint8Array.of(k.charCodeAt(0) - 96), 'other'); return true; }
       return false;
@@ -83,7 +85,10 @@
     width: (per / size) * (numInfo(disp.numType).width + 1) - 1,
     side: (b) => toHex(b),
   });
-  const dump = $derived(disp.format === 'num' ? numDump : disp.format === 'ascii' ? DUMP.hex : DUMP[disp.format]);
+  const dump = $derived(disp.format === 'num' ? numDump : disp.format === 'hex' || disp.format === 'dec' || disp.format === 'bin' ? DUMP[disp.format] : DUMP.hex);
+  /** Only a single port can show a screen: it needs the raw stream and somewhere to type. */
+  const screenSource = $derived('onRaw' in source ? (source as unknown as Session) : null);
+  let screen: Screen | undefined = $state();
 
   // Theme-dependent colours for the ANSI palette and for inverse video.
   let dark = $state(false);
@@ -159,14 +164,14 @@
       if (k < 0) { hi = (hi - 1 + hits.length) % hits.length; k = hits[hi]!.ranges.length - 1; }
       else if (k >= hits[hi]!.ranges.length) { hi = (hi + 1) % hits.length; k = 0; }
     } else {
-      const top = filtering ? (hits[view.topRow()]?.abs ?? 0) : source.log.dropped + view.topRow();
+      const top = filtering ? (hits[view?.topRow() ?? 0]?.abs ?? 0) : source.log.dropped + (view?.topRow() ?? 0);
       hi = index.lowerBound(top);
       if (dir < 0) hi -= 1;
       hi = (hi + hits.length) % hits.length;
       k = dir > 0 ? 0 : hits[hi]!.ranges.length - 1;
     }
     cur = { abs: hits[hi]!.abs, k };
-    view.scrollToRow(filtering ? hi : hits[hi]!.abs - source.log.dropped);
+    view?.scrollToRow(filtering ? hi : hits[hi]!.abs - source.log.dropped);
   }
 
   export function openFind() {
@@ -224,7 +229,7 @@
     return r.inverse ? { ...style, color: bg ?? panelColor, bg: fg ?? fgColor } : { ...style, color: fg, bg };
   }
   let follow = $state(true);
-  let view: CanvasView;
+  let view: CanvasView | undefined = $state();
 
   const pad = (n: number, w = 2) => String(n).padStart(w, '0');
   function stamp(t: number): string {
@@ -343,7 +348,7 @@
     if (disp.format !== 'ascii') disp.format = 'ascii';
     filter = false;
     const i = source.log.indexOfOffset(offset);
-    if (i >= 0) queueMicrotask(() => view.scrollToRow(i));
+    if (i >= 0) queueMicrotask(() => view?.scrollToRow(i));
   }
 </script>
 
@@ -353,8 +358,8 @@
   <div class="toolbar">
     {#if !findOpen && source.ring}
       <div class="seg" role="group" aria-label="Display format">
-        {#each [['ascii', 'ASCII'], ['hex', 'Hex'], ['dec', 'Dec'], ['bin', 'Bin'], ['num', 'Num']] as [f, l]}
-          <button class:on={disp.format === f} onclick={() => (disp.format = f as Format)} title={f === 'num' ? 'Decode as integers or floats' : undefined}>{l}</button>
+        {#each [['ascii', 'ASCII'], ['hex', 'Hex'], ['dec', 'Dec'], ['bin', 'Bin'], ['num', 'Num'], ...(screenSource ? [['screen', 'Screen']] : [])] as [f, l]}
+          <button class:on={disp.format === f} onclick={() => (disp.format = f as Format)} title={f === 'num' ? 'Decode as integers or floats' : f === 'screen' ? 'Full-screen terminal (VT100/xterm) for menus, top, editors: the cursor moves instead of lines scrolling' : undefined}>{l}</button>
         {/each}
       </div>
     {/if}
@@ -405,7 +410,7 @@
         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M10 10l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
       </button>
     {/if}
-    {#if !findOpen}<button onclick={() => source.clear()} title="Clear (Ctrl+L)">Clear</button>{/if}
+    {#if !findOpen}<button onclick={() => { source.clear(); screen?.reset(); }} title="Clear (Ctrl+L)">Clear</button>{/if}
     {#if !findOpen && disp.format === 'ascii'}
       <div class="anchor">
         <button bind:this={menuButton} class:active={viewChanged} onclick={() => (viewMenu = !viewMenu)} title="View options" aria-expanded={viewMenu}>⋯</button>
@@ -420,8 +425,12 @@
       </div>
     {/if}
   </div>
-  <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} onkey={typeKey} onpaste={typing ? typePaste : undefined} {typing} bind:follow />
-  {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
+  {#if disp.format === 'screen' && screenSource}
+    <Screen bind:this={screen} session={screenSource} />
+  {:else}
+    <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} onkey={typeKey} onpaste={typing ? typePaste : undefined} {typing} bind:follow />
+    {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
+  {/if}
 </section>
 
 <style>
