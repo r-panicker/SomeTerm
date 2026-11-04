@@ -23,6 +23,7 @@ SuperSerial: a cross-platform serial terminal with RealTerm's serial feature par
 - Core logic is unit-tested with a mock transport and a loopback transport; no test should need real hardware.
 - Run the test files actually relevant to what changed, not the whole battery reflexively: a pure layout/CSS change doesn't need the parser or transport suites, and a pure core change with no UI-visible effect doesn't need the UI suites. When unsure whether a change's blast radius reaches further than it looks (shared state, the ring buffer, a widely-used function), run the fuller set rather than guess.
 - Treat any new failure as a regression to root-cause, not a magic number to update blindly.
+- Gate commits on the test command's exit status, never on piped output (`… | grep` succeeds even when tests fail).
 - A test that only checks "did it run / how many bytes" is not enough: verify the actual received, rendered, or plotted output (byte sequences, displayed text, series values) matches what a human would call correct.
 - For UI changes, actually drive the page (a live browser check, not just unit tests) before calling it done. Include throughput: a UI change that looks fine at 9600 baud can fall over at 1 Mbaud.
 
