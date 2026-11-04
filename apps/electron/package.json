@@ -27,6 +27,7 @@
   "build": {
     "appId": "io.superserial.app",
     "productName": "SuperSerial",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release"
     },
