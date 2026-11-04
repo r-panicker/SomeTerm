@@ -8,13 +8,15 @@
   import StatusBar from './StatusBar.svelte';
   import CapturePanel from './CapturePanel.svelte';
   import ProfilesPanel from './ProfilesPanel.svelte';
+  import RulesPanel from './RulesPanel.svelte';
 
   let { session, workspace, narrow }: { session: Session; workspace: Workspace; narrow: boolean } = $props();
   let terminal: Terminal | undefined = $state();
   let sendBar: SendBar;
   let main: HTMLElement;
   let split = $state(0.5);
-  let drawer = $state<'capture' | 'profiles' | null>(null);
+  let drawer = $state<'capture' | 'profiles' | 'rules' | null>(null);
+  const DRAWER_TITLES = { capture: 'Capture', profiles: 'Profiles', rules: 'Colour rules' };
 
   /** Shortcuts that act on this tab; the app routes keys to the active tab. */
   export function handleKey(e: KeyboardEvent) {
@@ -51,7 +53,7 @@
 <TopBar {session} {workspace} bind:drawer />
 <main bind:this={main} class:narrow>
   {#if showTerm}
-    <div class="slot" style:flex={showPlot ? `${split} 1 0` : '1 1 0'}><Terminal bind:this={terminal} source={session} /></div>
+    <div class="slot" style:flex={showPlot ? `${split} 1 0` : '1 1 0'}><Terminal bind:this={terminal} source={session} onrules={() => (drawer = 'rules')} /></div>
   {/if}
   {#if showTerm && showPlot}
     <div class="handle" role="separator" aria-orientation={narrow ? 'horizontal' : 'vertical'} onpointerdown={drag}></div>
@@ -63,8 +65,8 @@
   {/if}
   {#if drawer}
     <aside>
-      <div class="head"><strong>{drawer === 'capture' ? 'Capture' : 'Profiles'}</strong><button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button></div>
-      {#if drawer === 'capture'}<CapturePanel ctl={session.capture} newline={session.newline} meta={() => ({ port: session.portLabel(), options: $state.snapshot(session.options) })} onstart={() => session.recordSignals()} />{:else}<ProfilesPanel {session} />{/if}
+      <div class="head"><strong>{DRAWER_TITLES[drawer]}</strong><button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button></div>
+      {#if drawer === 'capture'}<CapturePanel ctl={session.capture} newline={session.newline} meta={() => ({ port: session.portLabel(), options: $state.snapshot(session.options) })} onstart={() => session.recordSignals()} />{:else if drawer === 'profiles'}<ProfilesPanel {session} />{:else}<RulesPanel />{/if}
     </aside>
   {/if}
 </main>

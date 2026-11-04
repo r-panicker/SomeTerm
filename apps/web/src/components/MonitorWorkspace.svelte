@@ -2,11 +2,12 @@
   import type { Workspace } from '../lib/workspace.svelte';
   import Terminal from './Terminal.svelte';
   import CapturePanel from './CapturePanel.svelte';
+  import RulesPanel from './RulesPanel.svelte';
 
   let { workspace }: { workspace: Workspace } = $props();
   const monitor = $derived(workspace.monitor);
   let terminal: Terminal | undefined = $state();
-  let drawer = $state(false);
+  let drawer = $state<'capture' | 'rules' | null>(null);
 
   export function handleKey(e: KeyboardEvent) {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
@@ -15,7 +16,7 @@
     } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
       e.preventDefault();
       terminal?.openFind();
-    } else if (e.key === 'Escape') drawer = false;
+    } else if (e.key === 'Escape') drawer = null;
   }
 </script>
 
@@ -28,14 +29,14 @@
   {/each}
   <span class="spacer"></span>
   {#if monitor.errors}<span class="err" title={monitor.lastError}>⚠ {monitor.lastError}</span>{/if}
-  <button class="toggle" class:on={drawer} class:rec={monitor.capture.info?.state === 'running'} onclick={() => (drawer = !drawer)} title="Capture the merged timeline">Capture</button>
+  <button class="toggle" class:on={drawer === 'capture'} class:rec={monitor.capture.info?.state === 'running'} onclick={() => (drawer = drawer === 'capture' ? null : 'capture')} title="Capture the merged timeline">Capture</button>
 </header>
 <main>
-  <div class="slot"><Terminal bind:this={terminal} source={monitor} /></div>
+  <div class="slot"><Terminal bind:this={terminal} source={monitor} onrules={() => (drawer = 'rules')} /></div>
   {#if drawer}
     <aside>
-      <div class="head"><strong>Capture merged timeline</strong><button class="close" onclick={() => (drawer = false)} title="Close (Esc)">✕</button></div>
-      <CapturePanel ctl={monitor.capture} fixed />
+      <div class="head"><strong>{drawer === 'capture' ? 'Capture merged timeline' : 'Colour rules'}</strong><button class="close" onclick={() => (drawer = null)} title="Close (Esc)">✕</button></div>
+      {#if drawer === 'capture'}<CapturePanel ctl={monitor.capture} fixed />{:else}<RulesPanel />{/if}
     </aside>
   {/if}
 </main>

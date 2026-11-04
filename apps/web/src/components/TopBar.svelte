@@ -5,7 +5,7 @@
   import type { Workspace } from '../lib/workspace.svelte';
   import { profiles, settingsOf } from '../lib/profiles.svelte';
 
-  let { session, workspace, drawer = $bindable(null) }: { session: Session; workspace: Workspace; drawer?: 'capture' | 'profiles' | null } = $props();
+  let { session, workspace, drawer = $bindable(null) }: { session: Session; workspace: Workspace; drawer?: 'capture' | 'profiles' | 'rules' | null } = $props();
 
   const others = $derived(workspace.sessions.filter((o) => o !== session));
   /** Tooltip naming the tab that already has this port open, or ''. */

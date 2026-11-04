@@ -3,9 +3,11 @@
   import { untrack } from 'svelte';
   import CanvasView, { type Span } from './CanvasView.svelte';
   import { ansiColor } from '../lib/ansi-colors';
+  import { rules, ruleText, ruleTint } from '../lib/rules.svelte';
+  import { applyRules, type RuleRun } from '@superserial/core';
   import type { DisplayFormat, TermSource } from '../lib/source';
 
-  let { source }: { source: TermSource } = $props();
+  let { source, onrules }: { source: TermSource; onrules?: () => void } = $props();
 
   type Format = DisplayFormat;
   const disp = $derived(source.display);
@@ -135,12 +137,13 @@
    * Splits a line into spans at every ANSI style edge and find-match edge.
    * `shift` is the length of a prefix (the tx arrow) that the ranges do not include.
    */
-  function segments(text: string, tone: Span['tone'], abs: number, shift: number, runs: StyleRun[]): Span[] {
+  function segments(text: string, tone: Span['tone'], abs: number, shift: number, runs: StyleRun[], ruled: RuleRun[] = []): Span[] {
     const hi = index.active ? index.find(abs) : -1;
     const ranges = hi >= 0 ? index.hits[hi]!.ranges : [];
-    if (!runs.length && !ranges.length) return [{ text, tone }];
+    if (!runs.length && !ranges.length && !ruled.length) return [{ text, tone }];
     const cuts = new Set([0, text.length]);
     for (const r of runs) { cuts.add(r.from + shift); cuts.add(r.to + shift); }
+    for (const r of ruled) { cuts.add(r.from + shift); cuts.add(r.to + shift); }
     for (const [a, b] of ranges) { cuts.add(a + shift); cuts.add(b + shift); }
     const edges = [...cuts].filter((c) => c >= 0 && c <= text.length).sort((x, y) => x - y);
     const out: Span[] = [];
@@ -149,6 +152,9 @@
       const span: Span = { text: text.slice(a, edges[e + 1]), tone };
       const run = runs.find((r) => a - shift >= r.from && a - shift < r.to);
       if (run) Object.assign(span, styleOf(run));
+      // A colour rule is a deliberate choice, so it wins over the device's ANSI colour.
+      const rr = ruled.find((r) => a - shift >= r.from && a - shift < r.to);
+      if (rr) { span.color = ruleText(rr.color, dark); span.bold = true; }
       const k = ranges.findIndex(([x, y]) => a - shift >= x && a - shift < y);
       if (k >= 0) span.mark = cur && cur.abs === abs && cur.k === k ? 'current' : 'match';
       out.push(span);
@@ -197,9 +203,10 @@
       const tag = l.src !== undefined ? source.sources?.[l.src] : undefined;
       if (tag) spans.push({ text: `${tag.label}› `, tone: 'fg', color: tag.color, bold: true });
       if (disp.stamps) spans.push({ text: stamp(l.time), tone: 'muted' });
-      if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, []));
-      else if (disp.ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? []));
-      else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, []));
+      const ruled = applyRules(rules.compiled, shownText(l)).runs;
+      if (l.dir === 'tx') spans.push(...segments('→ ' + l.text, 'tx', abs, 2, [], ruled));
+      else if (disp.ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? [], ruled));
+      else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, [], ruled));
       return spans;
     }
     const d = dump;
@@ -213,8 +220,26 @@
     ];
   }
 
+  /** The text a line is drawn with, which is also what rules and find match against. */
+  function shownText(l: { dir: string; text: string; raw?: string }): string {
+    return l.dir === 'tx' || disp.ansi ? l.text : (l.raw ?? l.text);
+  }
+
+  function rowBg(i: number): string | undefined {
+    if (disp.format !== 'ascii' || !rules.compiled.length) return undefined;
+    const li = filtering ? index.hits[i]!.abs - source.log.dropped : i;
+    const c = applyRules(rules.compiled, shownText(asciiLine(li))).line;
+    return c === undefined ? undefined : ruleTint(c, dark);
+  }
+
+  function promoteToRule() {
+    if (!query || index.error) return;
+    rules.add({ pattern: query, caseSensitive, regex, mode: 'match' });
+    onrules?.();
+  }
+
   /** Anything that changes what rows look like must force a redraw, not only new data. */
-  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${dark}|${cur?.abs}:${cur?.k}`);
+  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${disp.stamps}|${findRev}|${filtering}|${disp.ansi}|${dark}|${cur?.abs}:${cur?.k}|${rules.version}`);
 
   const rowText = (i: number) => row(i).map((s) => s.text).join('');
 
@@ -264,6 +289,7 @@
       <button class="toggle" class:on={caseSensitive} onclick={() => (caseSensitive = !caseSensitive)} title="Match case">Aa</button>
       <button class="toggle" class:on={regex} onclick={() => (regex = !regex)} title="Regular expression">.*</button>
       <button class="toggle" class:on={filter} onclick={() => (filter = !filter)} title="Show only matching lines">Filter</button>
+      {#if onrules}<button onclick={promoteToRule} disabled={!query || !!index.error} title="Keep colouring this search as a rule">+ Rule</button>{/if}
       {#if query}
         <span class="count">{(void findRev, index.total) ? `${position || '–'}/${index.total}` : 'none'}</span>
       {/if}
@@ -272,8 +298,8 @@
       <button onclick={closeFind} title="Close (Esc)">✕</button>
     {:else if disp.format === 'ascii'}
       {#if source.setNewline}
-        <select value={source.newline} onchange={(e) => source.setNewline?.(e.currentTarget.value as NewlineMode)} title="Receive line ending">
-          <option value="auto">CR/LF auto</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CRLF</option>
+        <select value={source.newline} onchange={(e) => source.setNewline?.(e.currentTarget.value as NewlineMode)} title="Receive line ending. Auto: CR, LF or CRLF each end a line">
+          <option value="auto">Auto</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CRLF</option>
         </select>
       {/if}
       <button class="toggle" class:on={disp.stamps} onclick={() => (disp.stamps = !disp.stamps)} title="Timestamps">⏱</button>
@@ -282,12 +308,13 @@
         <button class="toggle" class:on={source.echo} onclick={() => (source.echo = !source.echo)} title="Show sent data (local echo)">⇄</button>
       {/if}
       <button onclick={openFind} title="Find (Ctrl+F)">Find</button>
+      {#if onrules}<button class:active={rules.list.length > 0} onclick={onrules} title="Colour rules: patterns that are always highlighted">Rules</button>{/if}
     {/if}
     {#if !findOpen}<span class="spacer"></span>{/if}
     {#if !follow}<button onclick={() => (follow = true)} title="Scroll to newest">↓ Live</button>{/if}
     {#if !findOpen}<button onclick={() => source.clear()} title="Clear (Ctrl+L)">Clear</button>{/if}
   </div>
-  <CanvasView bind:this={view} {count} version={revision} {row} {rowText} bind:follow />
+  <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} bind:follow />
   {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
 </section>
 
@@ -295,4 +322,5 @@
   .find { flex: 1; min-width: 6em; font-family: var(--mono); height: 23px; font-size: 12px; }
   .find.bad { border-color: var(--err); }
   .count { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+  button.active { color: var(--accent); border-color: var(--accent); }
 </style>

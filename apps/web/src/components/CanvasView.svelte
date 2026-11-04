@@ -24,9 +24,11 @@
     version: unknown;
     row: (i: number) => Span[];
     rowText: (i: number) => string;
+    /** Background for a whole row (colour rules), drawn under selection and find highlights. */
+    rowBg?: (i: number) => string | undefined;
     follow?: boolean;
   }
-  let { count, version, row, rowText, follow = $bindable(true) }: Props = $props();
+  let { count, version, row, rowText, rowBg, follow = $bindable(true) }: Props = $props();
 
   const LINE = 18;
   const PAD = 8;
@@ -93,6 +95,8 @@
     let widest = maxChars;
     for (let i = first; i < last; i++) {
       const y = i * LINE - top;
+      const tint = rowBg?.(i);
+      if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, y, width, LINE); }
       if (i >= lo && i <= hi) { ctx.fillStyle = colors.sel; ctx.fillRect(0, y, width, LINE); }
       if (i === flash) { ctx.fillStyle = colors.flash; ctx.fillRect(0, y, width, LINE); }
       let x = x0;
