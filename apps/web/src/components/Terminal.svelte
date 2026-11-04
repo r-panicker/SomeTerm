@@ -46,6 +46,12 @@
     return false;
   }
 
+  function imeText(input: { kind: 'text'; text: string } | { kind: 'backspace' } | { kind: 'enter' }) {
+    if (!typing || !source.typeKeys) return;
+    if (input.kind === 'text') source.typeKeys(utf8.encode(input.text), 'text', input.text);
+    else source.typeKeys(new Uint8Array(0), input.kind);
+  }
+
   function typePaste(text: string) {
     if (!typing || !source.typeKeys) return;
     text.split(/\r?\n|\r/).forEach((part, i, all) => {
@@ -423,7 +429,7 @@
   {#if disp.format === 'screen' && screenSource}
     <Screen bind:this={screen} session={screenSource} />
   {:else}
-    <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} onkey={typeKey} onpaste={typing ? typePaste : undefined} {typing} bind:follow />
+    <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} onkey={typeKey} onpaste={typing ? typePaste : undefined} ontext={typing ? imeText : undefined} {typing} bind:follow />
     {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
   {/if}
 </section>

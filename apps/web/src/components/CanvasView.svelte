@@ -32,13 +32,45 @@
     /** Gets keys first (terminal mode); returning true means handled. */
     onkey?: (e: KeyboardEvent) => boolean;
     onpaste?: (text: string) => void;
+    /** Text from an on-screen keyboard (touch devices), which does not report keys reliably. */
+    ontext?: (input: { kind: 'text'; text: string } | { kind: 'backspace' } | { kind: 'enter' }) => void;
     /** Outline the view while it is capturing keys. */
     typing?: boolean;
     follow?: boolean;
   }
-  let { count, version, row, rowText, rowBg, onkey, onpaste, typing = false, follow = $bindable(true) }: Props = $props();
+  let { count, version, row, rowText, rowBg, onkey, onpaste, ontext, typing = false, follow = $bindable(true) }: Props = $props();
 
   const PAD = 8;
+  /**
+   * Phones open their keyboard only for a focused text field, so a touch tap while
+   * typing focuses this hidden one. It always holds one placeholder character, so a
+   * Backspace with nothing typed still shows up as a shorter value.
+   */
+  const SENTINEL = '\u200b';
+  let ime: HTMLTextAreaElement | undefined = $state();
+  let imeFocused = $state(false);
+
+  let touched = false;
+  // Focus on click, the last event of a tap: the mousedown a browser adds after a touch would otherwise take focus back.
+  function tapped() {
+    if (!touched || !typing || !ime) return;
+    touched = false;
+    ime.value = SENTINEL;
+    ime.focus({ preventScroll: true });
+  }
+
+  function imeInput() {
+    if (!ime) return;
+    const v = ime.value;
+    ime.value = SENTINEL;
+    if (v.length < SENTINEL.length) { ontext?.({ kind: 'backspace' }); return; }
+    const added = v.replaceAll(SENTINEL, '');
+    added.split('\n').forEach((part, i) => {
+      if (i > 0) ontext?.({ kind: 'enter' });
+      if (part) ontext?.({ kind: 'text', text: part });
+    });
+  }
+
   const LINE = $derived(Math.round(prefs.textSize * 1.44));
   const FONT = $derived(`${prefs.textSize}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`);
 
@@ -230,9 +262,12 @@
     bind:this={scroller}
     onscroll={onScroll}
     onmousedown={down}
+    onpointerdown={(e) => (touched = e.pointerType === 'touch')}
+    onclick={tapped}
     oncopy={onCopy}
     onpaste={(e) => { if (!onpaste) return; e.preventDefault(); onpaste(e.clipboardData?.getData('text/plain') ?? ''); }}
     class:typing
+    class:ime-on={typing && imeFocused}
     onkeydown={onKey}
     onwheel={zoomWheel}
     tabindex="0"
@@ -241,11 +276,28 @@
   >
     <div style:height="{count * LINE + PAD * 2}px" style:width="{maxChars * charW + PAD * 2}px"></div>
   </div>
+  {#if ontext}
+    <textarea
+      bind:this={ime}
+      class="ime"
+      aria-label="Type to the device"
+      autocapitalize="off"
+      autocomplete="off"
+      spellcheck="false"
+      oninput={imeInput}
+      onkeydown={onKey}
+      onpaste={(e) => { if (!onpaste) return; e.preventDefault(); onpaste(e.clipboardData?.getData('text/plain') ?? ''); }}
+      onfocus={() => (imeFocused = true)}
+      onblur={() => (imeFocused = false)}
+    ></textarea>
+  {/if}
 </div>
 
 <style>
   .wrap { position: relative; flex: 1; min-height: 0; overflow: hidden; }
   canvas { position: absolute; inset: 0; }
   .scroller { position: absolute; inset: 0; overflow: auto; outline: none; cursor: text; }
-  .scroller.typing:focus { box-shadow: inset 0 0 0 2px var(--accent); }
+  .scroller.typing:focus, .scroller.ime-on { box-shadow: inset 0 0 0 2px var(--accent); }
+  /* Present for the on-screen keyboard but invisible; 16px stops iOS zooming in on focus. */
+  .ime { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; resize: none; font-size: 16px; pointer-events: none; }
 </style>
