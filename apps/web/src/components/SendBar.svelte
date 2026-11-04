@@ -122,8 +122,8 @@
     />
   {/if}
   {#if mode === 'text' && !job}
-    <select bind:value={session.sendOptions.eol} title="Appended to each send, after any checksum">
-      <option value={'\\r\\n'}>+CRLF</option><option value={'\\n'}>+LF</option><option value={'\\r'}>+CR</option><option value="">none</option>
+    <select bind:value={session.sendOptions.eol} title="Line ending added to each send, after any checksum; Enter sends it when typing in the terminal">
+      <option value={'\\r\\n'}>+CR+LF</option><option value={'\\n'}>+LF</option><option value={'\\r'}>+CR</option><option value="">none</option>
     </select>
   {/if}
   <div class="anchor">

@@ -22,7 +22,7 @@
   <div class="tab" class:on={workspace.active === 'monitor'} role="tab" aria-selected={workspace.active === 'monitor'}>
     <button class="pick" onclick={() => (workspace.active = 'monitor')} title="All ports on one timeline">Monitor</button>
   </div>
-  <button class="add" onclick={() => workspace.add()} title="Open another port in a new tab">+</button>
+  <button class="add" onclick={() => workspace.openTab()} title="Open another port in a new tab, with the current tab's settings">+</button>
 </div>
 
 <style>

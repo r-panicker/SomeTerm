@@ -8,9 +8,9 @@
 </script>
 
 {#if source.setNewline}
-  <label class="row">Line ending
-    <select value={source.newline} onchange={(e) => source.setNewline?.(e.currentTarget.value as NewlineMode)} title="Auto: CR, LF or CRLF each end a line">
-      <option value="auto">Auto</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CRLF</option>
+  <label class="row">Received line ending
+    <select value={source.newline} onchange={(e) => source.setNewline?.(e.currentTarget.value as NewlineMode)} title="What ends a received line. What you send (and Enter when typing) uses the send bar's line ending">
+      <option value="auto">CR, LF or CR+LF</option><option value="lf">LF</option><option value="cr">CR</option><option value="crlf">CR+LF</option>
     </select>
   </label>
 {/if}

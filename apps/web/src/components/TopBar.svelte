@@ -182,7 +182,7 @@
       <button class:on={session.view === v} onclick={() => session.chooseView(v as View)}>{l}</button>
     {/each}
   </div>
-  {#if !others.length}<button onclick={() => workspace.add()} title="Open another port in a new tab">+</button>{/if}
+  {#if !others.length}<button onclick={() => workspace.openTab()} title="Open another port in a new tab, with this tab's settings">+</button>{/if}
 </header>
 
 <style>

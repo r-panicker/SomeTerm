@@ -95,9 +95,9 @@
     </div>
   {:else if lastTab === 'send'}
     <div class="form">
-      <label>Line ending
-        <select bind:value={session.sendOptions.eol} title="Appended to each text send, after any checksum; Enter sends it in Type mode">
-          <option value={'\\r\\n'}>CRLF</option><option value={'\\n'}>LF</option><option value={'\\r'}>CR</option><option value="">none</option>
+      <label>Sent line ending
+        <select bind:value={session.sendOptions.eol} title="Appended to each text send, after any checksum; Enter sends it when typing in the terminal">
+          <option value={'\\r\\n'}>CR+LF</option><option value={'\\n'}>LF</option><option value={'\\r'}>CR</option><option value="">none</option>
         </select>
       </label>
       <SendOptions {session} onfile={() => fileInput?.click()} />

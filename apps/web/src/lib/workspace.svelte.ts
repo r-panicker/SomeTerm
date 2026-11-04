@@ -1,6 +1,6 @@
 import type { SerialOptions } from '@superserial/core';
 import { Monitor } from './monitor.svelte';
-import { sanitizeReplies, sanitizeQuickSends, sanitizeTransforms } from './profiles.svelte';
+import { applySettings, sanitizeReplies, sanitizeQuickSends, sanitizeTransforms, settingsOf } from './profiles.svelte';
 import { Session, native, type PortChoice, type SendOptions, type View } from './session.svelte';
 
 const STORAGE_KEY = 'superserial.workspace.v1';
@@ -54,6 +54,23 @@ export class Workspace {
     this.sessions.push(s);
     this.wireMonitor();
     this.active = s.letter;
+    return s;
+  }
+
+  /**
+   * A tab the user opens: it starts from the settings of the tab they were on, so
+   * a second board of the same kind needs no setting up. Auto-replies are left
+   * behind (they send on their own and belong to a device), and a port with a
+   * saved profile still gets its profile when chosen.
+   */
+  openTab(): Session {
+    const from = this.sessions.find((s) => s.letter === this.active) ?? this.sessions.at(-1);
+    const s = this.add();
+    if (from) {
+      applySettings(s, { ...settingsOf(from), autoReplies: [] });
+      s.typeToDevice = from.typeToDevice;
+      s.localEcho = from.localEcho;
+    }
     return s;
   }
 
