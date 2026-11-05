@@ -1,26 +1,14 @@
 <script lang="ts">
-  import { CHECKSUMS, XMODEM_MODES } from '@superserial/core';
+  import { CHECKSUMS } from '@superserial/core';
   import type { Session } from '../../lib/session.svelte';
 
-  /** Rows for a `.form` grid; used by the send bar's ⋯ options and the Settings panel. */
-  let { session, onfile }: { session: Session; onfile?: () => void } = $props();
+  /** Framing and timing rows for a `.form` grid (Send tab). */
+  let { session }: { session: Session } = $props();
 
   const o = $derived(session.sendOptions);
   const num = (v: string) => Math.max(0, Math.floor(Number(v) || 0));
-  const canSend = $derived(session.open && !session.player);
 </script>
 
-{#if onfile}
-  <span>File</span>
-  <span class="pair">
-    <select bind:value={session.sendOptions.fileProtocol} title="Raw sends the bytes as they are, paced by the Delay settings. XMODEM and YMODEM wait for the receiver (a bootloader, U-Boot loadx/loady) to ask, then send checked blocks">
-      <option value="raw">Raw</option>
-      {#each XMODEM_MODES as m}<option value={m.mode}>{m.label}</option>{/each}
-    </select>
-    <button type="button" class="action filebtn" onclick={onfile} disabled={!canSend}>Send file…</button>
-  </span>
-  <hr />
-{/if}
 <label>Checksum
   <select bind:value={session.sendOptions.checksum}>
     {#each CHECKSUMS as c}<option value={c.kind} title={c.detail}>{c.label}</option>{/each}

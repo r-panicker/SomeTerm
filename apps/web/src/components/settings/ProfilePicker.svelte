@@ -2,7 +2,7 @@
   import type { Session } from '../../lib/session.svelte';
   import { profiles, settingsOf } from '../../lib/profiles.svelte';
 
-  /** Rows for a `.form` grid: the tab's profile, saving a new one, updating a changed one. */
+  /** Rows for a `.form` grid: the connection's profile, saving a new one, updating a changed one. */
   let { session }: { session: Session } = $props();
 
   const profile = $derived(profiles.get(session.profileId));

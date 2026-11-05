@@ -2,7 +2,7 @@
   import { compileExpr } from '@superserial/core';
   import type { Session } from '../../lib/session.svelte';
 
-  /** Per-series conversions; used by the plot's ƒx popover and the Settings panel. */
+  /** Per-series conversions (Plot tab). */
   let { session, colors }: { session: Session; colors: readonly string[] } = $props();
 
   // Names are plain data; the version tick keeps the list current.

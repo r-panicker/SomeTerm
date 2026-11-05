@@ -50,7 +50,7 @@ button.toggle.on::before { background: var(--ok); box-shadow: 0 0 4px var(--ok);
   .toolbar select, .toolbar button { padding: 1px 4px; font-size: 11px; }
 }
 
-/* Settings forms: label column and control column. Used by popovers and the Settings panel. */
+/* Settings forms: label column and control column. */
 .form { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; }
 .form > label { display: contents; color: var(--muted); }
 .form > label > input:not([type='checkbox']), .form > label > select { width: 100%; min-width: 0; }

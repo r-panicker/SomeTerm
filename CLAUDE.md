@@ -15,7 +15,7 @@ SuperSerial: a cross-platform serial terminal with RealTerm's serial feature par
 - Incoming data path: transport, ring buffer, Web Worker (timestamp, split, parse), views. The main thread never parses or formats bulk data. Design for sustained 921600 baud and up.
 - Terminal and hex views are virtualized/canvas-based; no DOM node per line.
 - Plotting uses a canvas/WebGL library (uPlot or equivalent), fed from the same stream as the terminal.
-- UI framework: Svelte 5 + Vite. Electron is dev builds only for now; `electron-builder` packaging comes later.
+- UI framework: Svelte 5 + Vite. Electron is packaged with `electron-builder`; the Build and release workflow builds every OS.
 - Out of scope for now: protocol decoders (Modbus, SLIP, COBS, frame descriptors), I2C and other non-serial RealTerm features, mobile/Android.
 
 ## Testing

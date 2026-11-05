@@ -43,7 +43,7 @@ To use a port the OS does not list (socat, other virtual ports), start the deskt
 
 ## Connecting
 
-Pick a port, check the settings chip (`115200 8N1`, the Port tab), then Connect. The baud list has the common rates; **Other…** takes any rate the adapter supports, such as 31250 for MIDI. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
+Pick a port, check its settings on the Port tab (the status bar shows them as `115200 8N1`), then Connect. The baud list has the common rates; **Other…** takes any rate the adapter supports, such as 31250 for MIDI. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
 
 Settings a port cannot do are greyed out; hover for the reason.
 
@@ -52,7 +52,7 @@ Settings live in the tabs under the terminal, the way RealTerm lays them out:
 | Tab | Holds |
 |---|---|
 | Display | Display as (ASCII, Hex, Dec, Bin, Int/Float, Screen), line ending, timestamps, wrap, typing, theme, text size |
-| Port | Baud and framing, or the TCP/Telnet connection; profile; Break; forwarding and bridging to another tab |
+| Port | Baud and framing, or the TCP/Telnet connection; profile; Break; forwarding and bridging to another connection |
 | Send | Send lines (ASCII or numbers), +CR/+LF, checksum, repeat, delays, file |
 | Capture | Capture to file or memory |
 | Plot | Window, horizontal axis (time, XY, spectrum), conversions |
@@ -60,9 +60,9 @@ Settings live in the tabs under the terminal, the way RealTerm lays them out:
 | Profiles | Saved profiles: rename, export, import |
 | App | Reset to defaults, version and credits |
 
-Click the tab that is showing (or press Ctrl+,) to fold the panel away for more room; click any tab to bring it back. The chip, Plot view and REC bring their tab forward. **Reset to defaults** (App) keeps colour rules, auto-replies, quick-send buttons, send lines, text size and scrollback unless **All** is ticked; profiles are never deleted, and port settings stay while connected.
+Click the tab that is showing (or press Ctrl+,) to fold the panel away for more room; click any tab to bring it back. The status-bar summary, Plot view and REC bring their tab forward. **Reset to defaults** (App) keeps colour rules, auto-replies, quick-send buttons, send lines, text size and scrollback unless **All** is ticked; profiles are never deleted, and port settings stay while connected.
 
-If the device is unplugged or resets its USB connection, the tab waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
+If the device is unplugged or resets its USB connection, SuperSerial waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
 
 DTR and RTS toggle the output lines (green is asserted); a timed **Break** is on the Port tab. Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
 
@@ -70,7 +70,7 @@ DTR and RTS toggle the output lines (green is asserted); a timed **Break** is on
 
 Choose **Session recording** as the capture format to save a replayable `.ssrec` file: both directions with their timing, plus line-signal changes (CTS, DSR, DCD, RI and your DTR/RTS toggles). A recording is always one file, so splitting is not offered for it.
 
-**Open recording…** in the port list loads one; **Connect** plays it like a live port, so the terminal, plot, find, spectrum, Monitor and capture all work on it. The chip shows the port settings it was recorded with, and timestamps are the original times. Sent data appears as `→` lines; nothing is transmitted, and the send bar is off.
+**Open recording…** in the port list loads one; **Connect** plays it like a live port, so the terminal, plot, find, spectrum, Monitor and capture all work on it. The status bar shows the port settings it was recorded with, and timestamps are the original times. Sent data appears as `→` lines; nothing is transmitted, and the send bar is off.
 
 | Control | Use |
 |---|---|
@@ -83,26 +83,26 @@ A recording from a crashed session still opens, up to its last complete record.
 
 ## Profiles
 
-A profile stores a device's settings: port settings, DTR/RTS, receive line ending, echo, the terminal display (including Num type and byte order, timestamps, ANSI), send line ending, checksum and delays, view, and plot window.
+A profile stores a connection's settings: port settings (or the TCP/Telnet host and port, which applying the profile switches to), DTR/RTS, received line ending, the Display tab (including Int/Float type and byte order), send options and send lines, quick-send buttons, auto-replies, the view, and plot settings. Theme, text size, scrollback and colour rules belong to the app, not to a profile.
 
 Save one on the Port tab: **Profile → Save as…**. With **Apply to … automatically** ticked, choosing that device's port applies the profile by itself; nothing is sent to the device, only the settings change. A profile saved in the desktop app also records the board's serial number, so it matches that one board rather than every board of the model.
 
-The chip then reads `ESP32 · 115200 8N1`; a • means the settings have changed since, and **Update** saves them into the profile. Profiles can be applied only while disconnected.
+The status bar then reads `ESP32 · 115200 8N1`; a • means the settings have changed since, and **Update** saves them into the profile. Profiles can be applied only while disconnected.
 
-The **Profiles** tab renames, deletes, exports and imports them. An exported `.superserial.json` file leaves out serial numbers, so a profile shared for a lab matches every student's board of that model. Tabs restored on launch keep their own settings; profiles apply when you choose a port.
+The **Profiles** tab renames, deletes, exports and imports them. An exported `.superserial.json` file leaves out serial numbers, so a profile shared for a lab matches every student's board of that model. Connections restored on launch keep their own settings; profiles apply when you choose a port, or a profile by hand. Network connections have no USB ID, so their profiles are only applied by hand.
 
-## Several ports
+## Several connections
 
-**+** opens another port in a new tab, starting from the settings of the tab you were on (without its auto-replies). Tabs are lettered A, B, …; a port open in one tab is greyed out in the others. Every tab's settings come back the next time you open SuperSerial.
+**+** opens another connection, starting from the settings of the one you were on (without its auto-replies or network target). Connections are lettered A, B, … along the top; a port open in one is greyed out in the others. Each has its own port and its own settings, and the tabs under the terminal always show the selected one's. Everything comes back the next time you open SuperSerial.
 
-| Tab | Use |
+| Connection | Use |
 |---|---|
-| Port tabs | Each is a full terminal, plot, send bar and capture for one port |
+| A, B, … | Each is a full terminal, plot, send bar and capture for one port or network connection |
 | **Monitor** | Every port's sent and received lines on one timeline, tagged `A›`, `B›`. For spying on a link with two adapters, connect one to each wire. Its Capture writes the merged timeline as text; its own tabs hold its view options, capture and colour rules |
 
-**Connect to tab** (Port) forwards everything this tab receives out of another tab (the chip then shows `→B`); **bridge** does it both ways, to sit between two devices or to put a serial device on the network (see below). Forwarded bytes count as sent on B but are not echoed there, and the Monitor shows them once, as received on the source port. Do not forward through a loopback plug in both directions: the data circulates forever.
+**Connect to** (Port tab) forwards everything this connection receives out of another (the status bar then shows `→B`, or `⇄B` for a bridge); **bridge** does it both ways, to sit between two devices or to put a serial device on the network (see below). Forwarded bytes count as sent on B but are not echoed there, and the Monitor shows them once, as received on the source port. Do not forward through a loopback plug in both directions: the data circulates forever.
 
-Tabs, port choices and settings are restored on the next launch, but ports are not reopened: opening a port toggles DTR, which resets many boards. In the browser a port is only restored if exactly one granted port has its USB IDs.
+Connections, port choices and settings are restored on the next launch, but ports are not reopened: opening a port toggles DTR, which resets many boards. In the browser a port is only restored if exactly one granted port has its USB IDs.
 
 ## Network: TCP and Telnet
 
@@ -115,7 +115,7 @@ In the desktop app, **TCP / Telnet…** in the port list connects over the netwo
 | Host / Listen on | The server to reach, or `0.0.0.0` to accept clients from any network (`127.0.0.1` for this computer only) |
 | Port | 1 to 65535; ports below 1024 usually need administrator rights |
 
-Clients connecting and leaving are marked in the terminal. To put a serial device on the network, open it in one tab, a TCP or Telnet server in another, and on the server's Port tab choose **Connect to tab → ⇄ bridge** with the serial tab: whatever a client sends reaches the device, and whatever the device sends reaches every client.
+Clients connecting and leaving are marked in the terminal. To put a serial device on the network, open it in one connection, a TCP or Telnet server in another, and on the server's Port tab choose **Connect to → ⇄ bridge** with the serial connection: whatever a client sends reaches the device, and whatever the device sends reaches every client.
 
 ## Sending
 
@@ -216,6 +216,6 @@ Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as dat
 | Alt+1…9 | Quick-send buttons 1–9 |
 | Ctrl+= / Ctrl+- / Ctrl+0 | Zoom the whole window |
 | Ctrl+wheel over the terminal | Terminal text size |
-| Ctrl+Tab | Next tab (desktop app; browsers keep this key) |
+| Ctrl+Tab | Next connection (desktop app; browsers keep this key) |
 | Ctrl+L | Clear terminal, plot and error count |
 | Esc | Focus the send box |

@@ -12,7 +12,7 @@ export interface DisplaySettings {
   ansi: boolean;
   /** Show every control and non-ASCII byte as a token, line endings included. */
   ctrl: boolean;
-  /** Bytes per row in Hex, Dec and Num; Bin shows half as many. */
+  /** Bytes per row in Hex, Dec and Int/Float; Bin shows half as many. */
   perRow: number;
   /** Long lines continue on the next row instead of scrolling sideways. */
   wrap: boolean;
@@ -29,7 +29,7 @@ export interface TermSource {
   clear(): void;
   wallClock(t: number): Date;
   readonly display: DisplaySettings;
-  /** Raw received bytes for the Hex/Dec/Bin/Num views; absent for merged views. */
+  /** Raw received bytes for the Hex/Dec/Bin/Int/Float views; absent for merged views. */
   readonly ring?: ByteRing;
   readonly hexStart?: number;
   readonly newline?: NewlineMode;

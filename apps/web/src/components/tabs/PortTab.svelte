@@ -10,7 +10,7 @@
   const others = $derived(workspace.sessions.filter((o) => o !== session));
   const canBreak = $derived(session.open && session.capabilities.sendBreak && !session.player);
 
-  /** `fwd:B` sends what this tab receives out of B; `bridge:B` does that both ways. */
+  /** `fwd:B` sends what this connection receives out of B; `bridge:B` does that both ways. */
   const link = $derived(session.forwardTo ? `${session.forwardTo.forwardTo === session ? 'bridge' : 'fwd'}:${session.forwardTo.letter}` : '');
 
   function setLink(v: string) {
@@ -20,7 +20,7 @@
     const to = others.find((o) => o.letter === letter) ?? null;
     session.forwardTo = to;
     if (to && kind === 'bridge') {
-      // A tab can forward to only one other; bridging takes over B's forwarding.
+      // A connection forwards to only one other; bridging takes over B's forwarding.
       to.forwardTo = session;
     }
   }
@@ -48,8 +48,8 @@
           <button class="action" onclick={() => session.sendBreak()} title="Hold the line in the break state for 250 ms">Send 250 ms break</button>
         {/if}
         {#if others.length}
-          <label>Connect to tab
-            <select class="fwd" value={link} onchange={(e) => setLink(e.currentTarget.value)} title="Forward: what this tab receives is sent out of the other. Bridge: both ways, e.g. a serial port and a TCP server">
+          <label>Connect to
+            <select class="fwd" value={link} onchange={(e) => setLink(e.currentTarget.value)} title="Forward: what this connection receives is sent out of the other. Bridge: both ways, e.g. a serial port and a TCP server">
               <option value="">none</option>
               {#each others as o (o.id)}
                 <option value="fwd:{o.letter}">→ {o.letter} forward ({o.portLabel()})</option>

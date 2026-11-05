@@ -15,10 +15,10 @@
   let sendBar: SendBar;
   let main: HTMLElement;
   let split = $state(0.5);
-  /** Shortcuts elsewhere on screen (the chip, REC, ✎, + Rule) bring their tab of the panel forward. */
+  /** Shortcuts elsewhere on screen (the status-bar summary, REC, ✎, + Rule) bring their tab of the panel forward. */
   const show = (tab: PortTab) => portPanel.show(tab);
 
-  /** Shortcuts that act on this tab; the app routes keys to the active tab. */
+  /** Shortcuts that act on this connection; the app routes keys to the active one. */
   export function handleKey(e: KeyboardEvent) {
     // In the Screen view keys belong to the device (Esc for vi, Ctrl+L to redraw); Ctrl+Shift keeps app shortcuts.
     if (e.target instanceof Element && e.target.closest('.xterm') && !(e.ctrlKey && e.shiftKey)) return;
@@ -74,7 +74,7 @@
 {#if session.quickSends.length}<QuickSendStrip {session} onedit={() => show('automation')} />{/if}
 <SendBar bind:this={sendBar} {session} />
 <ControlPanel {session} {workspace} />
-<StatusBar {session} onCapture={() => show('capture')} />
+<StatusBar {session} onCapture={() => show('capture')} onport={() => show('port')} />
 
 <style>
   main { flex: 1; min-height: 0; display: flex; position: relative; }

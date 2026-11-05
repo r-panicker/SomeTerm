@@ -3,7 +3,6 @@
   import { isWebSerialAvailable } from '@superserial/transport-webserial';
   import { native, type PortChoice, type Session, type View } from '../lib/session.svelte';
   import type { Workspace } from '../lib/workspace.svelte';
-  import { profiles, settingsOf } from '../lib/profiles.svelte';
   import { portPanel, type PortTab } from '../lib/panel.svelte';
 
   /** `onshow` brings a tab of the control panel forward. */
@@ -13,19 +12,14 @@
   /** Tooltip naming the tab that already has this port open, or ''. */
   const heldBy = (c: PortChoice) => {
     const h = workspace.holder(c, session);
-    return h ? `Open in tab ${h.letter}` : '';
+    return h ? `Open in connection ${h.letter}` : '';
   };
 
-  const PARITY = { none: 'N', even: 'E', odd: 'O', mark: 'M', space: 'S' } as const;
-  const FLOW = { none: '', rtscts: 'RTS/CTS', dsrdtr: 'DSR/DTR', xonxoff: 'XON/XOFF' } as const;
   const hasWebSerial = !native && isWebSerialAvailable();
 
 
   const o = $derived(session.options);
-  const profile = $derived(profiles.get(session.profileId));
-  const dirty = $derived(!!profile && JSON.stringify(settingsOf(session)) !== JSON.stringify(profile.settings));
 
-  const summary = $derived(`${o.baudRate} ${o.dataBits}${PARITY[o.parity]}${o.stopBits}${FLOW[o.flowControl] ? ' ' + FLOW[o.flowControl] : ''}`);
   const why = (patch: Partial<SerialOptions>) => unsupportedOptions(session.capabilities, { ...session.options, ...patch })[0] ?? '';
 
   // A more limited port must not inherit settings it cannot honour.
@@ -96,9 +90,6 @@
     {/each}
     <option value="open-rec">Open recording…</option>
   </select>
-  {#if session.choice.kind !== 'net'}<button class="chip" class:on={portPanel.open && portPanel.tab === 'port'} onclick={() => onshow('port')} title={`${profile ? `Profile: ${profile.name}${dirty ? ' (changed since applied)' : ''}. ` : ''}Port settings and profiles`}>
-    {#if profile}<span class="pname">{profile.name}</span><span class="sep">·</span>{/if}{summary}{#if session.forwardTo}<span class="sep">→{session.forwardTo.letter}</span>{/if}{#if dirty}<span class="dirty">•</span>{/if}
-  </button>{/if}
   {#if session.waiting && !session.open}
     <button class="primary waiting" onclick={() => session.cancelWaiting()} title="The device was unplugged or reset; it reconnects when it comes back. Click to stop waiting.">Waiting…</button>
   {:else}
@@ -129,17 +120,10 @@
       <button class:on={session.view === v} onclick={() => { session.chooseView(v as View); if (v !== 'terminal') onshow('plot'); }}>{l}</button>
     {/each}
   </div>
-  {#if !others.length}<button onclick={() => workspace.openTab()} title="Open another port in a new tab, with this tab's settings">+</button>{/if}
+  {#if !others.length}<button onclick={() => workspace.openTab()} title="Open another connection, starting from this one's settings">+</button>{/if}
 </header>
 
 <style>
-  .chip.on { border-color: var(--accent); }
-  .chip { font-family: var(--mono); display: inline-flex; align-items: center; max-width: 34ch; white-space: nowrap; }
-  .pname { font-family: system-ui, sans-serif; overflow: hidden; text-overflow: ellipsis; max-width: 16ch; }
-  .sep { margin: 0 .4em; color: var(--muted); }
-  @media (max-width: 760px) { .pname { max-width: 6ch; } .sep { margin: 0 .25em; } }
-  @media (max-width: 660px) { .pname, .sep { display: none; } }
-  .dirty { margin-left: .3em; color: var(--accent); }
   .play { width: 30px; padding: 0; }
   .waiting { animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .55; } }

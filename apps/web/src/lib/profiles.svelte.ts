@@ -35,6 +35,8 @@ export interface ProfileSettings {
   autoReplies: AutoReply[];
   quickSends: QuickSend[];
   sendFields: string[];
+  /** The network connection, for a profile saved on TCP/Telnet; applying it switches to that connection. */
+  net?: NetSpec;
 }
 
 export function settingsOf(s: Session): ProfileSettings {
@@ -56,6 +58,7 @@ export function settingsOf(s: Session): ProfileSettings {
     autoReplies: $state.snapshot(s.autoReplies),
     quickSends: $state.snapshot(s.quickSends),
     sendFields: $state.snapshot(s.sendFields),
+    ...(s.choice.kind === 'net' && { net: { ...s.choice.spec } }),
   };
 }
 
@@ -113,6 +116,10 @@ export function applySettings(s: Session, p: ProfileSettings): void {
   s.autoReplies = p.autoReplies.map((r) => ({ ...r }));
   s.quickSends = p.quickSends.map((q) => ({ ...q }));
   s.sendFields = [...p.sendFields];
+  if (p.net) {
+    s.choice = { kind: 'net', spec: { ...p.net } };
+    s.lastNet = { ...p.net };
+  }
 }
 
 /**
@@ -238,6 +245,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
     autoReplies: sanitizeReplies((raw as Record<string, unknown>).autoReplies, trusted),
     quickSends: sanitizeQuickSends((raw as Record<string, unknown>).quickSends),
     sendFields: sanitizeFields((raw as Record<string, unknown>).sendFields),
+    ...(((n) => (n ? { net: n } : {}))(sanitizeNet((raw as Record<string, unknown>).net))),
     plotFs: ((x: unknown) => (typeof x === 'number' && x > 0 && x <= 10_000_000 ? x : null))((raw as Record<string, unknown>).plotFs),
   };
 }

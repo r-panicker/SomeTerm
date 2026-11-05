@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { FindIndex, type StyleRun, NUM_TYPES, decodeNumbers, formatNumber, numInfo, toAscii, toBinary, toHex, type NewlineMode, type NumType } from '@superserial/core';
+  import { FindIndex, type StyleRun, decodeNumbers, formatNumber, numInfo, toAscii, toBinary, toHex } from '@superserial/core';
   import { untrack } from 'svelte';
   import CanvasView, { type Span } from './CanvasView.svelte';
   import Screen from './Screen.svelte';
@@ -10,7 +10,7 @@
   import { rules, ruleText, ruleTint } from '../lib/rules.svelte';
   import { applyRules, RGB_FLAG, type RuleRun, type TermLine } from '@superserial/core';
   import { expandBytes, expandPictures, type Expanded } from '../lib/ctrl';
-  import type { DisplayFormat, TermSource } from '../lib/source';
+  import type { TermSource } from '../lib/source';
 
   /** `onshow` brings forward the panel tab that owns something: colour rules and auto-replies live under Automation. */
   let { source, onshow }: { source: TermSource; onshow?: (tab: 'terminal' | 'automation') => void } = $props();
@@ -62,15 +62,12 @@
 
   const TOKEN = RGB_FLAG | 0x5b7fb8;
 
-  type Format = DisplayFormat;
   const disp = $derived(source.display);
   const FORMAT_NAMES: Record<string, string> = { ascii: 'ASCII', hex: 'Hex', dec: 'Dec', bin: 'Bin', num: 'Int/Float', screen: 'Screen' };
   /** Terminal mode: keys pressed in the focused ASCII view go straight to the device. */
   const typing = $derived(!!source.typeKeys && !!source.typeToDevice && !!source.open && disp.format === 'ascii');
   /** Auto-replies send on their own, so while any is on the toolbar says so. */
   const replyCount = $derived(source.autoReplies?.filter((r) => r.enabled).length ?? 0);
-  /** The ⋯ button is highlighted whenever a terminal setting is not at its default. */
-  const viewChanged = $derived(disp.stamps || disp.wrap || !disp.ansi || disp.ctrl || !!source.echo || !!source.localEcho || source.typeToDevice === false || (source.newline ?? 'auto') !== 'auto');
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
   const per = $derived(disp.perRow || 16);
   const DUMP: Record<'hex' | 'dec' | 'bin', Dump> = $derived({

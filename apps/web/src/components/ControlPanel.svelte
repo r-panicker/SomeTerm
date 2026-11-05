@@ -12,7 +12,7 @@
   import CapturePanel from './CapturePanel.svelte';
   import ProfilesPanel from './ProfilesPanel.svelte';
 
-  /** A port tab's settings, one tab each, the way RealTerm lays them out. */
+  /** A connection's settings, in tabs the way RealTerm lays them out. */
   let { session, workspace }: { session: Session; workspace: Workspace } = $props();
   const TABS: [PortTab, string][] = [['display', 'Display'], ['port', 'Port'], ['send', 'Send'], ['capture', 'Capture'], ['plot', 'Plot'], ['automation', 'Automation'], ['profiles', 'Profiles'], ['app', 'App']];
 </script>

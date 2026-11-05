@@ -26,7 +26,7 @@ export function expandBytes(bytes: Uint8Array): Expanded {
 
 /**
  * For text whose raw bytes are no longer held: control pictures (U+2400…) become
- * tokens. Bytes ≥ 0x80 were stored as '.', which cannot be told apart from a real dot.
+ * tokens. Bytes that were not valid UTF-8 are '.' in the text and cannot be told apart from a real dot.
  */
 export function expandPictures(s: string): Expanded {
   let text = '';

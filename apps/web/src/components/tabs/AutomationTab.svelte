@@ -20,7 +20,7 @@
     </fieldset>
   {/if}
   <fieldset class="grow">
-    <legend>Colour rules <span class="hint">all tabs</span></legend>
+    <legend>Colour rules <span class="hint">all connections</span></legend>
     <RulesPanel />
   </fieldset>
 </div>

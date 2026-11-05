@@ -2,7 +2,7 @@
   import { parseEscapes, parseHexBytes } from '@superserial/core';
   import type { Session } from '../lib/session.svelte';
 
-  /** Editor for a tab's quick-send buttons; Settings → Send. */
+  /** Editor for a connection's quick-send buttons (Automation tab). */
   let { session }: { session: Session } = $props();
 
   const newId = () => `q${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;

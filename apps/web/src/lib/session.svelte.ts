@@ -187,7 +187,7 @@ export class Session implements TermSource {
   plotFft = $state(false);
   /** Sample rate for the spectrum in Hz; null estimates it from arrival times. */
   plotFs = $state<number | null>(null);
-  /** Pattern → reply rules for this tab; kept in profiles. */
+  /** Pattern → reply rules for this connection; kept in profiles. */
   autoReplies = $state<AutoReply[]>([]);
   quickSends = $state<QuickSend[]>([]);
   /** The Send tab's lines, each sent as ASCII or as numbers. */
@@ -207,7 +207,7 @@ export class Session implements TermSource {
   private userClosing = false;
   private identity: PortIdentity | null = null;
   private waitTimer: ReturnType<typeof setInterval> | undefined;
-  /** Present while a recording is open in this tab. */
+  /** Present while a recording is open in this connection. */
   player = $state<Player | null>(null);
   private replay: ReplayTransport | null = null;
   private replayFrame = 0;
@@ -674,7 +674,7 @@ export class Session implements TermSource {
     this.capture.signals(state, Date.now());
   }
 
-  /** Opens a recording (file chosen by the user) for replay in this tab. */
+  /** Opens a recording (file chosen by the user) for replay in this connection. */
   loadRecording(name: string, recording: Recording): void {
     if (this.open) return;
     this.choosePort({ kind: 'replay', name, recording });

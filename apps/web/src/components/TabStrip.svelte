@@ -6,7 +6,7 @@
   const color = (letter: string) => PORT_COLORS[(letter.charCodeAt(0) - 65) % PORT_COLORS.length];
 </script>
 
-<div class="strip" role="tablist" aria-label="Ports">
+<div class="strip" role="tablist" aria-label="Connections">
   {#each workspace.sessions as s (s.id)}
     <div class="tab" class:on={workspace.active === s.letter} role="tab" aria-selected={workspace.active === s.letter}>
       <button class="pick" onclick={() => (workspace.active = s.letter)} title={s.open ? 'Connected' : 'Not connected'}>
@@ -22,7 +22,7 @@
   <div class="tab" class:on={workspace.active === 'monitor'} role="tab" aria-selected={workspace.active === 'monitor'}>
     <button class="pick" onclick={() => (workspace.active = 'monitor')} title="All ports on one timeline">Monitor</button>
   </div>
-  <button class="add" onclick={() => workspace.openTab()} title="Open another port in a new tab, with the current tab's settings">+</button>
+  <button class="add" onclick={() => workspace.openTab()} title="Open another connection, starting from the current one's settings">+</button>
 </div>
 
 <style>

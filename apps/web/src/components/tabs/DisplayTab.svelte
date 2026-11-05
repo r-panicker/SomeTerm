@@ -65,7 +65,7 @@
   </fieldset>
 
   <fieldset>
-    <legend>Appearance <span class="all">all tabs</span></legend>
+    <legend>Appearance <span class="all">all connections</span></legend>
     <div class="form">
       <label>Theme
         <select value={prefs.theme} onchange={(e) => prefs.setTheme(e.currentTarget.value as Theme)} title="System follows your operating system's light or dark setting">

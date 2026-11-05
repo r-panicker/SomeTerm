@@ -44,7 +44,7 @@
     const off = session.onRaw((c) => term!.write(c));
     const keys = term.onData((s) => {
       if (!session.open) return;
-      // xterm.js sends DEL for Backspace; follow the tab's Backspace setting.
+      // xterm.js sends DEL for Backspace; follow the connection's Backspace setting.
       if (s === '\x7f' && session.sendOptions.backspace === 'bs') s = '\b';
       void session.sendRaw(new TextEncoder().encode(s));
     });

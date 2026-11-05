@@ -33,18 +33,18 @@ SuperSerial brings together the depth of established terminals such as RealTerm 
 |---|---|
 | Port settings | Any baud rate, 5–8 data bits, none/even/odd/mark/space parity, 1/1.5/2 stop bits, RTS/CTS and XON/XOFF flow control |
 | Line control | DTR and RTS toggles, timed break, live CTS/DSR/DCD/RI indicators |
-| Auto-reconnect | Unplug or reset the board and the tab picks it up again with the same settings, even under a new port name |
-| Several ports | One tab per port, a merged **Monitor** of all traffic, and forwarding between ports to sit in the middle of a link |
-| Profiles | Save settings per device; matched by USB ID (and serial number on desktop) and applied automatically |
+| Auto-reconnect | Unplug or reset the board and the connection picks it up again with the same settings, even under a new port name |
+| Several connections | Serial ports and network connections side by side, a merged **Monitor** of all traffic, and forwarding or bridging between them |
+| Profiles | Save a connection's settings, including a TCP/Telnet host and port; matched by USB ID (and serial number on desktop) and applied automatically |
 | Network | Raw TCP and Telnet, as client or server, and a bridge that puts a serial device on the network (desktop app) |
 
 ### See the data
 | | |
 |---|---|
-| Views | ASCII, Hex, Dec, Bin, and **Num**: decode the stream as int8–int32 or float32/64, either byte order, with alignment |
+| Views | ASCII, Hex, Dec (each byte 0–255), Bin, and **Int/Float**: decode the stream as int8–int32 or float32/64, either byte order, with alignment |
 | Terminal | Timestamps, ANSI colours, RealTerm-style `[CR]` `[LF]` control-character display, sent data inline |
 | Find | Live search with regex, case matching and a filter mode |
-| Colour rules | Keep errors red and OK/PASS green across every tab; one click turns a search into a rule |
+| Colour rules | Keep errors red and OK/PASS green across every connection; one click turns a search into a rule |
 | Terminal mode | Click in the terminal and type: keys go straight to the device, like GTKTerm or TeraTerm, with optional coloured local echo |
 | Screen | Full-screen VT100/xterm view for boot menus, `top` and editors |
 | Quick sends | Buttons for the commands you send most, Alt+1…9 |
@@ -66,7 +66,7 @@ SuperSerial brings together the depth of established terminals such as RealTerm 
 | Input | Text with `\r \n \t \xNN` escapes, or raw hex; history with ↑/↓ |
 | Send lines | RealTerm-style lines with **Send ASCII** and **Send Numbers** (`65 0x41 $41 41h 0b1000001 'A'`) |
 | Framing | Line ending plus Sum8, XOR8, CRC-8, CRC-16 (Modbus, CCITT) or CRC-32 |
-| Timing | Repeat N times or forever, inter-byte and inter-line delays, send a file with progress |
+| Timing | Repeat N times or forever, inter-byte and inter-line delays, choose a file then send it with progress |
 | Half duplex | Wait for each character's echo, or hold RTS while transmitting for RS-485 adapters |
 | Auto-replies | Answer prompts automatically: text or regex patterns with `$1` substitution and a loop guard |
 
@@ -79,7 +79,7 @@ SuperSerial brings together the depth of established terminals such as RealTerm 
 | Record and replay | Save a session as `.ssrec` and play it back later, at speed or instantly, with seeking. Handy for marking and demos with no hardware |
 
 ### Settings in tabs, RealTerm style
-Every setting sits in a tab under the terminal: Display, Port, Send, Capture, Plot, Automation, Profiles and App. Each has one home, always one click away; click the showing tab to fold the panel for more room. Light, dark or system theme, and it works on a phone.
+Every setting sits in a tab under the terminal: Display, Port, Send, Capture, Plot, Automation, Profiles and App. Each has one home, always one click away; click the showing tab to fold the panel for more room. The status bar keeps the essentials in view (profile, `115200 8N1`, any bridge) and opens the Port tab when clicked. On/off switches carry a light, so they never look like buttons. Light, dark or system theme, and it works on a phone.
 
 <img src="docs/images/settings-light.png" alt="The Send tab under the terminal and plot, with send lines, line ending, timing and file" width="900">
 

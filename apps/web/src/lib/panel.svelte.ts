@@ -1,6 +1,6 @@
 /**
  * Which tab of the control panel under the terminal is showing, and whether the
- * panel is open. Shared so that the port chip, Plot view, REC and similar can
+ * panel is open. Shared so that the status-bar summary, Plot view, REC and similar can
  * bring their tab forward; remembered across launches.
  */
 class PanelState<T extends string> {

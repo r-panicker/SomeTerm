@@ -16,7 +16,7 @@ export class Monitor implements TermSource {
   errors = $state(0);
   lastError = $state('');
   readonly capture = new CaptureController((m) => { this.errors++; this.lastError = m; });
-  /** Indexed by session id; entries outlive closed tabs so their old lines keep their tag. */
+  /** Indexed by session id; entries outlive closed connections so their old lines keep their tag. */
   sources = $state<{ label: string; color: string }[]>([]);
   private scheduled = false;
 

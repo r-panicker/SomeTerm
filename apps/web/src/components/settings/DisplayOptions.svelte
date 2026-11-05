@@ -2,7 +2,7 @@
   import type { NewlineMode } from '@superserial/core';
   import type { TermSource } from '../../lib/source';
 
-  /** Terminal view options; used by the terminal's ⋯ menu and the Settings panel. */
+  /** Terminal view options (Display tab, for connections and the Monitor). */
   let { source }: { source: TermSource } = $props();
   const disp = $derived(source.display);
 </script>

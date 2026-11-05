@@ -61,16 +61,18 @@ export class Workspace {
   }
 
   /**
-   * A tab the user opens: it starts from the settings of the tab they were on, so
-   * a second board of the same kind needs no setting up. Auto-replies are left
-   * behind (they send on their own and belong to a device), and a port with a
+   * A connection the user opens: it starts from the settings of the one they were
+   * on, so a second board of the same kind needs no setting up. Auto-replies are
+   * left behind (they send on their own and belong to a device), and a port with a
    * saved profile still gets its profile when chosen.
    */
   openTab(): Session {
     const from = this.sessions.find((s) => s.letter === this.active) ?? this.sessions.at(-1);
     const s = this.add();
     if (from) {
-      applySettings(s, { ...settingsOf(from), autoReplies: [] });
+      // The new connection keeps the settings but not the network target: a second listener on the same port would fail.
+      const { net: _net, ...settings } = settingsOf(from);
+      applySettings(s, { ...settings, autoReplies: [] });
       s.typeToDevice = from.typeToDevice;
       s.localEcho = from.localEcho;
     }
@@ -175,7 +177,7 @@ export class Workspace {
       if (typeof t.plotX === 'string') s.plotX = t.plotX;
       if (t.plotFft) s.plotFft = true;
       if (typeof t.plotFs === 'number' && t.plotFs > 0) s.plotFs = t.plotFs;
-      // Your own tabs keep their on/off state; only imported files arrive switched off.
+      // Restored connections keep their auto-replies' on/off state; only imported files arrive switched off.
       if (t.autoReplies) s.autoReplies = sanitizeReplies(t.autoReplies, true);
       if (t.quickSends) s.quickSends = sanitizeQuickSends(t.quickSends);
       if (t.sendFields) s.sendFields = sanitizeFields(t.sendFields);
