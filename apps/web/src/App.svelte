@@ -2,13 +2,14 @@
   import { onMount } from 'svelte';
   import { native } from './lib/session.svelte';
   import { Workspace } from './lib/workspace.svelte';
+  import { portPanel, monitorPanel } from './lib/panel.svelte';
   import PortWorkspace from './components/PortWorkspace.svelte';
   import MonitorWorkspace from './components/MonitorWorkspace.svelte';
   import TabStrip from './components/TabStrip.svelte';
 
   const workspace = new Workspace();
   if (import.meta.env.DEV) {
-    Object.assign(window, { workspace });
+    Object.assign(window, { workspace, panel: portPanel, monitorPanel });
     Object.defineProperty(window, 'session', { get: () => workspace.current, configurable: true });
   }
   let ready = $state(false);

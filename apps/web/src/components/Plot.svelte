@@ -6,7 +6,7 @@
   import 'uplot/dist/uPlot.min.css';
   import type { Session } from '../lib/session.svelte';
 
-  let { session, onpick, onsettings }: { session: Session; onpick: (offset: number) => void; onsettings?: () => void } = $props();
+  let { session, onpick }: { session: Session; onpick: (offset: number) => void } = $props();
 
   const PALETTE = ['#2f7ed8', '#e8590c', '#2b9348', '#c2255c', '#7048e8', '#0c8599', '#b08900', '#5c7cfa'];
   const WINDOWS = [[5, '5 s'], [10, '10 s'], [30, '30 s'], [60, '1 min'], [300, '5 min'], [0, 'All']] as const;
@@ -397,41 +397,16 @@
 
 <section class="pane">
   <div class="toolbar">
-    <select bind:value={session.plotWindow} title="Time window">
-      {#each WINDOWS as [v, l]}<option value={v}>{l}</option>{/each}
-    </select>
-    <button class="toggle" class:on={paused} onclick={() => { paused = !paused; update(true); }} title="Pause plot (data keeps arriving)">❚❚</button>
-    {#if hasData}
-      <select
-        value={session.plotFft ? '\u0001fft' : (session.plotX ?? '')}
-        onchange={(e) => {
-          const v = e.currentTarget.value;
-          session.plotFft = v === '\u0001fft';
-          session.plotX = session.plotFft || !v ? null : v;
-        }}
-        title="Horizontal axis: time, another series (XY), or frequency (spectrum)"
-      >
-        <option value="">vs time</option>
-        {#if seriesNames.length > 1}{#each seriesNames as n (n)}<option value={n}>vs {n}</option>{/each}{/if}
-        <option value={'\u0001fft'}>Spectrum</option>
-      </select>
-    {/if}
+    <button class="toggle" class:on={paused} onclick={() => { paused = !paused; update(true); }} title="Pause plot (data keeps arriving)">Pause</button>
+    <span class="mode" title="Set on the Plot tab">{session.plotFft ? 'Spectrum' : `${WINDOWS.find(([v]) => v === session.plotWindow)?.[1] ?? ''} · ${session.plotX && seriesNames.includes(session.plotX) ? `vs ${session.plotX}` : 'vs time'}`}{fxActive ? ' · converted' : ''}</span>
     {#if session.plotFft}
-      <input
-        class="fs"
-        inputmode="decimal"
-        value={session.plotFs ?? ''}
-        placeholder={fftInfo ? `${fftInfo.fs.toPrecision(4)} Hz` : 'Hz'}
-        onchange={(e) => { const v = Number(e.currentTarget.value); session.plotFs = e.currentTarget.value.trim() && v > 0 ? v : null; }}
-        title="Sample rate in Hz. Empty: estimated from arrival times{fftInfo ? ` (${fftInfo.n} samples, ${(fftInfo.fs / fftInfo.n).toPrecision(3)} Hz per bin)` : ''}"
-      />
+      {#if fftInfo}<span class="peaks" title="{fftInfo.n} samples, {(fftInfo.fs / fftInfo.n).toPrecision(3)} Hz per bin{session.plotFs ? '' : '; sample rate estimated from arrival times, set it on the Plot tab'}">{session.plotFs ? '' : '≈'}{fftInfo.fs.toPrecision(4)} Hz</span>{/if}
       {#if fftInfo?.peaks.length}
         <span class="peaks" title={fftInfo.peaks.map((p) => `${p.name}: ${hz(p.hz)}`).join('\n')}>
           peak {#each fftInfo.peaks.slice(0, 2) as pk}<b style:color={pk.color}>{hz(pk.hz)}</b>{/each}
         </span>
       {/if}
     {/if}
-    {#if onsettings}<button class="fx" class:active={fxActive} onclick={onsettings} title={fxActive ? 'Conversions are on: scale or convert series (e.g. ADC counts to volts)' : 'Scale or convert series (e.g. ADC counts to volts)'}>ƒx</button>{/if}
     <span class="spacer"></span>
     {#if hasData && !session.plotFft && !(session.plotX && seriesNames.includes(session.plotX))}
       <button class="toggle" class:on={statsOn} onclick={() => { statsOn = !statsOn; computeStats(); }} title="Min, max, mean and standard deviation of what is visible">Σ</button>
@@ -465,21 +440,20 @@
       {/if}
     </div>
   {/if}
-  {#if !hasData}<p class="idle">No numeric lines yet</p>{/if}
+  {#if !hasData}<p class="idle">Lines of numbers such as <code>12,34</code> or <code>temp:21.5</code> are plotted here</p>{/if}
 </section>
 
 
 <style>
-  .fx { font-style: italic; }
   .readout { padding: 4px 8px 6px; border-top: 1px solid var(--line); font: 12px var(--mono); color: var(--muted); overflow-x: auto; }
   .readout .rhead { color: var(--fg); white-space: pre; margin-bottom: 2px; }
   .readout table { border-collapse: collapse; }
   .readout th { text-align: left; font-weight: 600; padding-right: 12px; white-space: nowrap; }
   .readout td { padding-right: 14px; white-space: nowrap; }
-  .fs { width: 8em; height: 23px; font: 12px var(--mono); }
+  .mode { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .idle code { font-family: var(--mono); }
   .peaks b + b { margin-left: 1ch; }
   .peaks { font: 12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .fx.active { color: var(--accent); border-color: var(--accent); }
   .plot { flex: 1; min-height: 0; overflow: hidden; padding: 4px 4px 0; }
   .plot :global(.u-legend) { font: 12px ui-monospace, Menlo, Consolas, monospace; color: var(--fg); text-align: left; padding: 0 4px; }
   .plot :global(.u-legend .u-series:first-child) { display: none; }

@@ -35,6 +35,12 @@ import {
   type PortIdentity,
   type Recording,
   type SignalState,
+  NET_CAPABILITIES,
+  netPath,
+  describeNet,
+  netSpecProblem,
+  parseNumbers,
+  type NetSpec,
 } from '@superserial/core';
 import {
   WEB_SERIAL_CAPABILITIES,
@@ -60,6 +66,8 @@ export type PortChoice =
   | { kind: 'webserial'; port: SerialPort }
   | { kind: 'add' }
   | { kind: 'native'; path: string; label: string }
+  /** A TCP or Telnet connection, client or server; the desktop app only. */
+  | { kind: 'net'; spec: NetSpec }
   | { kind: 'replay'; name: string; recording: Recording };
 
 export interface Player {
@@ -182,6 +190,12 @@ export class Session implements TermSource {
   /** Pattern → reply rules for this tab; kept in profiles. */
   autoReplies = $state<AutoReply[]>([]);
   quickSends = $state<QuickSend[]>([]);
+  /** The Send tab's lines, each sent as ASCII or as numbers. */
+  sendFields = $state<string[]>(['', '', '', '']);
+  /** Chosen on the Send tab and sent by a separate click, so choosing a file never sends it. */
+  fileToSend = $state.raw<File | null>(null);
+  /** The last network settings used, so switching back to TCP/Telnet keeps them. */
+  lastNet = $state.raw<NetSpec>({ mode: 'client', protocol: 'tcp', host: '127.0.0.1', port: 23 });
   private replier = new AutoReplier(now);
   /** Terminal mode: the line being typed, and whether to show it (devices that echo make that redundant). */
   typed = $state('');
@@ -229,6 +243,7 @@ export class Session implements TermSource {
 
   get capabilities(): TransportCapabilities {
     if (this.choice.kind === 'loopback') return FULL_CAPABILITIES;
+    if (this.choice.kind === 'net') return NET_CAPABILITIES;
     return this.choice.kind === 'native' && native ? native.capabilities : WEB_SERIAL_CAPABILITIES;
   }
 
@@ -238,6 +253,7 @@ export class Session implements TermSource {
 
   portLabel(c: PortChoice = this.choice): string {
     if (c.kind === 'native') return c.label;
+    if (c.kind === 'net') return describeNet(c.spec);
     if (c.kind === 'replay') return `▶ ${c.name}`;
     return c.kind === 'loopback' ? 'Loopback' : c.kind === 'add' ? 'Add port…' : describePort(c.port);
   }
@@ -305,6 +321,13 @@ export class Session implements TermSource {
       if (this.choice.kind === 'replay') t = this.startReplay(this.choice.recording);
       else if (this.choice.kind === 'loopback') t = new LoopbackTransport({}, now);
       else if (this.choice.kind === 'native' && native) t = new IpcSerialTransport(native, this.choice.path, now);
+      else if (this.choice.kind === 'net') {
+        if (!native) throw new Error('TCP and Telnet need the desktop app: a browser cannot open network connections');
+        const problem = netSpecProblem(this.choice.spec);
+        if (problem) throw new Error(problem);
+        this.lastNet = this.choice.spec;
+        t = new IpcSerialTransport(native, netPath(this.choice.spec), now);
+      }
       else if (this.choice.kind === 'webserial') t = new WebSerialTransport(this.choice.port, now);
       else {
         const w = await requestWebSerialPort();
@@ -318,11 +341,13 @@ export class Session implements TermSource {
         t.onData((c, ts) => this.receive(c, ts)),
         t.onError((e) => { this.errors++; this.lastError = e.message; }),
         t.onClose(() => this.closed()),
+        ...(t.onNotice ? [t.onNotice((text) => this.marker(text))] : []),
       ];
       try {
         await t.open($state.snapshot(this.options));
         // Make the shown DTR/RTS state the real one rather than the driver's default.
-        this.lineControl = await t.setSignals({ dtr: this.dtr, rts: this.rts }).then(() => true, () => false);
+        this.lineControl = t.capabilities.lineSignals && (await t.setSignals({ dtr: this.dtr, rts: this.rts }).then(() => true, () => false));
+        if (this.choice.kind === 'net') this.marker(this.choice.spec.mode === 'server' ? `${describeNet(this.choice.spec)}: listening` : `${describeNet(this.choice.spec)}: connected`);
       } catch (e) {
         this.offs.forEach((f) => f());
         this.offs = [];
@@ -508,6 +533,20 @@ export class Session implements TermSource {
       return;
     }
     await this.sendMessage(payload, q.hex ? new Uint8Array(0) : parseEscapes(this.sendOptions.eol), true);
+  }
+
+  /** A Send tab line: as ASCII (escapes, then the line ending) or as numbers (exact bytes). */
+  async sendField(i: number, as: 'ascii' | 'numbers'): Promise<void> {
+    const text = this.sendFields[i] ?? '';
+    let payload: Uint8Array;
+    try {
+      payload = as === 'numbers' ? parseNumbers(text) : parseEscapes(text);
+    } catch (e) {
+      this.errors++;
+      this.lastError = `Send line ${i + 1}: ${(e as Error).message}`;
+      return;
+    }
+    await this.sendMessage(payload, as === 'ascii' ? parseEscapes(this.sendOptions.eol) : new Uint8Array(0));
   }
 
   async sendFile(file: File): Promise<void> {
@@ -757,6 +796,7 @@ export class Session implements TermSource {
   /** Identifies the physical port, so two tabs cannot open the same one. Null for Loopback. */
   portKey(c: PortChoice = this.choice): unknown {
     if (c.kind === 'native') return `native:${c.path}`;
+    if (c.kind === 'net') return c.spec.mode === 'server' ? `listen:${c.spec.port}` : null;
     if (c.kind === 'webserial') return c.port;
     return null; // Loopback and recordings can be open in any number of tabs.
   }
@@ -803,6 +843,7 @@ export class Session implements TermSource {
     this.clockOffset = 0;
     // Only a device that dropped out on its own is waited for; Disconnect and recordings are final.
     const kind = this.choice.kind;
+    if (kind === 'net' && !this.userClosing) this.marker(`${describeNet(this.choice.spec)}: closed by the other end`);
     if (!this.userClosing && (kind === 'native' || kind === 'webserial') && !this.waiting) this.beginWaiting();
   }
 

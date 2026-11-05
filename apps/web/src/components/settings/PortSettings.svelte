@@ -1,10 +1,9 @@
 <script lang="ts">
   import { unsupportedOptions, type SerialOptions } from '@superserial/core';
   import type { Session } from '../../lib/session.svelte';
-  import type { Workspace } from '../../lib/workspace.svelte';
 
-  /** Rows for a `.form` grid; used by the settings chip and the Settings panel. */
-  let { session, workspace }: { session: Session; workspace: Workspace } = $props();
+  /** Serial framing rows for a `.form` grid. */
+  let { session }: { session: Session } = $props();
 
   const BAUDS = [300, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 74880, 115200, 230400, 250000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 3000000];
   const PARITY = ['none', 'even', 'odd', 'mark', 'space'] as const;
@@ -13,10 +12,8 @@
   let custom = $state(false);
   const showCustom = $derived(custom || !BAUDS.includes(session.options.baudRate));
 
-  const others = $derived(workspace.sessions.filter((o) => o !== session));
   const locked = $derived(session.open ? 'Disconnect to change port settings' : '');
   const why = (patch: Partial<SerialOptions>) => unsupportedOptions(session.capabilities, { ...session.options, ...patch })[0] ?? '';
-  const canBreak = $derived(session.open && session.capabilities.sendBreak && !session.player);
 
   function baudInput(e: Event & { currentTarget: HTMLInputElement }) {
     const n = Number(e.currentTarget.value);
@@ -62,21 +59,3 @@
     {#each Object.entries(FLOW) as [f, l]}<option value={f} disabled={!!why({ flowControl: f as 'none' })} title={why({ flowControl: f as 'none' })}>{l}</option>{/each}
   </select>
 </label>
-{#if canBreak || others.length}<hr />{/if}
-{#if canBreak}
-  <span>Break</span>
-  <button class="action" onclick={() => session.sendBreak()} title="Hold the line in the break state for 250 ms">Send 250 ms break</button>
-{/if}
-{#if others.length}
-  <label>Forward
-    <select
-      class="fwd"
-      value={session.forwardTo?.letter ?? ''}
-      onchange={(e) => (session.forwardTo = others.find((o) => o.letter === e.currentTarget.value) ?? null)}
-      title="Write everything received on this port out of another port"
-    >
-      <option value="">none</option>
-      {#each others as o (o.id)}<option value={o.letter}>to {o.letter} ({o.portLabel()})</option>{/each}
-    </select>
-  </label>
-{/if}

@@ -1,13 +1,14 @@
 import type { SerialOptions } from '@superserial/core';
 import { Monitor } from './monitor.svelte';
-import { applySettings, sanitizeReplies, sanitizeQuickSends, sanitizeTransforms, settingsOf } from './profiles.svelte';
+import { applySettings, sanitizeReplies, sanitizeQuickSends, sanitizeTransforms, sanitizeFields, sanitizeNet, settingsOf } from './profiles.svelte';
+import type { NetSpec } from '@superserial/core';
 import { Session, native, type PortChoice, type SendOptions, type View } from './session.svelte';
 
 const STORAGE_KEY = 'superserial.workspace.v1';
 
 /** What is restored on launch. Kept apart from device profiles, which may later apply settings on top. */
 interface SavedTab {
-  choice: { kind: 'loopback' | 'add' } | { kind: 'native'; path: string; label: string } | { kind: 'webserial'; vid?: number; pid?: number };
+  choice: { kind: 'loopback' | 'add' } | { kind: 'native'; path: string; label: string } | { kind: 'webserial'; vid?: number; pid?: number } | { kind: 'net'; spec: NetSpec };
   options: SerialOptions;
   sendOptions: SendOptions;
   view: View;
@@ -23,6 +24,8 @@ interface SavedTab {
   plotFs?: number | null;
   autoReplies?: Session['autoReplies'];
   quickSends?: Session['quickSends'];
+  sendFields?: string[];
+  lastNet?: NetSpec;
   dtr?: boolean;
   rts?: boolean;
   typeToDevice?: boolean;
@@ -124,6 +127,8 @@ export class Workspace {
       plotFs: s.plotFs,
       autoReplies: $state.snapshot(s.autoReplies),
       quickSends: $state.snapshot(s.quickSends),
+      sendFields: $state.snapshot(s.sendFields),
+      lastNet: s.lastNet,
       dtr: s.dtr,
       rts: s.rts,
     }));
@@ -173,6 +178,9 @@ export class Workspace {
       // Your own tabs keep their on/off state; only imported files arrive switched off.
       if (t.autoReplies) s.autoReplies = sanitizeReplies(t.autoReplies, true);
       if (t.quickSends) s.quickSends = sanitizeQuickSends(t.quickSends);
+      if (t.sendFields) s.sendFields = sanitizeFields(t.sendFields);
+      const net = t.lastNet && sanitizeNet(t.lastNet);
+      if (net) s.lastNet = net;
       if (t.dtr !== undefined) s.dtr = t.dtr;
       if (t.rts !== undefined) s.rts = t.rts;
       if (t.newline !== s.newline) s.setNewline(t.newline);
@@ -190,6 +198,7 @@ function saveChoice(c: PortChoice): SavedTab['choice'] {
   // A recording's contents are not stored, so a replay tab comes back on the default port.
   if (c.kind === 'replay') return { kind: 'add' };
   if (c.kind === 'native') return { kind: 'native', path: c.path, label: c.label };
+  if (c.kind === 'net') return { kind: 'net', spec: c.spec };
   if (c.kind === 'webserial') {
     const { usbVendorId: vid, usbProductId: pid } = c.port.getInfo();
     return { kind: 'webserial', vid, pid };
@@ -200,6 +209,7 @@ function saveChoice(c: PortChoice): SavedTab['choice'] {
 /** Web Serial ports have no stable name, so a saved one is matched by USB IDs, and only if exactly one granted port matches. */
 async function loadChoice(c: SavedTab['choice'], s: Session): Promise<PortChoice | null> {
   if (c.kind === 'loopback') return { kind: 'loopback' };
+  if (c.kind === 'net') { const spec = sanitizeNet(c.spec); return spec ? { kind: 'net', spec } : null; }
   if (c.kind === 'native' && native) return { kind: 'native', path: c.path, label: s.nativePorts.find((p) => p.path === c.path)?.label ?? c.path };
   if (c.kind === 'webserial' && !native) {
     const matches = s.granted.filter((p) => {

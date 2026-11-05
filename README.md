@@ -36,6 +36,7 @@ SuperSerial brings together the depth of established terminals such as RealTerm 
 | Auto-reconnect | Unplug or reset the board and the tab picks it up again with the same settings, even under a new port name |
 | Several ports | One tab per port, a merged **Monitor** of all traffic, and forwarding between ports to sit in the middle of a link |
 | Profiles | Save settings per device; matched by USB ID (and serial number on desktop) and applied automatically |
+| Network | Raw TCP and Telnet, as client or server, and a bridge that puts a serial device on the network (desktop app) |
 
 ### See the data
 | | |
@@ -63,6 +64,7 @@ SuperSerial brings together the depth of established terminals such as RealTerm 
 | | |
 |---|---|
 | Input | Text with `\r \n \t \xNN` escapes, or raw hex; history with ↑/↓ |
+| Send lines | RealTerm-style lines with **Send ASCII** and **Send Numbers** (`65 0x41 $41 41h 0b1000001 'A'`) |
 | Framing | Line ending plus Sum8, XOR8, CRC-8, CRC-16 (Modbus, CCITT) or CRC-32 |
 | Timing | Repeat N times or forever, inter-byte and inter-line delays, send a file with progress |
 | Half duplex | Wait for each character's echo, or hold RTS while transmitting for RS-485 adapters |
@@ -76,10 +78,10 @@ SuperSerial brings together the depth of established terminals such as RealTerm 
 | Rotation | Split into numbered files every N MB or N minutes for long unattended logs |
 | Record and replay | Save a session as `.ssrec` and play it back later, at speed or instantly, with seeking. Handy for marking and demos with no hardware |
 
-### One place for settings
-Everything you set lives in one **Settings** panel (⚙ or Ctrl+,): Connection, Terminal, Send, Plot, Capture and App. The buttons beside each part of the screen (the port chip, ⋯, ƒx, Capture) open it at the right section, and the controls you flip while working stay on their toolbars. Light, dark or system theme; on a phone the panel fills the screen.
+### Settings in tabs, RealTerm style
+Every setting sits in a tab under the terminal: Display, Port, Send, Capture, Plot, Automation, Profiles and App. Each has one home, always one click away; click the showing tab to fold the panel for more room. Light, dark or system theme, and it works on a phone.
 
-<img src="docs/images/settings-light.png" alt="The Settings panel open on its Terminal section beside the terminal and plot" width="900">
+<img src="docs/images/settings-light.png" alt="The Send tab under the terminal and plot, with send lines, line ending, timing and file" width="900">
 
 ## Get it
 
@@ -152,7 +154,7 @@ pnpm test           # unit tests, no hardware needed
 packages/
   core/                 transport interface, parsing, plotting maths, capture, send logic (pure TypeScript)
   transport-webserial/  Web Serial driver
-  transport-node/       Node serialport driver and Electron IPC bridge
+  transport-node/       Node serialport driver, TCP/Telnet transport and Electron IPC bridge
 apps/
   web/                  Svelte 5 + Vite user interface
   electron/             desktop shell

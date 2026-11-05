@@ -10,6 +10,7 @@ import {
   type SerialOptions,
   compileExpr,
   type AutoReply,
+  type NetSpec,
 } from '@superserial/core';
 import { defaultDisplay, type DisplaySettings } from './source';
 import { rules } from './rules.svelte';
@@ -33,6 +34,7 @@ export interface ProfileSettings {
   plotFs: number | null;
   autoReplies: AutoReply[];
   quickSends: QuickSend[];
+  sendFields: string[];
 }
 
 export function settingsOf(s: Session): ProfileSettings {
@@ -53,6 +55,7 @@ export function settingsOf(s: Session): ProfileSettings {
     plotFs: s.plotFs,
     autoReplies: $state.snapshot(s.autoReplies),
     quickSends: $state.snapshot(s.quickSends),
+    sendFields: $state.snapshot(s.sendFields),
   };
 }
 
@@ -80,6 +83,7 @@ export function resetSettings(s: Session, everything = false): void {
     plotFs: null,
     autoReplies: everything ? [] : s.autoReplies,
     quickSends: everything ? [] : s.quickSends,
+    sendFields: everything ? ['', '', '', ''] : s.sendFields,
   });
   if (everything) {
     rules.clear();
@@ -108,6 +112,7 @@ export function applySettings(s: Session, p: ProfileSettings): void {
   s.plotFs = p.plotFs;
   s.autoReplies = p.autoReplies.map((r) => ({ ...r }));
   s.quickSends = p.quickSends.map((q) => ({ ...q }));
+  s.sendFields = [...p.sendFields];
 }
 
 /**
@@ -142,6 +147,20 @@ export function sanitizeQuickSends(raw: unknown): QuickSend[] {
       hex: q.hex === true,
     }];
   });
+}
+
+/** Send-tab lines: always four or more strings, each bounded. */
+export function sanitizeFields(raw: unknown): string[] {
+  const list = Array.isArray(raw) ? raw.slice(0, 16).map((x) => (typeof x === 'string' ? x.slice(0, 2000) : '')) : [];
+  while (list.length < 4) list.push('');
+  return list;
+}
+
+export function sanitizeNet(raw: unknown): NetSpec | null {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  if ((r.mode !== 'client' && r.mode !== 'server') || (r.protocol !== 'tcp' && r.protocol !== 'telnet')) return null;
+  if (typeof r.host !== 'string' || !Number.isInteger(r.port)) return null;
+  return { mode: r.mode, protocol: r.protocol, host: r.host.slice(0, 255), port: r.port as number };
 }
 
 /** Keeps only transforms whose expression compiles; an imported file cannot smuggle in anything else. */
@@ -218,6 +237,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
     plotFft: bool(r.plotFft, false),
     autoReplies: sanitizeReplies((raw as Record<string, unknown>).autoReplies, trusted),
     quickSends: sanitizeQuickSends((raw as Record<string, unknown>).quickSends),
+    sendFields: sanitizeFields((raw as Record<string, unknown>).sendFields),
     plotFs: ((x: unknown) => (typeof x === 'number' && x > 0 && x <= 10_000_000 ? x : null))((raw as Record<string, unknown>).plotFs),
   };
 }

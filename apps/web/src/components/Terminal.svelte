@@ -12,8 +12,8 @@
   import { expandBytes, expandPictures, type Expanded } from '../lib/ctrl';
   import type { DisplayFormat, TermSource } from '../lib/source';
 
-  /** `onsettings` opens the settings section that owns this view's options. */
-  let { source, onsettings }: { source: TermSource; onsettings?: (section: 'terminal' | 'send') => void } = $props();
+  /** `onshow` brings forward the panel tab that owns something: colour rules and auto-replies live under Automation. */
+  let { source, onshow }: { source: TermSource; onshow?: (tab: 'terminal' | 'automation') => void } = $props();
   const utf8 = new TextEncoder();
   const CSI = (s: string) => utf8.encode(`\x1b[${s}`);
   const KEYS: Record<string, Uint8Array> = {
@@ -64,6 +64,7 @@
 
   type Format = DisplayFormat;
   const disp = $derived(source.display);
+  const FORMAT_NAMES: Record<string, string> = { ascii: 'ASCII', hex: 'Hex', dec: 'Dec', bin: 'Bin', num: 'Int/Float', screen: 'Screen' };
   /** Terminal mode: keys pressed in the focused ASCII view go straight to the device. */
   const typing = $derived(!!source.typeKeys && !!source.typeToDevice && !!source.open && disp.format === 'ascii');
   /** Auto-replies send on their own, so while any is on the toolbar says so. */
@@ -384,7 +385,7 @@
   function promoteToRule() {
     if (!query || index.error) return;
     rules.add({ pattern: query, caseSensitive, regex, mode: 'match' });
-    onsettings?.('terminal');
+    onshow?.('automation');
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
@@ -406,27 +407,7 @@
 
 <section class="pane">
   <div class="toolbar">
-    {#if !findOpen && source.ring}
-      <div class="seg" role="group" aria-label="Display format">
-        {#each [['ascii', 'ASCII'], ['hex', 'Hex'], ['dec', 'Dec'], ['bin', 'Bin'], ['num', 'Num'], ...(screenSource ? [['screen', 'Screen']] : [])] as [f, l]}
-          <button class:on={disp.format === f} onclick={() => (disp.format = f as Format)} title={f === 'num' ? 'Decode as integers or floats' : f === 'screen' ? 'Full-screen terminal (VT100/xterm) for menus, top, editors: the cursor moves instead of lines scrolling' : undefined}>{l}</button>
-        {/each}
-      </div>
-    {/if}
-    {#if disp.format === 'num'}
-      <select bind:value={disp.numType} title="Value type">
-        {#each NUM_TYPES as n}<option value={n.type}>{n.type}</option>{/each}
-      </select>
-      {#if size > 1}
-        <div class="seg" role="group" aria-label="Byte order">
-          <button class:on={disp.littleEndian} onclick={() => (disp.littleEndian = true)} title="Little endian (least significant byte first)">LE</button>
-          <button class:on={!disp.littleEndian} onclick={() => (disp.littleEndian = false)} title="Big endian (most significant byte first)">BE</button>
-        </div>
-        <select bind:value={disp.align} title="Skip bytes so values line up with the sender's framing">
-          {#each Array.from({ length: size }, (_, i) => i) as a}<option value={a}>+{a}</option>{/each}
-        </select>
-      {/if}
-    {/if}
+    {#if !findOpen}<span class="fmt" title="Set on the Display tab">{FORMAT_NAMES[disp.format]}{disp.format === 'num' ? ` · ${disp.numType} ${size > 1 ? (disp.littleEndian ? 'LE' : 'BE') : ''}` : ''}</span>{/if}
     {#if findOpen}
       <input
         bind:this={findInput}
@@ -441,7 +422,7 @@
       <button class="toggle" class:on={caseSensitive} onclick={() => (caseSensitive = !caseSensitive)} title="Match case">Aa</button>
       <button class="toggle" class:on={regex} onclick={() => (regex = !regex)} title="Regular expression">.*</button>
       <button class="toggle" class:on={filter} onclick={() => (filter = !filter)} title="Show only matching lines">Filter</button>
-      {#if onsettings}<button onclick={promoteToRule} disabled={!query || !!index.error} title="Keep colouring this search as a rule">+ Rule</button>{/if}
+      {#if onshow}<button onclick={promoteToRule} disabled={!query || !!index.error} title="Keep colouring this search as a rule">+ Rule</button>{/if}
       {#if query}
         <span class="count">{(void findRev, index.total) ? `${position || '–'}/${index.total}` : 'none'}</span>
       {/if}
@@ -450,7 +431,7 @@
       <button onclick={closeFind} title="Close (Esc)">✕</button>
     {:else if disp.format === 'ascii'}
       {#if replyCount}
-        <button class="active" onclick={() => onsettings?.('send')} title="{replyCount} auto-repl{replyCount === 1 ? 'y is' : 'ies are'} on and will send data">↩ {replyCount}</button>
+        <button class="active" onclick={() => onshow?.('automation')} title="{replyCount} auto-repl{replyCount === 1 ? 'y is' : 'ies are'} on and will send data">↩ {replyCount}</button>
       {/if}
     {/if}
     {#if !findOpen}<span class="spacer"></span>{/if}
@@ -461,9 +442,6 @@
       </button>
     {/if}
     {#if !findOpen}<button onclick={() => { source.clear(); screen?.reset(); }} title="Clear (Ctrl+L)">Clear</button>{/if}
-    {#if !findOpen && onsettings}
-      <button class:active={viewChanged} onclick={() => onsettings?.('terminal')} title={viewChanged ? 'Terminal settings (some differ from the defaults)' : 'Terminal settings'} aria-label="Terminal settings">⋯</button>
-    {/if}
   </div>
   {#if disp.format === 'screen' && screenSource}
     <Screen bind:this={screen} session={screenSource} />
@@ -476,6 +454,7 @@
 <style>
   .find { flex: 1; min-width: 6em; font-family: var(--mono); height: 23px; font-size: 12px; }
   .find.bad { border-color: var(--err); }
+  .fmt { font-size: 12px; color: var(--muted); padding: 0 4px; }
   .count { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
   button.active { color: var(--accent); border-color: var(--accent); }
   button.icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; padding: 0; }

@@ -61,7 +61,7 @@
     </div>
   </div>
 {:else}
-  <p class="empty">None yet: choose Profile → Save as… above.</p>
+  <p class="empty">None yet: save one on the Port tab with Profile → Save as…</p>
 {/each}
 
 <style>

@@ -11,7 +11,7 @@ SuperSerial: a cross-platform serial terminal with RealTerm's serial feature par
 
 ## Architecture (decided)
 - Monorepo, strict boundaries: `core` (pure TS, no DOM, no Node APIs), `transport-webserial`, `transport-node`, `ui` (shared components), `app-web`, `app-electron`.
-- All serial I/O goes through a `SerialTransport` interface. The core never knows which driver is underneath. Features a transport can't support (Web Serial has no XON/XOFF, mark/space parity, or VID/PID metadata) are shown as unavailable on that transport, never silently ignored.
+- All I/O, serial ports and TCP/Telnet connections alike (desktop only; browsers have no sockets), goes through a `SerialTransport` interface. The core never knows which driver is underneath. Features a transport can't support (Web Serial has no XON/XOFF, mark/space parity, or VID/PID metadata) are shown as unavailable on that transport, never silently ignored.
 - Incoming data path: transport, ring buffer, Web Worker (timestamp, split, parse), views. The main thread never parses or formats bulk data. Design for sustained 921600 baud and up.
 - Terminal and hex views are virtualized/canvas-based; no DOM node per line.
 - Plotting uses a canvas/WebGL library (uPlot or equivalent), fed from the same stream as the terminal.
@@ -31,6 +31,8 @@ SuperSerial: a cross-platform serial terminal with RealTerm's serial feature par
 - Don't spend screen space on what a user knows by common sense or after one try: idle status, usage hints. Show state only when it carries information.
 - A label never costs a row. Fit it into a line that already exists, shrinking type or dropping secondary detail before letting a header wrap.
 - Keep the thing being studied next to what identifies it. Explanatory text is secondary; keep it short, and put it after the data, never above it.
+- Settings live in RealTerm-style tabs under the terminal, always visible and one click away. Each setting has exactly one home; nothing opens settings somewhere else (no popovers, drawers or ⋯ menus for settings). Toolbars hold actions and read-only state. The user found the alternatives (inline popovers plus a drawer, then a single drawer) confusing.
+- On/off switches look different from buttons that act or choose (they carry a light); labels say what a thing is in plain words (Int/Float, not Num).
 - Reuse the closest existing pattern for a new control instead of inventing a bespoke widget.
 - Show a value in more than one form when its format is ambiguous (hex alongside decimal, signed alongside unsigned), toggleable rather than picking one.
 - Never show a value before it's meaningful: a disconnected port shows a clear not-connected state, not zeros.

@@ -28,7 +28,10 @@ select, input, button { font: inherit; color: inherit; background: var(--bg); bo
 button { cursor: pointer; }
 button:disabled, select:disabled, input:disabled { opacity: .5; cursor: default; }
 button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-button.toggle.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+/* On/off switches carry a light, so they never look like buttons that open something or choose between options. */
+button.toggle::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; background: var(--line); vertical-align: 1px; }
+button.toggle.on { border-color: var(--ok); }
+button.toggle.on::before { background: var(--ok); box-shadow: 0 0 4px var(--ok); }
 .seg { display: inline-flex; }
 .seg button { border-radius: 0; margin-left: -1px; }
 .seg button:first-child { border-radius: 5px 0 0 5px; margin-left: 0; }
@@ -57,3 +60,11 @@ button.toggle.on { background: var(--fg); color: var(--bg); border-color: var(--
 .form .pair input[type='number'] { width: 5.5em; }
 .form .pair > select { flex: 1; min-width: 0; }
 .form .pair > .baud-custom { width: 8em; }
+
+/* Control panel: RealTerm-style group boxes laid out across the panel. */
+.groups { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+.groups > fieldset { border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px 8px; margin: 0; min-width: 0; }
+.groups > fieldset > legend { font-size: 11.5px; font-weight: 600; color: var(--muted); padding: 0 4px; }
+.checks { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; }
+.checks label, label.check { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--fg); }
+.groups .form { font-size: 12.5px; }

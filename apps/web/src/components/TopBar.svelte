@@ -4,10 +4,10 @@
   import { native, type PortChoice, type Session, type View } from '../lib/session.svelte';
   import type { Workspace } from '../lib/workspace.svelte';
   import { profiles, settingsOf } from '../lib/profiles.svelte';
-  import { settingsTab, type SettingsSection } from './SettingsPanel.svelte';
+  import { portPanel, type PortTab } from '../lib/panel.svelte';
 
-  /** `onsettings(section)` opens Settings there; with no section it toggles Settings. */
-  let { session, workspace, settingsOpen, onsettings }: { session: Session; workspace: Workspace; settingsOpen: boolean; onsettings: (section?: SettingsSection) => void } = $props();
+  /** `onshow` brings a tab of the control panel forward. */
+  let { session, workspace, onshow }: { session: Session; workspace: Workspace; onshow: (tab: PortTab) => void } = $props();
 
   const others = $derived(workspace.sessions.filter((o) => o !== session));
   /** Tooltip naming the tab that already has this port open, or ''. */
@@ -42,6 +42,7 @@
     ...session.granted.map((port, i) => ({ key: `p${i}`, c: { kind: 'webserial', port } as PortChoice })),
     ...(hasWebSerial ? [{ key: 'add', c: { kind: 'add' } as PortChoice }] : []),
     { key: 'loop', c: { kind: 'loopback' } as PortChoice },
+    { key: 'net', c: (session.choice.kind === 'net' ? session.choice : { kind: 'net', spec: session.lastNet }) as PortChoice },
     ...(session.choice.kind === 'replay' ? [{ key: 'replay', c: session.choice }] : []),
   ]);
   let recInput: HTMLInputElement;
@@ -78,18 +79,26 @@
       return;
     }
     session.choosePort(choices.find((x) => x.key === key)!.c);
+    // The connection's own settings are on the Port tab; a network one has nothing usable until host and port are set.
+    if (key === 'net') onshow('port');
   }
+
+  /** In a browser there are no sockets, so the network choice is shown but cannot be picked. */
+  const netUnavailable = native ? '' : 'TCP and Telnet need the desktop app: a browser cannot open network connections';
 
 </script>
 
 <header>
   <select bind:this={portSelect} value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={session.open || session.busy || session.waiting} title="Port">
-    {#each choices as x (x.key)}<option value={x.key} disabled={!!heldBy(x.c)} title={heldBy(x.c)}>{session.portLabel(x.c)}</option>{/each}
+    {#each choices as x (x.key)}
+      {#if x.key === 'net'}<option value="net" disabled={!!netUnavailable} title={netUnavailable || 'Raw TCP or Telnet, as client or server'}>{session.choice.kind === 'net' ? session.portLabel(x.c) : 'TCP / Telnet…'}</option>
+      {:else}<option value={x.key} disabled={!!heldBy(x.c)} title={heldBy(x.c)}>{session.portLabel(x.c)}</option>{/if}
+    {/each}
     <option value="open-rec">Open recording…</option>
   </select>
-  <button class="chip" class:on={settingsOpen && settingsTab() === 'connection'} onclick={() => onsettings('connection')} title={`${profile ? `Profile: ${profile.name}${dirty ? ' (changed since applied)' : ''}. ` : ''}Port settings and profiles`}>
+  {#if session.choice.kind !== 'net'}<button class="chip" class:on={portPanel.open && portPanel.tab === 'port'} onclick={() => onshow('port')} title={`${profile ? `Profile: ${profile.name}${dirty ? ' (changed since applied)' : ''}. ` : ''}Port settings and profiles`}>
     {#if profile}<span class="pname">{profile.name}</span><span class="sep">·</span>{/if}{summary}{#if session.forwardTo}<span class="sep">→{session.forwardTo.letter}</span>{/if}{#if dirty}<span class="dirty">•</span>{/if}
-  </button>
+  </button>{/if}
   {#if session.waiting && !session.open}
     <button class="primary waiting" onclick={() => session.cancelWaiting()} title="The device was unplugged or reset; it reconnects when it comes back. Click to stop waiting.">Waiting…</button>
   {:else}
@@ -109,17 +118,15 @@
     {#if session.choice.kind === 'replay' && session.choice.recording.records.some((r) => r.kind === 'signals')}
       <span class="outs" title="Output lines as recorded"><span class:on={pl.dtr}>DTR</span> <span class:on={pl.rts}>RTS</span></span>
     {/if}
-  {:else if session.open}
+  {:else if session.open && session.choice.kind !== 'net'}
     {@const noLines = session.lineControl ? '' : 'This port has no modem control lines'}
     <button class="line" class:on={session.dtr && session.lineControl} onclick={() => session.setLine('dtr', !session.dtr)} disabled={!!noLines} title={noLines || 'DTR output'}>DTR</button>
     <button class="line" class:on={session.rts && session.lineControl} onclick={() => session.setLine('rts', !session.rts)} disabled={!!noLines} title={noLines || 'RTS output'}>RTS</button>
   {/if}
   <span class="spacer"></span>
-  <button class="toggle capture" class:on={settingsOpen && settingsTab() === 'capture'} class:rec={session.capture.info?.state === 'running'} onclick={() => onsettings('capture')} title="Capture to file">Capture</button>
-  <button class="toggle gear" class:on={settingsOpen} onclick={() => onsettings()} title="Settings (Ctrl+,)" aria-label="Settings">⚙</button>
   <div class="seg" role="group" aria-label="View">
     {#each [['terminal', 'Terminal'], ['split', 'Split'], ['plot', 'Plot']] as [v, l]}
-      <button class:on={session.view === v} onclick={() => session.chooseView(v as View)}>{l}</button>
+      <button class:on={session.view === v} onclick={() => { session.chooseView(v as View); if (v !== 'terminal') onshow('plot'); }}>{l}</button>
     {/each}
   </div>
   {#if !others.length}<button onclick={() => workspace.openTab()} title="Open another port in a new tab, with this tab's settings">+</button>{/if}
@@ -133,16 +140,12 @@
   @media (max-width: 760px) { .pname { max-width: 6ch; } .sep { margin: 0 .25em; } }
   @media (max-width: 660px) { .pname, .sep { display: none; } }
   .dirty { margin-left: .3em; color: var(--accent); }
-  .rec::before { content: '● '; color: var(--err); }
   .play { width: 30px; padding: 0; }
-  .gear { width: 30px; padding: 0; font-size: 15px; }
   .waiting { animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .55; } }
   @media (prefers-reduced-motion: reduce) { .waiting { animation: none; } }
   .speed { width: 4.2em; }
   select[title='Port'] { max-width: 170px; }
-  /* Narrow windows: Capture is still one click away under ⚙, and the status bar shows REC. */
-  @media (max-width: 760px) { .capture:not(.rec) { display: none; } }
   @media (max-width: 700px) { select[title='Port'] { max-width: 120px; } }
   .seekbar { flex: 1 1 80px; min-width: 60px; max-width: 260px; height: 20px; padding: 0; border: 0; background: none; }
   .ptime { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
