@@ -53,6 +53,8 @@ export interface SerialTransport {
   onData(listener: (chunk: Uint8Array, timestamp: number) => void): Unsubscribe;
   onError(listener: (error: Error) => void): Unsubscribe;
   onClose(listener: () => void): Unsubscribe;
+  /** Events worth a line in the terminal but not errors, such as a client connecting to a server. */
+  onNotice?(listener: (text: string) => void): Unsubscribe;
 }
 
 /** Returns one reason per option the transport cannot honour; empty means all supported. */

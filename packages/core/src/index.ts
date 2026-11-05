@@ -29,3 +29,6 @@ export { findReturningDevice, type PortIdentity } from './reconnect';
 export { rangeStats, nearestIndex, type Stats } from './plot/stats';
 export { EchoMatcher, sendWithEcho, type SetTimer } from './send/echo';
 export { AutoReplier, type AutoReply, type ReplyAction, type ReplyResult } from './send/autoreply';
+export { NET_CAPABILITIES, netPath, parseNetPath, describeNet, netSpecProblem, type NetSpec } from './net/spec';
+export { TelnetCodec } from './net/telnet';
+export { parseNumbers } from './send/numbers';

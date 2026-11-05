@@ -1,6 +1,13 @@
-import type { SerialOptions, SerialTransport } from '@superserial/core';
+import { parseNetPath, type SerialOptions, type SerialTransport } from '@superserial/core';
 import { CHANNELS, type BridgeEvent, type NativePortSummary } from './bridge';
 import { NodeSerialTransport, listNodePorts } from './node';
+import { TcpTransport } from './net';
+
+/** A network path (`tcp://…`, `telnet-server://…`) opens a TCP connection; anything else is a serial port. */
+export function createTransport(path: string): SerialTransport {
+  const spec = parseNetPath(path);
+  return spec ? new TcpTransport(spec) : new NodeSerialTransport(path);
+}
 
 /** The parts of Electron's ipcMain the host needs; also lets tests run without Electron. */
 export interface IpcMainLike {
@@ -16,7 +23,7 @@ export interface IpcMainLike {
 export function serveSerialBridge(
   ipc: IpcMainLike,
   send: (channel: string, event: BridgeEvent) => void,
-  create: (path: string) => SerialTransport = (p) => new NodeSerialTransport(p),
+  create: (path: string) => SerialTransport = createTransport,
   list: () => Promise<NativePortSummary[]> = listNodePorts,
 ): () => Promise<void> {
   const ports = new Map<string, SerialTransport>();
@@ -34,6 +41,7 @@ export function serveSerialBridge(
     const t = create(path);
     t.onData((data) => send(CHANNELS.event, { path, type: 'data', data }));
     t.onError((e) => send(CHANNELS.event, { path, type: 'error', message: e.message }));
+    t.onNotice?.((text) => send(CHANNELS.event, { path, type: 'notice', text }));
     t.onClose(() => {
       ports.delete(path);
       send(CHANNELS.event, { path, type: 'close' });

@@ -12,6 +12,7 @@ export interface NativePortSummary {
 export type BridgeEvent =
   | { path: string; type: 'data'; data: Uint8Array }
   | { path: string; type: 'error'; message: string }
+  | { path: string; type: 'notice'; text: string }
   | { path: string; type: 'close' };
 
 /**

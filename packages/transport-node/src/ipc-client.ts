@@ -1,11 +1,13 @@
-import type {
-  InputSignals,
-  OutputSignals,
-  SerialOptions,
-  SerialTransport,
-  TransportCapabilities,
-  TransportState,
-  Unsubscribe,
+import {
+  NET_CAPABILITIES,
+  parseNetPath,
+  type InputSignals,
+  type OutputSignals,
+  type SerialOptions,
+  type SerialTransport,
+  type TransportCapabilities,
+  type TransportState,
+  type Unsubscribe,
 } from '@superserial/core';
 import type { NativeSerialBridge } from './bridge';
 
@@ -17,13 +19,14 @@ export class IpcSerialTransport implements SerialTransport {
   private data = new Set<(chunk: Uint8Array, timestamp: number) => void>();
   private errors = new Set<(error: Error) => void>();
   private closes = new Set<() => void>();
+  private notices = new Set<(text: string) => void>();
 
   constructor(
     private readonly bridge: NativeSerialBridge,
     readonly path: string,
     private readonly clock: () => number = () => performance.now(),
   ) {
-    this.capabilities = bridge.capabilities;
+    this.capabilities = parseNetPath(path) ? NET_CAPABILITIES : bridge.capabilities;
   }
 
   get state(): TransportState {
@@ -39,6 +42,7 @@ export class IpcSerialTransport implements SerialTransport {
         const t = this.clock();
         this.data.forEach((l) => l(e.data, t));
       } else if (e.type === 'error') this.errors.forEach((l) => l(new Error(e.message)));
+      else if (e.type === 'notice') this.notices.forEach((l) => l(e.text));
       else this.finish();
     });
     try {
@@ -90,6 +94,11 @@ export class IpcSerialTransport implements SerialTransport {
   onClose(l: () => void): Unsubscribe {
     this.closes.add(l);
     return () => this.closes.delete(l);
+  }
+
+  onNotice(l: (text: string) => void): Unsubscribe {
+    this.notices.add(l);
+    return () => this.notices.delete(l);
   }
 
   private finish(): void {
