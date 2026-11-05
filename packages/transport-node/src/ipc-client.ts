@@ -11,6 +11,12 @@ import {
 } from '@superserial/core';
 import type { NativeSerialBridge } from './bridge';
 
+/** Electron wraps errors from the main process as "Error invoking remote method 'x': Error: reason"; keep the reason. */
+export function ipcError(e: unknown): Error {
+  const msg = e instanceof Error ? e.message : String(e);
+  return new Error(msg.replace(/^Error invoking remote method '[^']*': (?:\w*Error: )?/, ''));
+}
+
 /** Renderer-side transport that drives a native port in the main process. */
 export class IpcSerialTransport implements SerialTransport {
   readonly capabilities: TransportCapabilities;
@@ -50,7 +56,7 @@ export class IpcSerialTransport implements SerialTransport {
     } catch (e) {
       this.off();
       this.off = null;
-      throw e;
+      throw ipcError(e);
     }
     this.current = 'open';
   }
@@ -63,7 +69,7 @@ export class IpcSerialTransport implements SerialTransport {
 
   write(data: Uint8Array): Promise<void> {
     this.requireOpen();
-    return this.bridge.write(this.path, data.slice());
+    return this.bridge.write(this.path, data.slice()).catch((e) => { throw ipcError(e); });
   }
 
   setSignals(s: OutputSignals): Promise<void> {
