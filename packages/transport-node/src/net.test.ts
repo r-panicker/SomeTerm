@@ -13,7 +13,8 @@ afterEach(async () => { for (const c of cleanup.splice(0).reverse()) await c(); 
 
 /** A local server: echoes by default, or runs `onSocket`. Returns its port. */
 async function server(onSocket?: (s: net.Socket) => void): Promise<number> {
-  const srv = net.createServer(onSocket ?? ((s) => s.pipe(s)));
+  // The far end of a connection the transport closes can see a reset (macOS does); that is expected here.
+  const srv = net.createServer((s) => { s.on('error', () => {}); (onSocket ?? ((x: net.Socket) => x.pipe(x)))(s); });
   await new Promise<void>((r) => srv.listen(0, '127.0.0.1', () => r()));
   cleanup.push(() => new Promise((r) => srv.close(() => r(null))));
   return (srv.address() as net.AddressInfo).port;
@@ -37,6 +38,7 @@ function collect(t: TcpTransport) {
 
 function client(port: number) {
   const s = net.connect({ host: '127.0.0.1', port });
+  s.on('error', () => {});
   const got: number[] = [];
   s.on('data', (b) => got.push(...b));
   cleanup.push(() => s.destroy());
