@@ -27,7 +27,9 @@ pnpm dist:electron
 
 The result is in `apps/electron/release/`: an AppImage on Linux, an installer `.exe` on Windows, a `.dmg` on macOS. Each OS builds its own; the **Build and release** GitHub workflow builds all three, plus a zip of the web app, when started by hand. Builds are unsigned; the [README](../README.md#desktop-app) says how to get past SmartScreen and Gatekeeper on first launch.
 
-To publish a release, either push a version tag, or start **Build and release** from the repository's Actions tab with the tag (e.g. `v0.2.0`) typed into **Release tag**. The workflow builds everything, creates a GitHub release named after the tag with the installers and `SomeTerm-web-<version>.zip` attached, and, unless the tag has a hyphen, puts the browser version on GitHub Pages. A tag with a hyphen (`v0.3.0-rc.1`) is marked as a pre-release. Tick **pages** when starting it by hand to update GitHub Pages without a release. Pages must be switched on once: repository **Settings → Pages → Source: GitHub Actions**.
+To publish a release, either push a version tag, or start **Build and release** from the repository's Actions tab with the tag (e.g. `v0.2.0`) typed into **Release tag**. The workflow builds everything, creates a GitHub release named after the tag with the installers and `SomeTerm-web-<version>.zip` attached, A tag with a hyphen (`v0.3.0-rc.1`) is marked as a pre-release.
+
+The browser version on GitHub Pages is rebuilt on every push to `main` by the **Pages** workflow; its About tab shows the commit. Pages must be switched on once: repository **Settings → Pages → Source: GitHub Actions**.
 
 ```bash
 git tag v0.2.0

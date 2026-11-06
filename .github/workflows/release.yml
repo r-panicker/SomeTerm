@@ -1,9 +1,7 @@
 # Desktop installers for each OS (built on that OS) and a zip of the web app.
 # A pushed v* tag, or a tag typed in when starting it by hand, also publishes a
-# GitHub release with every file attached. A release without a suffix (v1.2.3,
-# not v1.2.3-rc.1) also puts the web app on GitHub Pages; ticking "pages" when
-# starting by hand does that without a release. Started by hand with neither,
-# it only builds. Ordinary pushes do not run it, so they use no Actions minutes.
+# GitHub release with every file attached. Started by hand with no tag, it only
+# builds. GitHub Pages is updated on every push by pages.yml, not here.
 name: Build and release
 
 on:
@@ -13,10 +11,6 @@ on:
         description: Release tag to create, e.g. v0.2.0 (empty = build only)
         required: false
         default: ''
-      pages:
-        description: Publish the web app to GitHub Pages
-        type: boolean
-        default: false
   push:
     tags: ['v*']
 
@@ -24,7 +18,6 @@ env:
   TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
   # Shown in the app's About tab; the web job falls back to the commit.
   VITE_APP_VERSION: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
-  PAGES: ${{ inputs.pages || (github.event_name == 'push' || inputs.tag != '') && !contains(github.event_name == 'push' && github.ref_name || inputs.tag, '-') }}
 
 jobs:
   desktop:
@@ -77,10 +70,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: echo "VITE_APP_VERSION=${VITE_APP_VERSION:-$(git rev-parse --short HEAD)}" >> "$GITHUB_ENV"
       - run: pnpm --filter @someterm/web build
-      - if: env.PAGES == 'true'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: apps/web/dist
       - name: Zip the web app
         run: |
           version=${TAG#v}
@@ -105,7 +94,6 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: someterm-*
           path: files
           merge-multiple: true
       # Creates the tag at the built commit when it does not exist yet.
@@ -119,17 +107,3 @@ jobs:
           fi
           gh release upload "$TAG" files/* --clobber
 
-  # Needs Settings → Pages → Source set to "GitHub Actions" once.
-  pages:
-    if: always() && needs.web.result == 'success' && (needs.release.result == 'success' || needs.release.result == 'skipped') && (inputs.pages || (github.event_name == 'push' || inputs.tag != '') && !contains(github.event_name == 'push' && github.ref_name || inputs.tag, '-'))
-    needs: [web, release]
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - id: deploy
-        uses: actions/deploy-pages@v4

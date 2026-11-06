@@ -1,0 +1,38 @@
+# Puts the web app on GitHub Pages (https://r-panicker.github.io/SomeTerm/) on every push to main.
+# Needs Settings → Pages → Source set to "GitHub Actions" once.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Shown in the About tab, so the page says which commit it is.
+      - run: echo "VITE_APP_VERSION=$(git describe --tags --always)" >> "$GITHUB_ENV"
+      - run: pnpm --filter @someterm/web build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+      - id: deploy
+        uses: actions/deploy-pages@v4
