@@ -11,7 +11,7 @@
   const o = $derived(session.options);
   const profile = $derived(profiles.get(session.profileId));
   const dirty = $derived(!!profile && JSON.stringify(settingsOf(session)) !== JSON.stringify(profile.settings));
-  /** A network connection has no baud or framing; its name is already in the port list. */
+  /** A network connection has no baud or framing; its name is already on the top bar. */
   const framing = $derived(session.choice.kind === 'net' ? '' : `${o.baudRate} ${o.dataBits}${PARITY[o.parity]}${o.stopBits}${FLOW[o.flowControl] ? ' ' + FLOW[o.flowControl] : ''}`);
 
   const SIGNALS = [['cts', 'CTS'], ['dsr', 'DSR'], ['dcd', 'DCD'], ['ri', 'RI']] as const;

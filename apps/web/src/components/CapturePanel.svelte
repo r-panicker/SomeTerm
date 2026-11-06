@@ -106,7 +106,7 @@
           </div>
         {/if}
         <span>Format</span>
-        <select bind:value={format} disabled={active} title={recording ? 'Both directions and the line signals, with timing; replay it with Open recording… in the port list' : undefined}>
+        <select bind:value={format} disabled={active} title={recording ? 'Both directions and the line signals, with timing; replay it with Recording… in the connection type list' : undefined}>
           <option value="text">Text, timestamped lines</option>
           <option value="raw">Raw bytes</option>
           <option value="hex">Hex, timestamped chunks</option>

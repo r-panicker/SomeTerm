@@ -23,7 +23,7 @@
 
 <style>
   .panel { background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column; }
-  .strip { display: flex; align-items: flex-end; gap: 2px; padding: 4px 8px 0; border-bottom: 1px solid var(--line); background: var(--bg); overflow-x: auto; }
+  .strip { display: flex; align-items: flex-end; gap: 2px; padding: 4px 8px 0; border-bottom: 1px solid var(--line); background: var(--bg); overflow-x: auto; overflow-y: hidden; }
   .panel.closed .strip { border-bottom: 0; }
   .strip button[role='tab'] {
     height: 26px; padding: 0 12px; font-size: 12.5px; border: 1px solid var(--line); border-bottom: 0;

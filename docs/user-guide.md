@@ -45,7 +45,7 @@ To use a port the OS does not list (socat, other virtual ports), start the deskt
 
 ## Connecting
 
-Pick a port, check its settings on the Port tab (the status bar shows them as `115200 8N1`), then Connect. The baud list has the common rates; **Other…** takes any rate the adapter supports, such as 31250 for MIDI. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
+The first list on the top bar picks the type of connection: **Serial**, **Network** (TCP or Telnet, desktop app), **Loopback** or **Recording**. Changing it opens the Port tab, where that type is set up. For Serial, pick the port in the list beside it, check its settings on the Port tab (the status bar shows them as `115200 8N1`), then Connect. The baud list has the common rates; **Other…** takes any rate the adapter supports, such as 31250 for MIDI. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
 
 Settings a port cannot do are greyed out; hover for the reason.
 
@@ -72,7 +72,7 @@ DTR and RTS toggle the output lines (green is asserted); a timed **Break** is on
 
 Choose **Session recording** as the capture format to save a replayable `.strec` file: both directions with their timing, plus line-signal changes (CTS, DSR, DCD, RI and your DTR/RTS toggles). A recording is always one file, so splitting is not offered for it.
 
-**Open recording…** in the port list loads one; **Connect** plays it like a live port, so the terminal, plot, find, spectrum, Monitor and capture all work on it. The status bar shows the port settings it was recorded with, and timestamps are the original times. Sent data appears as `→` lines; nothing is transmitted, and the send bar is off.
+**Recording…** in the connection type list loads one; **Connect** plays it like a live port, so the terminal, plot, find, spectrum, Monitor and capture all work on it. The status bar shows the port settings it was recorded with, and timestamps are the original times. Sent data appears as `→` lines; nothing is transmitted, and the send bar is off.
 
 | Control | Use |
 |---|---|
@@ -108,7 +108,7 @@ Connections, port choices and settings are restored on the next launch, but port
 
 ## Network: TCP and Telnet
 
-In the desktop app, **TCP / Telnet…** in the port list connects over the network instead of a serial port (a browser cannot open network connections). Set it up on the Port tab:
+In the desktop app, **Network** as the connection type connects over TCP or Telnet instead of a serial port (a browser cannot open network connections). Set it up on the Port tab:
 
 | Setting | Choice |
 |---|---|
@@ -162,7 +162,7 @@ ASCII shows lines as a terminal would draw them: UTF-8 text such as `°C` and `�
 
 The Display tab sets **Bytes per row** for these views (8, 16 or 32; Bin shows half as many) ; **Scrollback** on the App tab sets the lines each terminal keeps (10,000 to 500,000; older lines leave the view, not a capture).
 
-**xterm** shows the port through a terminal emulator (VT100/xterm), for anything that draws with the cursor rather than printing lines: boot menus, `top`, `vi`, `nano`. Keys go straight to the device, including Esc and Ctrl+L; use Ctrl+Shift for app shortcuts. It opens showing the last 64 kB received, and the line log, plot and capture carry on underneath. The device decides what the screen shows, so the Text and typing options other than Backspace are greyed out.
+**xterm** shows the port through a terminal emulator (VT100/xterm), for anything that draws with the cursor rather than printing lines: boot menus, `top`, `vi`, `nano`. Keys go straight to the device, including Esc and Ctrl+L. Enter sends CR, as a terminal does, and it is the device's echo (CR LF from a shell) that moves to the next line; a peer that echoes nothing, such as another SomeTerm connection, leaves each line overwriting the last. use Ctrl+Shift for app shortcuts. It opens showing the last 64 kB received, and the line log, plot and capture carry on underneath. The device decides what the screen shows, so the Text and typing options other than Backspace are greyed out.
 
 The magnifier (Ctrl+F) searches the ASCII view, sent and received lines alike. Enter and Shift+Enter step through matches; **Aa** matches case, **.\*** takes a regular expression, and **Filter** hides lines without a match. New data is searched as it arrives. Esc closes find.
 

@@ -32,16 +32,18 @@
     if (why({ flowControl: opts.flowControl })) opts.flowControl = 'none';
   });
 
+  type Kind = 'serial' | 'network' | 'loopback' | 'recording';
+  const kindOf = (c: PortChoice): Kind => (c.kind === 'net' ? 'network' : c.kind === 'loopback' ? 'loopback' : c.kind === 'replay' ? 'recording' : 'serial');
+  const kind = $derived(kindOf(session.choice));
+
+  /** Serial ports only; the other kinds are picked in the type list beside it. */
   const choices = $derived<{ key: string; c: PortChoice }[]>([
     ...session.nativePorts.map((p) => ({ key: `n:${p.path}`, c: { kind: 'native', ...p } as PortChoice })),
     ...session.granted.map((port, i) => ({ key: `p${i}`, c: { kind: 'webserial', port } as PortChoice })),
     ...(hasWebSerial ? [{ key: 'add', c: { kind: 'add' } as PortChoice }] : []),
-    { key: 'loop', c: { kind: 'loopback' } as PortChoice },
-    { key: 'net', c: (session.choice.kind === 'net' ? session.choice : { kind: 'net', spec: session.lastNet }) as PortChoice },
-    ...(session.choice.kind === 'replay' ? [{ key: 'replay', c: session.choice }] : []),
   ]);
+  let kindSelect: HTMLSelectElement;
   let recInput: HTMLInputElement;
-  let portSelect: HTMLSelectElement;
 
   async function openRecording() {
     const f = recInput.files?.[0];
@@ -59,38 +61,53 @@
     const s = Math.max(0, ms) / 1000;
     return `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
   };
-  const selectedKey = $derived(
-    choices.find((x) => keyOf(x.c) === keyOf(session.choice))?.key ?? choices[0]?.key ?? 'loop',
-  );
+  const selectedKey = $derived(choices.find((x) => keyOf(x.c) === keyOf(session.choice))?.key ?? '');
 
   function keyOf(c: PortChoice): unknown {
-    return c.kind === 'native' ? `n:${c.path}` : c.kind === 'webserial' ? c.port : c.kind === 'replay' ? c.recording : c.kind;
+    return c.kind === 'native' ? `n:${c.path}` : c.kind === 'webserial' ? c.port : c.kind;
   }
 
-  function pick(key: string) {
-    if (key === 'open-rec') {
-      portSelect.value = selectedKey;
+  function pickKind(k: Kind) {
+    if (k === 'recording') {
+      // The type changes once a recording has loaded.
+      kindSelect.value = kind;
       recInput.click();
       return;
     }
+    if (k === 'network') session.choosePort({ kind: 'net', spec: session.lastNet });
+    else if (k === 'loopback') session.choosePort({ kind: 'loopback' });
+    else if (choices[0]) session.choosePort(choices[0].c);
+    // Each type is set up on the Port tab.
+    onshow('port');
+  }
+
+  function pick(key: string) {
     session.choosePort(choices.find((x) => x.key === key)!.c);
-    // The connection's own settings are on the Port tab; a network one has nothing usable until host and port are set.
-    if (key === 'net') onshow('port');
   }
 
   /** In a browser there are no sockets, so the network choice is shown but cannot be picked. */
   const netUnavailable = native ? '' : 'TCP and Telnet need the desktop app: a browser cannot open network connections';
+  const locked = $derived(session.open || session.busy || session.waiting);
 
 </script>
 
 <header>
-  <select bind:this={portSelect} value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={session.open || session.busy || session.waiting} title="Port">
-    {#each choices as x (x.key)}
-      {#if x.key === 'net'}<option value="net" disabled={!!netUnavailable} title={netUnavailable || 'Raw TCP or Telnet, as client or server'}>{session.choice.kind === 'net' ? session.portLabel(x.c) : netUnavailable ? 'TCP / Telnet (desktop app only)' : 'TCP / Telnet…'}</option>
-      {:else}<option value={x.key} disabled={!!heldBy(x.c)} title={heldBy(x.c)}>{session.portLabel(x.c)}</option>{/if}
-    {/each}
-    <option value="open-rec">Open recording…</option>
+  <select bind:this={kindSelect} class="kind" value={kind} onchange={(e) => pickKind(e.currentTarget.value as Kind)} disabled={locked} title="Connection type">
+    <option value="serial">Serial</option>
+    <option value="network" disabled={!!netUnavailable} title={netUnavailable || 'Raw TCP or Telnet, as client or server'}>{netUnavailable ? 'Network (desktop app)' : 'Network'}</option>
+    <option value="loopback" title="Everything sent comes straight back; for trying things without a device">Loopback</option>
+    <option value="recording" title="Replay a session recording (.strec)">{kind === 'recording' ? 'Recording' : 'Recording…'}</option>
   </select>
+  {#if kind === 'serial'}
+    <select value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={locked || !choices.length} title="Port">
+      {#if !choices.length}<option value="">No serial ports found</option>{:else if !selectedKey}<option value="" disabled>{session.portLabel()}</option>{/if}
+      {#each choices as x (x.key)}
+        <option value={x.key} disabled={!!heldBy(x.c)} title={heldBy(x.c)}>{session.portLabel(x.c)}</option>
+      {/each}
+    </select>
+  {:else if kind === 'network' || kind === 'recording'}
+    <button class="target" onclick={() => (kind === 'recording' && !locked ? recInput.click() : onshow('port'))} title={kind === 'recording' ? 'Open another recording' : 'Set on the Port tab'}>{session.portLabel()}</button>
+  {/if}
   {#if session.waiting && !session.open}
     <button class="primary waiting" onclick={() => session.cancelWaiting()} title="The device was unplugged or reset; it reconnects when it comes back. Click to stop waiting.">Waiting…</button>
   {:else}
@@ -136,8 +153,10 @@
   @keyframes pulse { 50% { opacity: .55; } }
   @media (prefers-reduced-motion: reduce) { .waiting { animation: none; } }
   .speed { width: 4.2em; }
-  select[title='Port'] { max-width: 170px; }
-  @media (max-width: 700px) { select[title='Port'] { max-width: 120px; } }
+  select[title='Port'], .target { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 700px) { select[title='Port'], .target { max-width: 120px; } }
+  .target { font: 12px var(--mono); }
+  .kind { width: 7.4em; flex-shrink: 0; }
   .seekbar { flex: 1 1 80px; min-width: 60px; max-width: 260px; height: 20px; padding: 0; border: 0; background: none; }
   .ptime { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
   @media (max-width: 960px) { .ptime { display: none; } }
