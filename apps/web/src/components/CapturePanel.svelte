@@ -18,10 +18,6 @@
   let splitMin = $state('');
   let startBytes = $state('');
   let startText = $state('');
-  let more = $state(false);
-  /** Advanced options stay visible while any is set, so nothing hidden is quietly active. */
-  const advancedSet = $derived(!!(splitMb.trim() || splitMin.trim() || startBytes.trim() || startText.trim() || maxBytes.trim() || maxSeconds.trim()));
-  const showMore = $derived(more || advancedSet);
   const folderOk = canPickFolder();
   const recording = $derived(!fixed && format === 'session');
   const splitting = $derived(dest === 'file' && folderOk && !recording && !!(positive(splitMb) || positive(splitMin)));
@@ -71,96 +67,104 @@
   }
 </script>
 
-<div class="grid" class:locked={active}>
-  <span>Save to</span>
-  <div class="seg">
-    <button class:on={dest === 'file'} onclick={() => (dest = 'file')} disabled={!fileOk || active} title={fileOk ? 'Stream to a file as data arrives' : 'This browser cannot write files directly'}>File</button>
-    <button class:on={dest === 'memory'} onclick={() => (dest = 'memory')} disabled={active} title="Hold in memory; view or download after stopping">Memory</button>
-  </div>
-  {#if dest === 'file' && !splitting}
-    <span>File</span>
-    <div class="seg">
-      <button class:on={!append} onclick={() => (append = false)} disabled={active}>Overwrite</button>
-      <button class:on={append} onclick={() => (append = true)} disabled={active}>Append</button>
-    </div>
-  {/if}
-  {#if !fixed}
-    {#if !recording}
-      <span>Data</span>
+<div class="groups">
+  <fieldset>
+    <legend>Save to</legend>
+    <div class="form">
+      <span>Into</span>
       <div class="seg">
-        {#each [['rx', 'Received'], ['tx', 'Sent'], ['both', 'Both']] as [v, l]}
-          <button class:on={source === v} onclick={() => (source = v as CaptureSource)} disabled={active}>{l}</button>
-        {/each}
+        <button class:on={dest === 'file'} onclick={() => (dest = 'file')} disabled={!fileOk || active} title={fileOk ? 'Stream to a file as data arrives' : 'This browser cannot write files directly'}>File</button>
+        <button class:on={dest === 'memory'} onclick={() => (dest = 'memory')} disabled={active} title="Hold in memory; view or download after stopping">Memory</button>
       </div>
-    {/if}
-    <span>Format</span>
-    <select bind:value={format} disabled={active}>
-      <option value="text">Text, timestamped lines</option>
-      <option value="raw">Raw bytes</option>
-      <option value="hex">Hex, timestamped chunks</option>
-      <option value="session">Session recording, replayable (.strec)</option>
-    </select>
-  {/if}
-  <button class="more" onclick={() => (more = !more)} disabled={advancedSet} aria-expanded={showMore}>{showMore ? '▾' : '▸'} More options</button>
-  {#if showMore}
-    {#if dest === 'file' && folderOk && !recording}
-      <span>Split every</span>
+      {#if dest === 'file' && !splitting}
+        <span>File</span>
+        <div class="seg">
+          <button class:on={!append} onclick={() => (append = false)} disabled={active}>Overwrite</button>
+          <button class:on={append} onclick={() => (append = true)} disabled={active}>Append</button>
+        </div>
+      {/if}
+      {#if dest === 'file' && folderOk && !recording}
+        <span>Split every</span>
+        <div class="limits">
+          <input bind:value={splitMb} inputmode="decimal" placeholder="–" disabled={active} title="Start a new file after this many megabytes" /> MB
+          <input bind:value={splitMin} inputmode="decimal" placeholder="–" disabled={active} title="Start a new file after this many minutes" /> min
+        </div>
+      {/if}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>What and when</legend>
+    <div class="form">
+      {#if !fixed}
+        {#if !recording}
+          <span>Data</span>
+          <div class="seg">
+            {#each [['rx', 'Received'], ['tx', 'Sent'], ['both', 'Both']] as [v, l]}
+              <button class:on={source === v} onclick={() => (source = v as CaptureSource)} disabled={active} title={v === 'both' ? 'Both directions, sent data tagged' : undefined}>{l}</button>
+            {/each}
+          </div>
+        {/if}
+        <span>Format</span>
+        <select bind:value={format} disabled={active} title={recording ? 'Both directions and the line signals, with timing; replay it with Open recording… in the port list' : undefined}>
+          <option value="text">Text, timestamped lines</option>
+          <option value="raw">Raw bytes</option>
+          <option value="hex">Hex, timestamped chunks</option>
+          <option value="session">Session recording, replayable (.strec)</option>
+        </select>
+      {/if}
+      <span>Start after</span>
       <div class="limits">
-        <input bind:value={splitMb} inputmode="decimal" placeholder="–" disabled={active} title="Start a new file after this many megabytes" /> MB
-        <input bind:value={splitMin} inputmode="decimal" placeholder="–" disabled={active} title="Start a new file after this many minutes" /> min
+        <input bind:value={startBytes} inputmode="numeric" placeholder="–" disabled={active || !!startText.trim()} title="Begin capturing after this many data bytes" /> bytes
+        <input class="text" bind:value={startText} placeholder="or text" disabled={active || !!startBytes.trim()} title="Begin where this text first appears (included). Escapes like \r \n \xNN work" />
+      </div>
+      <span>Stop after</span>
+      <div class="limits">
+        <input bind:value={maxBytes} inputmode="numeric" placeholder="∞" disabled={active} title="Stop after this many data bytes" /> bytes
+        <input bind:value={maxSeconds} inputmode="numeric" placeholder="∞" disabled={active} title="Stop after this many seconds" /> s
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="run">
+    <legend>Capture</legend>
+    <div class="actions">
+      {#if active && c}
+        <button onclick={() => (c.state === 'paused' ? ctl.resume() : ctl.pause())}>{c.state === 'paused' ? 'Resume' : 'Pause'}</button>
+        <button class="primary" onclick={() => ctl.stop()}>Stop</button>
+      {:else}
+        <button class="primary" onclick={start} title={splitting ? 'Choose a folder; files are numbered -001, -002, …' : ''}>{splitting ? 'Choose folder…' : 'Start capture'}</button>
+      {/if}
+    </div>
+    {#if c}
+      <div class="status" class:rec={c.state === 'running'}>
+        <div class="name" title={c.name}>{c.name}</div>
+        <div>
+          {formatBytes(c.captured)}{c.files ? ` · ${c.files} ${c.files === 1 ? 'file' : 'files'}` : ''}
+          {#if c.state === 'armed'}· armed, waiting for {startText.trim() ? `“${startText}”` : `${startBytes} bytes`}{:else if active}· {elapsed(now - c.startedAt)}{c.state === 'paused' ? ' · paused' : ''}{:else if c.reason !== 'stopped'}· {c.reason}{/if}
+        </div>
+        {#if c.state === 'stopped' && c.kind === 'memory'}
+          <div class="actions">
+            <button onclick={() => open(false)}>View</button>
+            <button onclick={() => open(true)}>Download</button>
+            <button onclick={() => ctl.discard()}>Discard</button>
+          </div>
+        {/if}
       </div>
     {/if}
-    <span>Start after</span>
-    <div class="limits">
-      <input bind:value={startBytes} inputmode="numeric" placeholder="–" disabled={active || !!startText.trim()} title="Begin capturing after this many data bytes" /> bytes
-      <input class="text" bind:value={startText} placeholder="or text" disabled={active || !!startBytes.trim()} title="Begin where this text first appears (included). Escapes like \r \n \xNN work" />
-    </div>
-    <span>Stop after</span>
-    <div class="limits">
-      <input bind:value={maxBytes} inputmode="numeric" placeholder="∞" disabled={active} title="Stop after this many data bytes" /> bytes
-      <input bind:value={maxSeconds} inputmode="numeric" placeholder="∞" disabled={active} title="Stop after this many seconds" /> s
-    </div>
-  {/if}
+  </fieldset>
 </div>
-
-<div class="actions">
-  {#if active && c}
-    <button onclick={() => (c.state === 'paused' ? ctl.resume() : ctl.pause())}>{c.state === 'paused' ? 'Resume' : 'Pause'}</button>
-    <button class="primary" onclick={() => ctl.stop()}>Stop</button>
-  {:else}
-    <button class="primary" onclick={start} title={splitting ? 'Choose a folder; files are numbered -001, -002, …' : ''}>{splitting ? 'Choose folder…' : 'Start capture'}</button>
-  {/if}
-</div>
-
-{#if c}
-  <div class="status" class:rec={c.state === 'running'}>
-    <div class="name" title={c.name}>{c.name}</div>
-    <div>
-      {formatBytes(c.captured)}{c.files ? ` · ${c.files} ${c.files === 1 ? 'file' : 'files'}` : ''}
-      {#if c.state === 'armed'}· armed, waiting for {startText.trim() ? `“${startText}”` : `${startBytes} bytes`}{:else if active}· {elapsed(now - c.startedAt)}{c.state === 'paused' ? ' · paused' : ''}{:else if c.reason !== 'stopped'}· {c.reason}{/if}
-    </div>
-    {#if c.state === 'stopped' && c.kind === 'memory'}
-      <div class="actions">
-        <button onclick={() => open(false)}>View</button>
-        <button onclick={() => open(true)}>Download</button>
-        <button onclick={() => ctl.discard()}>Discard</button>
-      </div>
-    {/if}
-  </div>
-{/if}
 
 <style>
-  .grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 10px; align-items: center; }
-  .grid > span { color: var(--muted); }
+  .seg { display: flex; }
   .seg button { flex: 1; }
-  .limits { display: flex; align-items: center; gap: 4px; color: var(--muted); }
-  .limits input { width: 6.5em; min-width: 0; }
-  .limits input.text { flex: 1; width: auto; font-family: var(--mono); }
-  .more { grid-column: 1 / -1; justify-self: start; border: 0; background: none; color: var(--muted); padding: 0; height: auto; font-size: 12px; }
-  .more:disabled { opacity: 1; cursor: default; }
-  .actions { display: flex; gap: 6px; margin-top: 12px; }
-  .status { margin-top: 14px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: 12px var(--mono); color: var(--muted); }
+  .limits { display: flex; align-items: center; gap: 4px; }
+  .limits input { width: 5em; min-width: 0; }
+  .limits input.text { width: 7em; font-family: var(--mono); }
+  .run { flex: 1 1 130px; max-width: 360px; }
+  .actions { display: flex; gap: 6px; }
+  .status { margin-top: 8px; font: 12px var(--mono); color: var(--muted); }
   .status .name { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .status.rec .name::before { content: '● '; color: var(--err); }
-  .status .actions { margin-top: 8px; }
+  .status .actions { margin-top: 6px; }
 </style>

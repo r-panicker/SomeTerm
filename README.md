@@ -1,17 +1,17 @@
 <div align="center">
 
+<img src="docs/icon.svg" alt="" width="88">
+
 # SomeTerm
 
-**A modern serial terminal for the lab bench.**
-A full-featured serial terminal with Arduino-style live plotting, in the tradition of RealTerm and Tera Term.
+**Serial, TCP and Telnet terminal with live plotting, for the lab bench.**
+In the tradition of RealTerm and Tera Term, with an Arduino-style plotter built in.
 Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, macOS and Linux.
 
 [![Build and release](https://github.com/r-panicker/SomeTerm/actions/workflows/release.yml/badge.svg)](https://github.com/r-panicker/SomeTerm/actions/workflows/release.yml)
 [![Latest release](https://img.shields.io/github/v/release/r-panicker/SomeTerm?include_prereleases&sort=semver)](https://github.com/r-panicker/SomeTerm/releases)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
-![Svelte 5](https://img.shields.io/badge/Svelte-5-ff3e00)
 
-[Download](https://github.com/r-panicker/SomeTerm/releases) · [User guide](docs/user-guide.md) · [Specs and changelog](docs/specs.md)
+**[Open in the browser](https://r-panicker.github.io/SomeTerm/)** · [Download the desktop app](https://github.com/r-panicker/SomeTerm/releases/latest) · [User guide](docs/user-guide.md) · [Specs and changelog](docs/specs.md)
 
 <img src="docs/images/split-dark.png" alt="SomeTerm in Split view: timestamped terminal with colour-coded log lines next to a live plot of three series" width="900">
 
@@ -19,12 +19,17 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 
 ## Why SomeTerm
 
-SomeTerm brings together the depth of established terminals such as RealTerm and Tera Term and the immediacy of the Arduino Serial Plotter, in one app that runs on Windows, macOS and Linux, or straight from a browser with nothing to install.
-
-- **One window, one stream.** The terminal and the plot are fed by the same data. Click a point on the plot to jump to the line that produced it.
-- **Fast.** Parsing runs in a Web Worker, and the terminal and plot are canvas-drawn. It is designed for sustained 921600 baud and up.
-- **Honest about the link.** Line signals, byte and error counters, rates, timestamps and raw bytes are shown when they mean something. Settings a port can't do are greyed out with the reason, never silently ignored.
-- **Built for teaching labs.** Sensible defaults, dark and light themes, keyboard shortcuts, and profiles that apply themselves when a known board is plugged in.
+| | |
+|---|---|
+| **Several connections at once** | Serial ports, TCP and Telnet side by side, each with its own settings, plus a merged Monitor that interleaves them by time. |
+| **Bridging and forwarding** | Join any two connections: serial to serial to sniff a link, or serial to a TCP server to put a board on the network. |
+| **Plotting built in** | Print numbers and they're plotted, next to the text they came from. Cursors, statistics, XY and spectrum views, unit conversions. |
+| **Profiles** | Save a board's settings once; they apply themselves when it's plugged in again. Share them as a file with a class. |
+| **Display your way** | ASCII, hex, decimal, binary, decoded integers and floats, an xterm screen for menus and editors, timestamps, colour rules. |
+| **Automation** | Auto-replies answer prompts, quick-send buttons hold your common commands, send lines repeat with timing and checksums. |
+| **Search and capture** | Regex find with a filter mode; capture to disk with triggers and rotation, or record a session and replay it later with no hardware. |
+| **Configurable, not cluttered** | RealTerm-depth settings in tabs under the terminal, one click away and folded when you don't need them. Keyboard shortcuts, dark and light themes, works on a phone. |
+| **Keeps up** | Comfortable at 921600 baud and beyond, with byte counts, rates and line signals shown when they mean something. |
 
 ## Features
 
@@ -36,7 +41,8 @@ SomeTerm brings together the depth of established terminals such as RealTerm and
 | Auto-reconnect | Unplug or reset the board and the connection picks it up again with the same settings, even under a new port name |
 | Several connections | Serial ports and network connections side by side, a merged **Monitor** of all traffic, and forwarding or bridging between them |
 | Profiles | Save a connection's settings, including a TCP/Telnet host and port; matched by USB ID (and serial number on desktop) and applied automatically |
-| Network | Raw TCP and Telnet, as client or server, and a bridge that puts a serial device on the network (desktop app) |
+| Network | Raw TCP and Telnet, as client or server (desktop app) |
+| Bridging | Forward one connection's data out of another, or bridge both ways: serial ⇄ serial, serial ⇄ TCP/Telnet, TCP ⇄ TCP. Serial bridging works in the browser too |
 
 ### See the data
 | | |
@@ -46,7 +52,7 @@ SomeTerm brings together the depth of established terminals such as RealTerm and
 | Find | Live search with regex, case matching and a filter mode |
 | Colour rules | Keep errors red and OK/PASS green across every connection; one click turns a search into a rule |
 | Terminal mode | Click in the terminal and type: keys go straight to the device, like GTKTerm or TeraTerm, with optional coloured local echo |
-| Screen | Full-screen VT100/xterm view for boot menus, `top` and editors |
+| xterm | Terminal emulator view (VT100/xterm) for boot menus, `top` and editors |
 | Quick sends | Buttons for the commands you send most, Alt+1…9 |
 | File upload | Raw, XMODEM, XMODEM-1K or YMODEM, for bootloaders and U-Boot |
 
@@ -76,7 +82,7 @@ SomeTerm brings together the depth of established terminals such as RealTerm and
 | Capture | Timestamped text, raw bytes or timestamped hex; RX, TX or both; straight to disk or in memory |
 | Triggers and limits | Start after N bytes or on a piece of text, stop after a size or time |
 | Rotation | Split into numbered files every N MB or N minutes for long unattended logs |
-| Record and replay | Save a session as `.ssrec` and play it back later, at speed or instantly, with seeking. Handy for marking and demos with no hardware |
+| Record and replay | Save a session as `.strec` and play it back later, at speed or instantly, with seeking. Handy for marking and demos with no hardware |
 
 ### Settings in tabs, RealTerm style
 Every setting sits in a tab under the terminal: Display, Port, Send, Capture, Plot, Automation, Profiles and App. Each has one home, always one click away; click the showing tab to fold the panel for more room. The status bar keeps the essentials in view (profile, `115200 8N1`, any bridge) and opens the Port tab when clicked. On/off switches carry a light, so they never look like buttons. Light, dark or system theme, and it works on a phone.
@@ -105,7 +111,7 @@ The builds are not code-signed yet, so the first launch needs one extra step:
 ### Browser
 Nothing to install. Open this link in Chrome or Edge:
 
-**https://raw.githack.com/r-panicker/SomeTerm/web/index.html**
+**https://r-panicker.github.io/SomeTerm/**
 
 It always serves the latest release. To run a copy yourself, unzip `SomeTerm-web-<version>.zip` from a release, start a local server in that folder, and open http://localhost:8000:
 
@@ -125,6 +131,7 @@ Both run the same app. The desktop version talks to the OS serial driver directl
 | Mark/space parity, 1.5 stop bits | no | Windows |
 | Ports the OS doesn't list (socat, ptys) | no | yes |
 | RI input | yes | no |
+| TCP and Telnet | no | yes |
 
 ## Build from source
 
@@ -160,7 +167,7 @@ apps/
   electron/             desktop shell
 ```
 
-All serial I/O goes through one `SerialTransport` interface, so the core never knows which driver is underneath. A loopback and a replay transport make every feature testable without hardware.
+All I/O, serial and network alike, goes through one `SerialTransport` interface, so the core never knows which driver is underneath. A loopback and a replay transport make every feature testable without hardware.
 
 ## Status
 
@@ -172,4 +179,4 @@ Created by **Rajesh Panicker**.
 
 Inspired by [RealTerm](https://realterm.sourceforge.io/), [Tera Term](https://teratermproject.github.io/), GTKTerm and the Arduino Serial Plotter. SomeTerm is an independent implementation written from scratch; it is not affiliated with those projects and shares no code with them.
 
-The Screen view uses [xterm.js](https://xtermjs.org/), and plotting uses [uPlot](https://github.com/leeoniya/uPlot).
+The xterm view uses [xterm.js](https://xtermjs.org/), and plotting uses [uPlot](https://github.com/leeoniya/uPlot).

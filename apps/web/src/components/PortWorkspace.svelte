@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { Session } from '../lib/session.svelte';
   import type { Workspace } from '../lib/workspace.svelte';
-  import { portPanel, type PortTab } from '../lib/panel.svelte';
+  import { PORT_TABS, portPanel, type PortTab } from '../lib/panel.svelte';
+  import type { View } from '../lib/session.svelte';
   import TopBar from './TopBar.svelte';
   import Terminal from './Terminal.svelte';
   import Plot from './Plot.svelte';
@@ -20,9 +21,21 @@
 
   /** Shortcuts that act on this connection; the app routes keys to the active one. */
   export function handleKey(e: KeyboardEvent) {
-    // In the Screen view keys belong to the device (Esc for vi, Ctrl+L to redraw); Ctrl+Shift keeps app shortcuts.
+    // In the xterm view keys belong to the device (Esc for vi, Ctrl+L to redraw); Ctrl+Shift keeps app shortcuts.
     if (e.target instanceof Element && e.target.closest('.xterm') && !(e.ctrlKey && e.shiftKey)) return;
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
+    const ctrlShift = (e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey;
+    if (ctrlShift && e.key === 'Enter') {
+      e.preventDefault();
+      if (session.open) void session.disconnect();
+      else if (!session.busy && !workspace.holder(session.choice, session)) void session.connect();
+    } else if (ctrlShift && /^Digit[1-8]$/.test(e.code)) {
+      e.preventDefault();
+      portPanel.click(PORT_TABS[Number(e.code.slice(5)) - 1]!);
+    } else if (ctrlShift && e.code === 'Space') {
+      e.preventDefault();
+      const views: View[] = ['terminal', 'split', 'plot'];
+      session.chooseView(views[(views.indexOf(session.view) + 1) % views.length]!);
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
       e.preventDefault();
       session.clear();
     } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {

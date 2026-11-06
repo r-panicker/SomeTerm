@@ -25,6 +25,7 @@ async function listPorts() {
   }
 }
 
+const WINDOW_ICON = path.join(__dirname, '..', 'web', 'icon-512.png');
 let win: BrowserWindow | null = null;
 
 function createWindow(): void {
@@ -34,6 +35,8 @@ function createWindow(): void {
     minWidth: 600,
     minHeight: 400,
     title: 'SomeTerm',
+    // Windows and macOS take the icon from the package; Linux windows need it set.
+    ...(process.platform === 'linux' && existsSync(WINDOW_ICON) && { icon: WINDOW_ICON }),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),

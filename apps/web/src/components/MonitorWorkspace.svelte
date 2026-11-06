@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Workspace } from '../lib/workspace.svelte';
-  import { monitorPanel, type MonitorTab } from '../lib/panel.svelte';
+  import { MONITOR_TABS, monitorPanel, type MonitorTab } from '../lib/panel.svelte';
   import Terminal from './Terminal.svelte';
   import CapturePanel from './CapturePanel.svelte';
   import TabbedPanel from './TabbedPanel.svelte';
@@ -14,7 +14,10 @@
   const TABS: [MonitorTab, string][] = [['display', 'Display'], ['capture', 'Capture'], ['automation', 'Colour rules'], ['app', 'App']];
 
   export function handleKey(e: KeyboardEvent) {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && /^Digit[1-4]$/.test(e.code)) {
+      e.preventDefault();
+      monitorPanel.click(MONITOR_TABS[Number(e.code.slice(5)) - 1]!);
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
       e.preventDefault();
       monitor.clear();
     } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
@@ -44,7 +47,7 @@
 <TabbedPanel tabs={TABS} state={monitorPanel}>
   {#snippet children(tab: MonitorTab)}
     {#if tab === 'display'}<DisplayTab source={monitor} />
-    {:else if tab === 'capture'}<div class="capture"><CapturePanel ctl={monitor.capture} fixed /></div>
+    {:else if tab === 'capture'}<CapturePanel ctl={monitor.capture} fixed />
     {:else if tab === 'automation'}<AutomationTab />
     {:else}<AppTab />{/if}
   {/snippet}
@@ -57,5 +60,4 @@
   .rec { color: var(--err); border-color: var(--err); }
   main { flex: 1; min-height: 0; display: flex; position: relative; }
   .slot { display: flex; flex: 1; min-width: 0; min-height: 0; }
-  .capture { max-width: 560px; }
 </style>

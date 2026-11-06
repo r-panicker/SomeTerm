@@ -14,6 +14,11 @@
   const link = $derived(session.forwardTo ? `${session.forwardTo.forwardTo === session ? 'bridge' : 'fwd'}:${session.forwardTo.letter}` : '');
 
   function setLink(v: string) {
+    if (v === 'new') {
+      // The new connection becomes the one showing, so its port can be chosen next.
+      const to = workspace.openTab();
+      v = `bridge:${to.letter}`;
+    }
     const old = session.forwardTo;
     if (old && old.forwardTo === session) old.forwardTo = null;
     const [kind, letter] = v.split(':');
@@ -39,26 +44,23 @@
     <div class="form"><ProfilePicker {session} /></div>
   </fieldset>
 
-  {#if canBreak || others.length}
-    <fieldset>
-      <legend>Link</legend>
-      <div class="form">
-        {#if canBreak}
-          <span>Break</span>
-          <button class="action" onclick={() => session.sendBreak()} title="Hold the line in the break state for 250 ms">Send 250 ms break</button>
-        {/if}
-        {#if others.length}
-          <label>Connect to
-            <select class="fwd" value={link} onchange={(e) => setLink(e.currentTarget.value)} title="Forward: what this connection receives is sent out of the other. Bridge: both ways, e.g. a serial port and a TCP server">
-              <option value="">none</option>
-              {#each others as o (o.id)}
-                <option value="fwd:{o.letter}">→ {o.letter} forward ({o.portLabel()})</option>
-                <option value="bridge:{o.letter}">⇄ {o.letter} bridge ({o.portLabel()})</option>
-              {/each}
-            </select>
-          </label>
-        {/if}
-      </div>
-    </fieldset>
-  {/if}
+  <fieldset>
+    <legend>Link</legend>
+    <div class="form">
+      <label>Connect to
+        <select class="fwd" value={link} onchange={(e) => setLink(e.currentTarget.value)} title="Forward: what this connection receives is sent out of the other. Bridge: both ways, e.g. two serial ports, or a serial port and a TCP server">
+          <option value="">none</option>
+          {#each others as o (o.id)}
+            <option value="fwd:{o.letter}">→ {o.letter} forward ({o.portLabel()})</option>
+            <option value="bridge:{o.letter}">⇄ {o.letter} bridge ({o.portLabel()})</option>
+          {/each}
+          <option value="new">⇄ new connection…</option>
+        </select>
+      </label>
+      {#if canBreak}
+        <span>Break</span>
+        <button class="action" onclick={() => session.sendBreak()} title="Hold the line in the break state for 250 ms">Send 250 ms break</button>
+      {/if}
+    </div>
+  </fieldset>
 </div>

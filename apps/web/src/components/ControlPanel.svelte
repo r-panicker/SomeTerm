@@ -23,7 +23,7 @@
     {:else if tab === 'port'}<PortTabView {session} {workspace} />
     {:else if tab === 'send'}<SendTab {session} />
     {:else if tab === 'capture'}
-      <div class="capture"><CapturePanel ctl={session.capture} newline={session.newline} meta={() => ({ port: session.portLabel(), options: $state.snapshot(session.options) })} onstart={() => session.recordSignals()} /></div>
+      <CapturePanel ctl={session.capture} newline={session.newline} meta={() => ({ port: session.portLabel(), options: $state.snapshot(session.options) })} onstart={() => session.recordSignals()} />
     {:else if tab === 'plot'}<PlotTab {session} />
     {:else if tab === 'automation'}<AutomationTab {session} />
     {:else if tab === 'profiles'}<div class="narrow"><ProfilesPanel {session} /></div>
@@ -32,5 +32,5 @@
 </TabbedPanel>
 
 <style>
-  .capture, .narrow { max-width: 560px; }
+  .narrow { max-width: 560px; }
 </style>

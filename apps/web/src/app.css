@@ -24,6 +24,7 @@ header, .toolbar { display: flex; gap: 6px; align-items: center; padding: 5px 8p
 .toolbar { padding: 3px 6px; gap: 4px; }
 .spacer { flex: 1; }
 select, input, button { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 2px 7px; height: 26px; }
+input[type='checkbox'], input[type='radio'] { height: auto; padding: 0; margin: 0; }
 .toolbar select, .toolbar button { height: 23px; font-size: 12px; padding: 1px 6px; }
 button { cursor: pointer; }
 button:disabled, select:disabled, input:disabled { opacity: .5; cursor: default; }
@@ -52,12 +53,12 @@ button.toggle.on::before { background: var(--ok); box-shadow: 0 0 4px var(--ok);
 
 /* Settings forms: label column and control column. */
 .form { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; }
-.form > label { display: contents; color: var(--muted); }
+.form > label { display: contents; }
 .form > label > input:not([type='checkbox']), .form > label > select { width: 100%; min-width: 0; }
 .form > hr { grid-column: 1 / -1; width: 100%; border: 0; border-top: 1px solid var(--line); margin: 2px 0; }
 .form .action { justify-self: start; }
-.form .pair { display: flex; gap: 6px; align-items: center; white-space: nowrap; color: var(--muted); }
-.form .pair input[type='number'] { width: 5.5em; }
+.form .pair { display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.form .pair input[type='number'] { width: 4.8em; }
 .form .pair > select { flex: 1; min-width: 0; }
 .form .pair > .baud-custom { width: 8em; }
 

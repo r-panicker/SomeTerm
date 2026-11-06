@@ -10,7 +10,7 @@ pnpm dev            # browser: open the printed URL in Chrome or Edge
 pnpm dev:electron   # desktop app
 ```
 
-The browser version uses Web Serial, so other browsers offer only Loopback. The desktop app talks to the OS serial driver directly and supports more settings:
+The browser version (https://r-panicker.github.io/SomeTerm/) uses Web Serial, so browsers other than Chrome and Edge offer only Loopback, and it has no TCP or Telnet. The desktop app talks to the OS serial driver directly and supports more settings:
 
 | Setting | Browser | Desktop |
 |---|---|---|
@@ -27,7 +27,7 @@ pnpm dist:electron
 
 The result is in `apps/electron/release/`: an AppImage on Linux, an installer `.exe` on Windows, a `.dmg` on macOS. Each OS builds its own; the **Build and release** GitHub workflow builds all three, plus a zip of the web app, when started by hand. Builds are unsigned; the [README](../README.md#desktop-app) says how to get past SmartScreen and Gatekeeper on first launch.
 
-To publish a release, either push a version tag, or start **Build and release** from the repository's Actions tab with the tag (e.g. `v0.2.0`) typed into **Release tag**. The workflow builds everything, creates a GitHub release named after the tag with the installers and `SomeTerm-web-<version>.zip` attached, and updates the browser version on the `web` branch. A tag with a hyphen (`v0.3.0-rc.1`) is marked as a pre-release.
+To publish a release, either push a version tag, or start **Build and release** from the repository's Actions tab with the tag (e.g. `v0.2.0`) typed into **Release tag**. The workflow builds everything, creates a GitHub release named after the tag with the installers and `SomeTerm-web-<version>.zip` attached, and, unless the tag has a hyphen, puts the browser version on GitHub Pages. A tag with a hyphen (`v0.3.0-rc.1`) is marked as a pre-release. Tick **pages** when starting it by hand to update GitHub Pages without a release. Pages must be switched on once: repository **Settings → Pages → Source: GitHub Actions**.
 
 ```bash
 git tag v0.2.0
@@ -51,16 +51,16 @@ Settings live in the tabs under the terminal, the way RealTerm lays them out:
 
 | Tab | Holds |
 |---|---|
-| Display | Display as (ASCII, Hex, Dec, Bin, Int/Float, Screen), line ending, timestamps, wrap, typing, theme, text size |
+| Display | Display as (ASCII, Hex, Dec, Bin, Int/Float, xterm), line ending, timestamps, wrap, typing |
 | Port | Baud and framing, or the TCP/Telnet connection; profile; Break; forwarding and bridging to another connection |
 | Send | Send lines (ASCII or numbers), +CR/+LF, checksum, repeat, delays, file |
 | Capture | Capture to file or memory |
 | Plot | Window, horizontal axis (time, XY, spectrum), conversions |
 | Automation | Auto-replies, quick-send buttons, colour rules |
 | Profiles | Saved profiles: rename, export, import |
-| App | Reset to defaults, version and credits |
+| App | Theme, scrollback, reset to defaults, keys, version and credits |
 
-Click the tab that is showing (or press Ctrl+,) to fold the panel away for more room; click any tab to bring it back. The status-bar summary, Plot view and REC bring their tab forward. **Reset to defaults** (App) keeps colour rules, auto-replies, quick-send buttons, send lines, text size and scrollback unless **All** is ticked; profiles are never deleted, and port settings stay while connected.
+**Hide** (or Ctrl+, or clicking the tab that is showing) folds the panel away for more room; **Show** or any tab brings it back. Ctrl+Shift+1…8 picks a tab from the keyboard. The status-bar summary, Plot view and REC bring their tab forward. **Reset to defaults** (App) keeps colour rules, auto-replies, quick-send buttons, send lines, theme, text size and scrollback unless **All** is ticked; profiles are never deleted, and port settings stay while connected.
 
 If the device is unplugged or resets its USB connection, SomeTerm waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
 
@@ -68,7 +68,7 @@ DTR and RTS toggle the output lines (green is asserted); a timed **Break** is on
 
 ## Recording and replay
 
-Choose **Session recording** as the capture format to save a replayable `.ssrec` file: both directions with their timing, plus line-signal changes (CTS, DSR, DCD, RI and your DTR/RTS toggles). A recording is always one file, so splitting is not offered for it.
+Choose **Session recording** as the capture format to save a replayable `.strec` file (older `.ssrec` files still open): both directions with their timing, plus line-signal changes (CTS, DSR, DCD, RI and your DTR/RTS toggles). A recording is always one file, so splitting is not offered for it.
 
 **Open recording…** in the port list loads one; **Connect** plays it like a live port, so the terminal, plot, find, spectrum, Monitor and capture all work on it. The status bar shows the port settings it was recorded with, and timestamps are the original times. Sent data appears as `→` lines; nothing is transmitted, and the send bar is off.
 
@@ -100,7 +100,7 @@ The **Profiles** tab renames, deletes, exports and imports them. An exported `.s
 | A, B, … | Each is a full terminal, plot, send bar and capture for one port or network connection |
 | **Monitor** | Every port's sent and received lines on one timeline, tagged `A›`, `B›`. For spying on a link with two adapters, connect one to each wire. Its Capture writes the merged timeline as text; its own tabs hold its view options, capture and colour rules |
 
-**Connect to** (Port tab) forwards everything this connection receives out of another (the status bar then shows `→B`, or `⇄B` for a bridge); **bridge** does it both ways, to sit between two devices or to put a serial device on the network (see below). Forwarded bytes count as sent on B but are not echoed there, and the Monitor shows them once, as received on the source port. Do not forward through a loopback plug in both directions: the data circulates forever.
+**Connect to** (Port tab) forwards everything this connection receives out of another (the status bar then shows `→B`, or `⇄B` for a bridge); **bridge** does it both ways, to sit between two devices or to put a serial device on the network (see below). **⇄ new connection…** opens the other end for you. Bridging two serial ports works in the browser too. Forwarded bytes count as sent on B but are not echoed there, and the Monitor shows them once, as received on the source port. Do not forward through a loopback plug in both directions: the data circulates forever.
 
 Connections, port choices and settings are restored on the next launch, but ports are not reopened: opening a port toggles DTR, which resets many boards. In the browser a port is only restored if exactly one granted port has its USB IDs.
 
@@ -115,7 +115,7 @@ In the desktop app, **TCP / Telnet…** in the port list connects over the netwo
 | Host / Listen on | The server to reach, or `0.0.0.0` to accept clients from any network (`127.0.0.1` for this computer only) |
 | Port | 1 to 65535; ports below 1024 usually need administrator rights |
 
-Clients connecting and leaving are marked in the terminal. To put a serial device on the network, open it in one connection, a TCP or Telnet server in another, and on the server's Port tab choose **Connect to → ⇄ bridge** with the serial connection: whatever a client sends reaches the device, and whatever the device sends reaches every client.
+Clients connecting and leaving are marked in the terminal. To put a serial device on the network, open it in one connection, a TCP or Telnet server in another, and on the server's Port tab choose **Connect to → ⇄ bridge** with the serial connection (or **⇄ new connection…** to open it there and then): whatever a client sends reaches the device, and whatever the device sends reaches every client.
 
 ## Sending
 
@@ -158,9 +158,9 @@ ASCII shows lines as a terminal would draw them: UTF-8 text such as `°C` and `�
 | LE / BE | Byte order of the sender (most microcontrollers are LE) |
 | skip 0 … 7 | Skip bytes until values line up with the sender's framing |
 
-The Display tab sets **Bytes per row** for these views (8, 16 or 32; Bin shows half as many) and **Scrollback**, the lines each terminal keeps (10,000 to 500,000; older lines leave the view, not a capture).
+The Display tab sets **Bytes per row** for these views (8, 16 or 32; Bin shows half as many) ; **Scrollback** on the App tab sets the lines each terminal keeps (10,000 to 500,000; older lines leave the view, not a capture).
 
-**Screen** shows the port as a full-screen terminal (VT100/xterm), for anything that draws with the cursor rather than printing lines: boot menus, `top`, `vi`, `nano`. Keys go straight to the device, including Esc and Ctrl+L; use Ctrl+Shift for app shortcuts. It opens showing the last 64 kB received, and the line log, plot and capture carry on underneath.
+**xterm** shows the port through a terminal emulator (VT100/xterm), for anything that draws with the cursor rather than printing lines: boot menus, `top`, `vi`, `nano`. Keys go straight to the device, including Esc and Ctrl+L; use Ctrl+Shift for app shortcuts. It opens showing the last 64 kB received, and the line log, plot and capture carry on underneath. The device decides what the screen shows, so the Text and typing options other than Backspace are greyed out.
 
 The magnifier (Ctrl+F) searches the ASCII view, sent and received lines alike. Enter and Shift+Enter step through matches; **Aa** matches case, **.\*** takes a regular expression, and **Filter** hides lines without a match. New data is searched as it arrives. Esc closes find.
 
@@ -168,7 +168,7 @@ The magnifier (Ctrl+F) searches the ASCII view, sent and received lines alike. E
 
 ANSI colour codes are shown as colour; other escape sequences (cursor movement, clear screen, titles) are removed rather than acted on, since this is a scrolling log, not a screen. Turn **ANSI colours** off to see the raw codes as `␛[31m`. Coloured numeric lines still plot.
 
-**Theme** (Display tab) picks Light or Dark, or follows the operating system. For a projector, Ctrl+= and Ctrl+- zoom the whole window (Ctrl+0 resets), or Ctrl+wheel over the terminal enlarges only the terminal text, in every tab; **Text size** on the Display tab sets it too.
+**Theme** (App tab) picks Light or Dark, or follows the operating system. For a projector, **A−** / **A+** on the terminal toolbar (or Ctrl+wheel over the terminal) set the terminal text size for every connection; Ctrl+= and Ctrl+- zoom the whole window (Ctrl+0 resets). The ⛶ button at the right of the top bar, or Alt+Enter, goes full screen.
 
 Drag to select lines (a plain click only focuses), Ctrl+A for all, then Ctrl+C; Esc clears the selection. In the desktop app, right-click also offers Copy and Paste. Scrolling up pauses following; **↓ Live** resumes.
 
@@ -201,18 +201,22 @@ Capture is on the Capture tab. Capture is independent of the connection: it keep
 | Raw bytes | byte, exactly as received | binary data, replay |
 | Hex, timestamped chunks | chunk as it arrived | timing and framing questions |
 
-**More options** holds the rest: **Start after** N bytes or a piece of text (escapes allowed; the text itself is captured, and the capture shows ◌ ARMED until it appears), **Stop after** N bytes or seconds, and **Split every**. It stays open while any of these is set.
+**Start after** waits for N bytes or a piece of text (escapes allowed; the text itself is captured, and the capture shows ◌ ARMED until it appears); **Stop after** ends it after N bytes or seconds.
 
 **Split every** N MB and/or N min writes a numbered series (`…-001.txt`, `…-002.txt`) into a folder you choose, for long unattended logs. A line or hex chunk is never split across two files, and an idle link does not create empty files.
 
-Choosing **Both** tags each record `RX` or `TX`. **File** streams to disk as data arrives (Chrome and Edge); **Memory** keeps it until you View, Download or Discard. Leave a limit empty for no limit.
+**Data** picks what is logged: **Received**, **Sent**, or **Both**, which tags each record `RX` or `TX`. While a capture runs, the status bar shows ● REC and its size. **File** streams to disk as data arrives (Chrome and Edge); **Memory** keeps it until you View, Download or Discard. Leave a limit empty for no limit.
 
 ## Shortcuts
 
 | Key | Action |
 |---|---|
-| Ctrl+F | Find in terminal |
+| Ctrl+Shift+Enter | Connect or disconnect |
+| Ctrl+Shift+1…8 | Show a settings tab (Display … App); again folds the panel |
 | Ctrl+, | Fold or open the settings panel |
+| Ctrl+Shift+Space | Next view: Terminal, Split, Plot |
+| Ctrl+F | Find in terminal |
+| Alt+Enter | Full screen |
 | Alt+1…9 | Quick-send buttons 1–9 |
 | Ctrl+= / Ctrl+- / Ctrl+0 | Zoom the whole window |
 | Ctrl+wheel over the terminal | Terminal text size |

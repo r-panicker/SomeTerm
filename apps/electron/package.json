@@ -22,7 +22,7 @@
     "@someterm/core": "workspace:*",
     "@someterm/transport-node": "workspace:*"
   },
-  "description": "Serial terminal with plotting, capture and replay",
+  "description": "Serial, TCP and Telnet terminal with plotting, bridging, capture and replay",
   "author": "Rajesh Panicker",
   "build": {
     "appId": "io.someterm.app",

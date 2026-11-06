@@ -21,7 +21,7 @@
 {#if source.typeKeys}
   <label class="check" title="Keys pressed in the terminal go to the device, like a terminal emulator. Ctrl+Shift keeps app shortcuts"><input type="checkbox" checked={source.typeToDevice} onchange={(e) => (source.typeToDevice = e.currentTarget.checked)} /> Keyboard to device</label>
   {#if source.typeToDevice}
-    <label class="check indent" title="Show what you type; leave off for devices that echo"><input type="checkbox" checked={source.localEcho} onchange={(e) => (source.localEcho = e.currentTarget.checked)} /> Local echo</label>
+    <label class="check" title="Show what you type; leave off for devices that echo"><input type="checkbox" checked={source.localEcho} onchange={(e) => (source.localEcho = e.currentTarget.checked)} /> Local echo</label>
   {/if}
 {/if}
 {#if source.echo !== undefined}
@@ -29,7 +29,6 @@
 {/if}
 
 <style>
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .check { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-  .indent { margin-left: 22px; }
 </style>

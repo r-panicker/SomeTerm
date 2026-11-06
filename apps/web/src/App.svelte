@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fullscreen } from './lib/fullscreen.svelte';
   import { onMount } from 'svelte';
   import { native } from './lib/session.svelte';
   import { Workspace } from './lib/workspace.svelte';
@@ -49,6 +50,11 @@
   });
 
   function key(e: KeyboardEvent) {
+    if (e.altKey && e.key === 'Enter' && !e.ctrlKey && !e.shiftKey && !e.metaKey) {
+      e.preventDefault();
+      fullscreen.toggle();
+      return;
+    }
     if (e.ctrlKey && e.key === 'Tab') {
       e.preventDefault();
       workspace.cycle(e.shiftKey ? -1 : 1);

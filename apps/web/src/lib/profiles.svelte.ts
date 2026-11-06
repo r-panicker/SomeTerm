@@ -92,6 +92,7 @@ export function resetSettings(s: Session, everything = false): void {
     rules.clear();
     prefs.setTextSize(TEXT_SIZES[0]);
     prefs.setScrollback(SCROLLBACK[1]);
+    prefs.setTheme('system');
   }
   s.sendOptions.repeat = send.repeat;
   s.sendOptions.intervalMs = send.intervalMs;

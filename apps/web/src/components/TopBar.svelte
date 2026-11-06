@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fullscreen } from '../lib/fullscreen.svelte';
   import { parseRecording, unsupportedOptions, type SerialOptions } from '@someterm/core';
   import { isWebSerialAvailable } from '@someterm/transport-webserial';
   import { native, type PortChoice, type Session, type View } from '../lib/session.svelte';
@@ -85,7 +86,7 @@
 <header>
   <select bind:this={portSelect} value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={session.open || session.busy || session.waiting} title="Port">
     {#each choices as x (x.key)}
-      {#if x.key === 'net'}<option value="net" disabled={!!netUnavailable} title={netUnavailable || 'Raw TCP or Telnet, as client or server'}>{session.choice.kind === 'net' ? session.portLabel(x.c) : 'TCP / Telnet…'}</option>
+      {#if x.key === 'net'}<option value="net" disabled={!!netUnavailable} title={netUnavailable || 'Raw TCP or Telnet, as client or server'}>{session.choice.kind === 'net' ? session.portLabel(x.c) : netUnavailable ? 'TCP / Telnet (desktop app only)' : 'TCP / Telnet…'}</option>
       {:else}<option value={x.key} disabled={!!heldBy(x.c)} title={heldBy(x.c)}>{session.portLabel(x.c)}</option>{/if}
     {/each}
     <option value="open-rec">Open recording…</option>
@@ -93,7 +94,7 @@
   {#if session.waiting && !session.open}
     <button class="primary waiting" onclick={() => session.cancelWaiting()} title="The device was unplugged or reset; it reconnects when it comes back. Click to stop waiting.">Waiting…</button>
   {:else}
-    <button class="primary" onclick={() => (session.open ? session.disconnect() : session.connect())} disabled={session.busy || (!session.open && !!heldBy(session.choice))} title={session.open ? '' : heldBy(session.choice)}>
+    <button class="primary" onclick={() => (session.open ? session.disconnect() : session.connect())} disabled={session.busy || (!session.open && !!heldBy(session.choice))} title={heldBy(session.choice) && !session.open ? heldBy(session.choice) : `${session.open ? 'Disconnect' : 'Connect'} (Ctrl+Shift+Enter)`}>
       {session.open ? 'Disconnect' : 'Connect'}
     </button>
   {/if}
@@ -121,10 +122,16 @@
     {/each}
   </div>
   {#if !others.length}<button onclick={() => workspace.openTab()} title="Open another connection, starting from this one's settings">+</button>{/if}
+  {#if fullscreen.available}
+    <button class="icon" onclick={() => fullscreen.toggle()} title="{fullscreen.on ? 'Leave full screen' : 'Full screen'} (Alt+Enter)" aria-label={fullscreen.on ? 'Leave full screen' : 'Full screen'} aria-pressed={fullscreen.on}>
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d={fullscreen.on ? 'M6 2v4H2M10 2v4h4M6 14v-4H2M10 14v-4h4' : 'M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4'} fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    </button>
+  {/if}
 </header>
 
 <style>
   .play { width: 30px; padding: 0; }
+  .icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; padding: 0; }
   .waiting { animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .55; } }
   @media (prefers-reduced-motion: reduce) { .waiting { animation: none; } }

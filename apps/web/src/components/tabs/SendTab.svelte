@@ -34,16 +34,13 @@
         <button disabled={!canSend || !!job || !!numErr || !session.sendFields[i]?.trim()} title={numErr || 'As bytes: 65 0x41 $41 41h 0b1000001 \'A\' are all 0x41; no line ending'} onclick={() => session.sendField(i, 'numbers')}>Send Numbers</button>
       </div>
     {/each}
-    {#if session.sendFields.length < 16}<button class="add" onclick={() => session.sendFields.push('')} title="Another line">+</button>{/if}
-  </fieldset>
-
-  <fieldset>
-    <legend>ASCII line ending</legend>
-    <div class="checks">
-      <label><input type="checkbox" checked={cr} onchange={(e) => setEol(e.currentTarget.checked, lf)} /> +CR</label>
-      <label><input type="checkbox" checked={lf} onchange={(e) => setEol(cr, e.currentTarget.checked)} /> +LF</label>
+    <div class="foot">
+      {#if session.sendFields.length < 16}<button class="add" onclick={() => session.sendFields.push('')} title="Another line">+</button>{/if}
+      <span class="spacer"></span>
+      <span title="Added after Send ASCII, the send bar's text, and Enter when typing in the terminal">ASCII line ending</span>
+      <label class="check"><input type="checkbox" checked={cr} onchange={(e) => setEol(e.currentTarget.checked, lf)} /> +CR</label>
+      <label class="check"><input type="checkbox" checked={lf} onchange={(e) => setEol(cr, e.currentTarget.checked)} /> +LF</label>
     </div>
-    <p class="note">Also what Enter sends when typing in the terminal</p>
   </fieldset>
 
   <fieldset>
@@ -73,12 +70,12 @@
 </div>
 
 <style>
-  .lines { flex: 1 1 420px; }
+  .lines { flex: 1 1 300px; }
+  .foot { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
   .line { display: flex; gap: 4px; margin-bottom: 4px; }
   .line input { flex: 1; min-width: 6em; font-family: var(--mono); height: 25px; }
   .line button { height: 25px; font-size: 12px; white-space: nowrap; }
   .add { width: 28px; height: 24px; padding: 0; }
-  .note { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); max-width: 16em; }
   .file { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 12.5px; }
   .fname { color: var(--muted); max-width: 18em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

@@ -4,7 +4,7 @@
   import CanvasView, { type Span } from './CanvasView.svelte';
   import Screen from './Screen.svelte';
   import { WrapMap, sliceSpans } from '../lib/wrap';
-  import { prefs } from '../lib/prefs.svelte';
+  import { prefs, TEXT_SIZES } from '../lib/prefs.svelte';
   import type { Session } from '../lib/session.svelte';
   import { ansiColor } from '../lib/ansi-colors';
   import { rules, ruleText, ruleTint } from '../lib/rules.svelte';
@@ -63,7 +63,7 @@
   const TOKEN = RGB_FLAG | 0x5b7fb8;
 
   const disp = $derived(source.display);
-  const FORMAT_NAMES: Record<string, string> = { ascii: 'ASCII', hex: 'Hex', dec: 'Dec', bin: 'Bin', num: 'Int/Float', screen: 'Screen' };
+  const FORMAT_NAMES: Record<string, string> = { ascii: 'ASCII', hex: 'Hex', dec: 'Dec', bin: 'Bin', num: 'Int/Float', screen: 'xterm' };
   /** Terminal mode: keys pressed in the focused ASCII view go straight to the device. */
   const typing = $derived(!!source.typeKeys && !!source.typeToDevice && !!source.open && disp.format === 'ascii');
   /** Auto-replies send on their own, so while any is on the toolbar says so. */
@@ -438,7 +438,14 @@
         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M10 10l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
       </button>
     {/if}
-    {#if !findOpen}<button onclick={() => { source.clear(); screen?.reset(); }} title="Clear (Ctrl+L)">Clear</button>{/if}
+    {#if !findOpen}
+      <div class="zoom" role="group" aria-label="Text size">
+        <button onclick={() => prefs.stepTextSize(-1)} disabled={prefs.textSize <= TEXT_SIZES[0]} title="Smaller text (Ctrl+wheel down)" aria-label="Smaller text">A−</button>
+        <span title="Text size; Ctrl+= and Ctrl+- zoom the whole window">{Math.round((prefs.textSize / TEXT_SIZES[0]) * 100)}%</span>
+        <button onclick={() => prefs.stepTextSize(1)} disabled={prefs.textSize >= TEXT_SIZES[TEXT_SIZES.length - 1]!} title="Larger text (Ctrl+wheel up)" aria-label="Larger text">A+</button>
+      </div>
+      <button onclick={() => { source.clear(); screen?.reset(); }} title="Clear (Ctrl+L)">Clear</button>
+    {/if}
   </div>
   {#if disp.format === 'screen' && screenSource}
     <Screen bind:this={screen} session={screenSource} />
@@ -452,6 +459,9 @@
   .find { flex: 1; min-width: 6em; font-family: var(--mono); height: 23px; font-size: 12px; }
   .find.bad { border-color: var(--err); }
   .fmt { font-size: 12px; color: var(--muted); padding: 0 4px; }
+  .zoom { display: flex; align-items: center; }
+  .zoom span { font: 11.5px var(--mono); color: var(--muted); min-width: 4.2ch; text-align: center; }
+  .zoom button { padding: 1px 5px; }
   .count { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
   button.active { color: var(--accent); border-color: var(--accent); }
   button.icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; padding: 0; }

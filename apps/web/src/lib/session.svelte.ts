@@ -409,7 +409,7 @@ export class Session implements TermSource {
     }
   }
 
-  /** Every received chunk as it arrives, for the Screen view; returns the unsubscribe. */
+  /** Every received chunk as it arrives, for the xterm view; returns the unsubscribe. */
   onRaw(fn: (chunk: Uint8Array) => void): () => void {
     this.rawListeners.add(fn);
     return () => this.rawListeners.delete(fn);

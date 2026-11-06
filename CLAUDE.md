@@ -31,6 +31,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Don't spend screen space on what a user knows by common sense or after one try: idle status, usage hints. Show state only when it carries information.
 - A label never costs a row. Fit it into a line that already exists, shrinking type or dropping secondary detail before letting a header wrap.
 - Keep the thing being studied next to what identifies it. Explanatory text is secondary; keep it short, and put it after the data, never above it.
+- The settings panel should not need vertical scrolling on a laptop-width window: lay groups side by side, merge small groups, and keep labels in the normal text colour (muted reads as disabled).
 - Settings live in RealTerm-style tabs under the terminal, always visible and one click away. Each setting has exactly one home; nothing opens settings somewhere else (no popovers, drawers or ⋯ menus for settings). Toolbars hold actions and read-only state. The user found the alternatives (inline popovers plus a drawer, then a single drawer) confusing.
 - On/off switches look different from buttons that act or choose (they carry a light); labels say what a thing is in plain words (Int/Float, not Num).
 - Reuse the closest existing pattern for a new control instead of inventing a bespoke widget.
@@ -49,6 +50,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - When mentioning other tools (RealTerm, Tera Term, GTKTerm, the Arduino plotter), credit their strengths and describe SomeTerm by its own (cross-platform, runs in a browser); never criticise them, in docs, UI, commits or chat. The repo is public and these projects are its inspiration.
 - When editing a document that already exists, write in *its* register: match its sentence length, bullets vs prose, and how much it explains.
 - Prefer tables over paragraphs when they convey the same facts more densely.
+- Pitch copy (README, descriptions, About) sells what a user gets: multiple connections, bridging, plotting, profiles, display options, automation, search. Implementation details (workers, canvas, frameworks) belong in specs, not the pitch.
 
 ## Scope
 - Ideate before implementing anything structural or UX-shaped: present options and a recommendation, wait for direction, rather than building first.
