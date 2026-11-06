@@ -92,11 +92,11 @@
 </script>
 
 <header>
-  <select bind:this={kindSelect} class="kind" value={kind} onchange={(e) => pickKind(e.currentTarget.value as Kind)} disabled={locked} title="Connection type">
+  <select bind:this={kindSelect} class="kind" class:rec={kind === 'recording'} value={kind} onchange={(e) => pickKind(e.currentTarget.value as Kind)} disabled={locked} title="Connection type">
     <option value="serial">Serial</option>
     <option value="network" disabled={!!netUnavailable} title={netUnavailable || 'Raw TCP or Telnet, as client or server'}>{netUnavailable ? 'Network (desktop app)' : 'Network'}</option>
     <option value="loopback" title="Everything sent comes straight back; for trying things without a device">Loopback</option>
-    <option value="recording" title="Replay a session recording (.strec)">{kind === 'recording' ? 'Recording' : 'Recording…'}</option>
+    <option value="recording" title="Replay a session recording (.strec)">Open recording…</option>
   </select>
   {#if kind === 'serial'}
     <select value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={locked || !choices.length} title="Port">
@@ -157,6 +157,7 @@
   @media (max-width: 700px) { select[title='Port'], .target { max-width: 120px; } }
   .target { font: 12px var(--mono); }
   .kind { width: 7.4em; flex-shrink: 0; }
+  .kind.rec { width: 10.6em; }
   .seekbar { flex: 1 1 80px; min-width: 60px; max-width: 260px; height: 20px; padding: 0; border: 0; background: none; }
   .ptime { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
   @media (max-width: 960px) { .ptime { display: none; } }

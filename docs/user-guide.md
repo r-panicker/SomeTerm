@@ -45,7 +45,7 @@ To use a port the OS does not list (socat, other virtual ports), start the deskt
 
 ## Connecting
 
-The first list on the top bar picks the type of connection: **Serial**, **Network** (TCP or Telnet, desktop app), **Loopback** or **Recording**. Changing it opens the Port tab, where that type is set up. For Serial, pick the port in the list beside it, check its settings on the Port tab (the status bar shows them as `115200 8N1`), then Connect. The baud list has the common rates; **Other…** takes any rate the adapter supports, such as 31250 for MIDI. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
+The first list on the top bar picks the type of connection: **Serial**, **Network** (TCP or Telnet, desktop app), **Loopback** or **Open recording…**. Changing it opens the Port tab, where that type is set up. For Serial, pick the port in the list beside it, check its settings on the Port tab (the status bar shows them as `115200 8N1`), then Connect. The baud list has the common rates; **Other…** takes any rate the adapter supports, such as 31250 for MIDI. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
 
 Settings a port cannot do are greyed out; hover for the reason.
 
@@ -72,7 +72,7 @@ DTR and RTS toggle the output lines (green is asserted); a timed **Break** is on
 
 Choose **Session recording** as the capture format to save a replayable `.strec` file: both directions with their timing, plus line-signal changes (CTS, DSR, DCD, RI and your DTR/RTS toggles). A recording is always one file, so splitting is not offered for it.
 
-**Recording…** in the connection type list loads one; **Connect** plays it like a live port, so the terminal, plot, find, spectrum, Monitor and capture all work on it. The status bar shows the port settings it was recorded with, and timestamps are the original times. Sent data appears as `→` lines; nothing is transmitted, and the send bar is off.
+**Open recording…** in the connection type list loads one; **Connect** plays it like a live port, so the terminal, plot, find, spectrum, Monitor and capture all work on it. The status bar shows the port settings it was recorded with, and timestamps are the original times. Sent data appears as `→` lines; nothing is transmitted, and the send bar is off.
 
 | Control | Use |
 |---|---|
