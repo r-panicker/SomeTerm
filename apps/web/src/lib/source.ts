@@ -16,9 +16,11 @@ export interface DisplaySettings {
   perRow: number;
   /** Long lines continue on the next row instead of scrolling sideways. */
   wrap: boolean;
+  /** xterm view: a received CR also starts a new line, for devices that end lines with CR alone. */
+  crNewline: boolean;
 }
 
-export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16, wrap: false });
+export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16, wrap: false, crNewline: false });
 
 /** What the terminal view needs from whatever feeds it: one port, or several merged. */
 export interface TermSource {

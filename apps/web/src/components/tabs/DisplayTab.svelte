@@ -58,6 +58,9 @@
       <div class="checks cols"><DisplayOptions {source} /></div>
     </fieldset>
     {#if session}
+      {#if xterm}
+        <label class="check row" title="For devices that end lines with CR alone, so each line does not overwrite the last. CR LF still gives one new line; a progress line redrawn with CR scrolls instead"><input type="checkbox" bind:checked={disp.crNewline} /> New line on received CR</label>
+      {/if}
       <label class="row">Backspace sends
         <select bind:value={session.sendOptions.backspace} title="What the Backspace key sends when typing to the device; many Linux consoles expect DEL">
           <option value="bs">BS (0x08)</option><option value="del">DEL (0x7F)</option>

@@ -3,6 +3,7 @@
   import { Terminal as XTerm } from '@xterm/xterm';
   import { FitAddon } from '@xterm/addon-fit';
   import '@xterm/xterm/css/xterm.css';
+  import { CrNewline } from '@someterm/core';
   import type { Session } from '../lib/session.svelte';
   import { prefs } from '../lib/prefs.svelte';
 
@@ -19,6 +20,18 @@
   let host: HTMLDivElement;
   let term: XTerm | undefined;
   let fit: FitAddon | undefined;
+  const cr = new CrNewline();
+  const feed = (c: Uint8Array) => term?.write(session.display.crNewline ? cr.push(c) : c);
+
+  /** Redraws from the received bytes, e.g. after the CR setting changes. */
+  function refill() {
+    if (!term) return;
+    term.reset();
+    cr.reset();
+    const ring = session.ring;
+    const from = Math.max(ring.start, session.hexStart, ring.end - BACKFILL);
+    if (ring.end > from) feed(ring.slice(from, ring.end));
+  }
 
   function theme() {
     const cs = getComputedStyle(host);
@@ -28,6 +41,7 @@
 
   export function reset() {
     term?.reset();
+    cr.reset();
   }
 
   onMount(() => {
@@ -37,11 +51,9 @@
     term.open(host);
     fit.fit();
 
-    const ring = session.ring;
-    const from = Math.max(ring.start, session.hexStart, ring.end - BACKFILL);
-    if (ring.end > from) term.write(ring.slice(from, ring.end));
+    refill();
 
-    const off = session.onRaw((c) => term!.write(c));
+    const off = session.onRaw(feed);
     const keys = term.onData((s) => {
       if (!session.open) return;
       // xterm.js sends DEL for Backspace; follow the connection's Backspace setting.
@@ -52,6 +64,13 @@
     ro.observe(host);
     term.focus();
     return () => { off(); keys.dispose(); ro.disconnect(); term?.dispose(); term = undefined; };
+  });
+
+  let lastCr: boolean | undefined;
+  $effect(() => {
+    const on = session.display.crNewline;
+    if (lastCr !== undefined && on !== lastCr) refill();
+    lastCr = on;
   });
 
   $effect(() => {

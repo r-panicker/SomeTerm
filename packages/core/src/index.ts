@@ -7,6 +7,7 @@ export { parseEscapes, parseHexBytes } from './send/escapes';
 export { parseNumericLine, type Sample } from './plot/parse';
 export { SeriesStore } from './plot/series';
 export { TerminalLog, type TermLine, type Direction } from './terminal/log';
+export { CrNewline } from './terminal/cr-newline';
 export { decimateMinMax, type Decimated } from './plot/decimate';
 export { Capture, formatStamp, type CaptureOptions, type CaptureSink, type CaptureSource, type CaptureFormat, type CaptureState } from './capture/capture';
 export { checksumBytes, frame, CHECKSUMS, type ChecksumKind } from './send/checksum';

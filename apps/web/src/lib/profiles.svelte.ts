@@ -227,6 +227,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
       ctrl: bool(d.ctrl, false),
       perRow: pick(d.perRow, [8, 16, 32] as const, 16),
       wrap: bool(d.wrap, false),
+      crNewline: bool(d.crNewline, false),
     },
     send: {
       eol: pick(s.eol, ['\\r\\n', '\\n', '\\r', ''], '\\r\\n'),
