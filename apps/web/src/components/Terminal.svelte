@@ -392,6 +392,22 @@
   /** A wrapped continuation: copied without a line break before it. */
   const continues = (r: number) => wrapping && (void count, wrap.locate(r).k > 0);
 
+  /**
+   * Puts the keyboard where typing goes, the device in terminal mode or xterm, and
+   * sends `e` there if given. False when this view does not take keys.
+   */
+  export function takeKeys(e?: KeyboardEvent): boolean {
+    if (disp.format === 'screen' && screen && screenSource?.open) {
+      screen.focus();
+      if (e) screen.type(e);
+      return true;
+    }
+    if (!typing) return false;
+    view?.focus();
+    if (e && typeKey(e)) e.preventDefault();
+    return true;
+  }
+
   /** Scrolls to the line containing a stream offset, switching to ASCII if needed. */
   export function jumpToOffset(offset: number) {
     if (disp.format !== 'ascii') disp.format = 'ascii';

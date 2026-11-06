@@ -39,6 +39,16 @@
     return { background: v('--panel'), foreground: v('--fg'), cursor: v('--accent'), selectionBackground: v('--sel') };
   }
 
+  export function focus() {
+    term?.focus();
+  }
+
+  /** A key pressed while the screen did not have focus, sent as if it had. */
+  export function type(e: KeyboardEvent) {
+    const s = e.key === 'Enter' ? '\r' : e.key === 'Backspace' ? (session.sendOptions.backspace === 'bs' ? '\b' : '\x7f') : e.key === 'Tab' ? '\t' : e.key === 'Escape' ? '\x1b' : [...e.key].length === 1 ? e.key : '';
+    if (s && session.open) { e.preventDefault(); void session.sendRaw(new TextEncoder().encode(s)); }
+  }
+
   export function reset() {
     term?.reset();
     cr.reset();

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { Session } from '../lib/session.svelte';
   import type { Workspace } from '../lib/workspace.svelte';
   import { PORT_TABS, portPanel, type PortTab } from '../lib/panel.svelte';
@@ -11,13 +12,32 @@
   import ControlPanel from './ControlPanel.svelte';
   import QuickSendStrip from './QuickSendStrip.svelte';
 
-  let { session, workspace, narrow }: { session: Session; workspace: Workspace; narrow: boolean } = $props();
+  let { session, workspace, narrow, active }: { session: Session; workspace: Workspace; narrow: boolean; active: boolean } = $props();
   let terminal: Terminal | undefined = $state();
   let sendBar: SendBar;
   let main: HTMLElement;
   let split = $state(0.5);
   /** Shortcuts elsewhere on screen (the status-bar summary, REC, ✎, + Rule) bring their tab of the panel forward. */
   const show = (tab: PortTab) => portPanel.show(tab);
+
+  /**
+   * Keyboard to where typing goes: the device in terminal mode or xterm, else the
+   * send bar. With `e`, a key that landed nowhere is delivered there too.
+   */
+  export function focusInput(e?: KeyboardEvent) {
+    if (terminal?.takeKeys(e)) return;
+    sendBar?.focus();
+    if (e && [...e.key].length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); sendBar?.insert(e.key); }
+  }
+
+  // Switching to this connection, or connecting it, leaves the keyboard ready to type.
+  // Not on touch screens, where focusing a field pops up the on-screen keyboard.
+  const touch = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+  $effect(() => {
+    if (!active || touch) return;
+    void session.open;
+    queueMicrotask(() => untrack(() => focusInput()));
+  });
 
   /** Shortcuts that act on this connection; the app routes keys to the active one. */
   export function handleKey(e: KeyboardEvent) {

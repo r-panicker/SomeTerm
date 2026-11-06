@@ -15,7 +15,15 @@
   }
   let ready = $state(false);
   let narrow = $state(false);
-  const views: Record<string, { handleKey(e: KeyboardEvent): void } | undefined> = $state({});
+  const views: Record<string, { handleKey(e: KeyboardEvent): void; focusInput?(e?: KeyboardEvent): void } | undefined> = $state({});
+
+  /** A key that would do nothing: focus is on the page itself or on a button (Space and Enter press buttons). */
+  function lost(e: KeyboardEvent): boolean {
+    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return false;
+    const t = e.target;
+    if (t === document.body || t === document.documentElement) return [...e.key].length === 1 || e.key === 'Enter' || e.key === 'Backspace';
+    return t instanceof HTMLButtonElement && [...e.key].length === 1 && e.key !== ' ';
+  }
 
   onMount(() => {
     void workspace.restore().then(() => (ready = true));
@@ -60,6 +68,7 @@
       workspace.cycle(e.shiftKey ? -1 : 1);
       return;
     }
+    if (lost(e)) { views[workspace.active]?.focusInput?.(e); return; }
     views[workspace.active]?.handleKey(e);
   }
 </script>
@@ -71,7 +80,7 @@
   {#each workspace.sessions as s (s.id)}
     <!-- Inactive tabs stay mounted so their scroll, find and view state survive switching. -->
     <div class="ws" hidden={workspace.active !== s.letter}>
-      <PortWorkspace bind:this={views[s.letter]} session={s} {workspace} {narrow} />
+      <PortWorkspace bind:this={views[s.letter]} session={s} {workspace} {narrow} active={workspace.active === s.letter} />
     </div>
   {/each}
   {#if workspace.sessions.length > 1}

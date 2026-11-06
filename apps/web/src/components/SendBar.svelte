@@ -40,6 +40,13 @@
     field?.focus();
   }
 
+  /** Typed text that arrived while nothing had focus. */
+  export function insert(text: string) {
+    if (!field || field.disabled) return;
+    input += text;
+    field.focus();
+  }
+
   async function send(e: SubmitEvent) {
     e.preventDefault();
     if (job) { session.cancelJob(); return; }
