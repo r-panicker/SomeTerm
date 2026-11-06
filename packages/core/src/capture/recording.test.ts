@@ -47,8 +47,13 @@ describe('recording format', () => {
   });
 
   it('rejects other files', () => {
-    expect(() => parseRecording(enc('hello'))).toThrow('Not a SuperSerial recording');
-    expect(() => parseRecording(enc('SSREC1\n{"version":9,"created":1}\n'))).toThrow('Unsupported');
+    expect(() => parseRecording(enc('hello'))).toThrow('Not a SomeTerm recording');
+    expect(() => parseRecording(enc('STREC1\n{"version":9,"created":1}\n'))).toThrow('Unsupported');
+  });
+
+  it('opens recordings saved under the earlier name', () => {
+    const r = parseRecording(Uint8Array.from([...enc('SSREC1\n{"version":1,"created":0}\n'), ...encodeRecord('rx', 1, enc('hi'))]));
+    expect(r.records.map((x) => String.fromCharCode(...x.data))).toEqual(['hi']);
   });
 
   it('signal bits round-trip', () => {

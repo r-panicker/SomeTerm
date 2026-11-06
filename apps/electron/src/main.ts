@@ -1,10 +1,11 @@
 import { app, BrowserWindow, ipcMain, Menu, shell, type MenuItemConstructorOptions } from 'electron';
+import { cpSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { listNodePorts, serveSerialBridge } from '@superserial/transport-node';
+import { listNodePorts, serveSerialBridge } from '@someterm/transport-node';
 
-const DEV_URL = process.env.SUPERSERIAL_DEV_URL;
+const DEV_URL = process.env.SOMETERM_DEV_URL;
 /** Ports the OS does not enumerate (socat, other virtual ports), separated by the platform path delimiter. */
-const EXTRA_PORTS = (process.env.SUPERSERIAL_EXTRA_PORTS ?? '').split(path.delimiter).filter(Boolean);
+const EXTRA_PORTS = (process.env.SOMETERM_EXTRA_PORTS ?? '').split(path.delimiter).filter(Boolean);
 
 async function listPorts() {
   // Enumeration can fail on its own (Linux shells out to udevadm); extra ports must still be offered.
@@ -15,6 +16,15 @@ async function listPorts() {
   const extra = EXTRA_PORTS.filter((p) => !found.some((f) => f.path === p)).map((p) => ({ path: p, label: p }));
   return [...found, ...extra];
 }
+// Saved settings from the app's earlier name carry over on first launch.
+{
+  const legacy = path.join(app.getPath('appData'), 'SuperSerial');
+  const current = app.getPath('userData');
+  if (existsSync(legacy) && !existsSync(current)) {
+    try { cpSync(legacy, current, { recursive: true }); } catch (e) { console.warn(`Could not carry over settings: ${(e as Error).message}`); }
+  }
+}
+
 let win: BrowserWindow | null = null;
 
 function createWindow(): void {
@@ -23,7 +33,7 @@ function createWindow(): void {
     height: 800,
     minWidth: 600,
     minHeight: 400,
-    title: 'SuperSerial',
+    title: 'SomeTerm',
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),

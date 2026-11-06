@@ -1,4 +1,4 @@
-import type { InputSignals, OutputSignals, SerialOptions, TransportCapabilities } from '@superserial/core';
+import type { InputSignals, OutputSignals, SerialOptions, TransportCapabilities } from '@someterm/core';
 
 export interface NativePortSummary {
   path: string;
@@ -32,12 +32,12 @@ export interface NativeSerialBridge {
 }
 
 export const CHANNELS = {
-  list: 'superserial:list',
-  open: 'superserial:open',
-  close: 'superserial:close',
-  write: 'superserial:write',
-  setSignals: 'superserial:setSignals',
-  getSignals: 'superserial:getSignals',
-  sendBreak: 'superserial:sendBreak',
-  event: 'superserial:event',
+  list: 'someterm:list',
+  open: 'someterm:open',
+  close: 'someterm:close',
+  write: 'someterm:write',
+  setSignals: 'someterm:setSignals',
+  getSignals: 'someterm:getSignals',
+  sendBreak: 'someterm:sendBreak',
+  event: 'someterm:event',
 } as const;

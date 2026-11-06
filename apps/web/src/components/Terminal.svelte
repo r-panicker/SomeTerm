@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { FindIndex, type StyleRun, decodeNumbers, formatNumber, numInfo, toAscii, toBinary, toHex } from '@superserial/core';
+  import { FindIndex, type StyleRun, decodeNumbers, formatNumber, numInfo, toAscii, toBinary, toHex } from '@someterm/core';
   import { untrack } from 'svelte';
   import CanvasView, { type Span } from './CanvasView.svelte';
   import Screen from './Screen.svelte';
@@ -8,7 +8,7 @@
   import type { Session } from '../lib/session.svelte';
   import { ansiColor } from '../lib/ansi-colors';
   import { rules, ruleText, ruleTint } from '../lib/rules.svelte';
-  import { applyRules, RGB_FLAG, type RuleRun, type TermLine } from '@superserial/core';
+  import { applyRules, RGB_FLAG, type RuleRun, type TermLine } from '@someterm/core';
   import { expandBytes, expandPictures, type Expanded } from '../lib/ctrl';
   import type { TermSource } from '../lib/source';
 

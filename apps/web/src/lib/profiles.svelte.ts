@@ -11,7 +11,7 @@ import {
   compileExpr,
   type AutoReply,
   type NetSpec,
-} from '@superserial/core';
+} from '@someterm/core';
 import { defaultDisplay, type DisplaySettings } from './source';
 import { rules } from './rules.svelte';
 import { prefs, SCROLLBACK, TEXT_SIZES } from './prefs.svelte';
@@ -250,7 +250,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
   };
 }
 
-const STORAGE_KEY = 'superserial.profiles.v1';
+const STORAGE_KEY = 'someterm.profiles.v1';
 const newId = () => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 
 /** All saved profiles, shared by every tab. */

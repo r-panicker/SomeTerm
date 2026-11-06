@@ -1,5 +1,5 @@
 {
-  "name": "@superserial/transport-webserial",
+  "name": "@someterm/transport-webserial",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
-    "@superserial/core": "workspace:*"
+    "@someterm/core": "workspace:*"
   },
   "devDependencies": {
     "@types/w3c-web-serial": "^1.0.8"

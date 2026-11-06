@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { NewlineMode } from '@superserial/core';
+  import type { NewlineMode } from '@someterm/core';
   import type { TermSource } from '../../lib/source';
 
   /** Terminal view options (Display tab, for connections and the Monitor). */

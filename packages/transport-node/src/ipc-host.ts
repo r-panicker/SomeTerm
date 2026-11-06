@@ -1,4 +1,4 @@
-import { parseNetPath, type SerialOptions, type SerialTransport } from '@superserial/core';
+import { parseNetPath, type SerialOptions, type SerialTransport } from '@someterm/core';
 import { CHANNELS, type BridgeEvent, type NativePortSummary } from './bridge';
 import { NodeSerialTransport, listNodePorts } from './node';
 import { TcpTransport } from './net';

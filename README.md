@@ -1,25 +1,25 @@
 <div align="center">
 
-# SuperSerial
+# SomeTerm
 
 **A modern serial terminal for the lab bench.**
 A full-featured serial terminal with Arduino-style live plotting, in the tradition of RealTerm and Tera Term.
 Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, macOS and Linux.
 
-[![Build and release](https://github.com/r-panicker/SuperSerial/actions/workflows/release.yml/badge.svg)](https://github.com/r-panicker/SuperSerial/actions/workflows/release.yml)
-[![Latest release](https://img.shields.io/github/v/release/r-panicker/SuperSerial?include_prereleases&sort=semver)](https://github.com/r-panicker/SuperSerial/releases)
+[![Build and release](https://github.com/r-panicker/SomeTerm/actions/workflows/release.yml/badge.svg)](https://github.com/r-panicker/SomeTerm/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/r-panicker/SomeTerm?include_prereleases&sort=semver)](https://github.com/r-panicker/SomeTerm/releases)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![Svelte 5](https://img.shields.io/badge/Svelte-5-ff3e00)
 
-[Download](https://github.com/r-panicker/SuperSerial/releases) · [User guide](docs/user-guide.md) · [Specs and changelog](docs/specs.md)
+[Download](https://github.com/r-panicker/SomeTerm/releases) · [User guide](docs/user-guide.md) · [Specs and changelog](docs/specs.md)
 
-<img src="docs/images/split-dark.png" alt="SuperSerial in Split view: timestamped terminal with colour-coded log lines next to a live plot of three series" width="900">
+<img src="docs/images/split-dark.png" alt="SomeTerm in Split view: timestamped terminal with colour-coded log lines next to a live plot of three series" width="900">
 
 </div>
 
-## Why SuperSerial
+## Why SomeTerm
 
-SuperSerial brings together the depth of established terminals such as RealTerm and Tera Term and the immediacy of the Arduino Serial Plotter, in one app that runs on Windows, macOS and Linux, or straight from a browser with nothing to install.
+SomeTerm brings together the depth of established terminals such as RealTerm and Tera Term and the immediacy of the Arduino Serial Plotter, in one app that runs on Windows, macOS and Linux, or straight from a browser with nothing to install.
 
 - **One window, one stream.** The terminal and the plot are fed by the same data. Click a point on the plot to jump to the line that produced it.
 - **Fast.** Parsing runs in a Web Worker, and the terminal and plot are canvas-drawn. It is designed for sustained 921600 baud and up.
@@ -86,28 +86,28 @@ Every setting sits in a tab under the terminal: Display, Port, Send, Capture, Pl
 ## Get it
 
 ### Desktop app
-Download the installer for your OS from [Releases](https://github.com/r-panicker/SuperSerial/releases):
+Download the installer for your OS from [Releases](https://github.com/r-panicker/SomeTerm/releases):
 
 | OS | File |
 |---|---|
-| Windows | `SuperSerial-<version>-win-x64.exe` |
-| macOS | `SuperSerial-<version>-mac-arm64.dmg` (Apple Silicon) or `SuperSerial-<version>-mac-x64.dmg` (Intel) |
-| Linux | `SuperSerial-<version>-linux-x86_64.AppImage` |
+| Windows | `SomeTerm-<version>-win-x64.exe` |
+| macOS | `SomeTerm-<version>-mac-arm64.dmg` (Apple Silicon) or `SomeTerm-<version>-mac-x64.dmg` (Intel) |
+| Linux | `SomeTerm-<version>-linux-x86_64.AppImage` |
 
 The builds are not code-signed yet, so the first launch needs one extra step:
 
 | OS | First launch |
 |---|---|
 | Windows | On the SmartScreen warning, click **More info → Run anyway**. If there is no **Run anyway**, right-click the downloaded `.exe` → **Properties**, tick **Unblock** at the bottom of the General tab, click OK, then run it again. |
-| macOS | Open the `.dmg` and drag SuperSerial to Applications. Open it once and dismiss the warning, then go to **System Settings → Privacy & Security** and click **Open Anyway**. Alternatively, run `xattr -dr com.apple.quarantine /Applications/SuperSerial.app` in Terminal. |
-| Linux | `chmod +x SuperSerial-*.AppImage`, then run it. |
+| macOS | Open the `.dmg` and drag SomeTerm to Applications. Open it once and dismiss the warning, then go to **System Settings → Privacy & Security** and click **Open Anyway**. Alternatively, run `xattr -dr com.apple.quarantine /Applications/SomeTerm.app` in Terminal. |
+| Linux | `chmod +x SomeTerm-*.AppImage`, then run it. |
 
 ### Browser
 Nothing to install. Open this link in Chrome or Edge:
 
-**https://raw.githack.com/r-panicker/SuperSerial/web/index.html**
+**https://raw.githack.com/r-panicker/SomeTerm/web/index.html**
 
-It always serves the latest release. To run a copy yourself, unzip `SuperSerial-web-<version>.zip` from a release, start a local server in that folder, and open http://localhost:8000:
+It always serves the latest release. To run a copy yourself, unzip `SomeTerm-web-<version>.zip` from a release, start a local server in that folder, and open http://localhost:8000:
 
 ```bash
 python -m http.server 8000
@@ -170,6 +170,6 @@ Usable and actively developed. Serial parity with RealTerm is close: see the [pa
 
 Created by **Rajesh Panicker**.
 
-Inspired by [RealTerm](https://realterm.sourceforge.io/), [Tera Term](https://teratermproject.github.io/), GTKTerm and the Arduino Serial Plotter. SuperSerial is an independent implementation written from scratch; it is not affiliated with those projects and shares no code with them.
+Inspired by [RealTerm](https://realterm.sourceforge.io/), [Tera Term](https://teratermproject.github.io/), GTKTerm and the Arduino Serial Plotter. SomeTerm is an independent implementation written from scratch; it is not affiliated with those projects and shares no code with them.
 
 The Screen view uses [xterm.js](https://xtermjs.org/), and plotting uses [uPlot](https://github.com/leeoniya/uPlot).

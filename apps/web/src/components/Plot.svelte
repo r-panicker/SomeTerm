@@ -2,7 +2,7 @@
   import { prefs } from '../lib/prefs.svelte';
   import { onMount, untrack } from 'svelte';
   import uPlot from 'uplot';
-  import { compileExpr, decimateMinMax, estimateRate, largestPow2, nearestIndex, peakFrequency, rangeStats, spectrum, type Fn, type Stats } from '@superserial/core';
+  import { compileExpr, decimateMinMax, estimateRate, largestPow2, nearestIndex, peakFrequency, rangeStats, spectrum, type Fn, type Stats } from '@someterm/core';
   import 'uplot/dist/uPlot.min.css';
   import type { Session } from '../lib/session.svelte';
 
@@ -389,7 +389,7 @@
     }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([rows.join('\n') + '\n'], { type: 'text/csv' }));
-    a.download = 'superserial-plot.csv';
+    a.download = 'someterm-plot.csv';
     a.click();
     URL.revokeObjectURL(a.href);
   }

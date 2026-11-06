@@ -1,4 +1,4 @@
-import { TerminalLog, formatStamp, type TermLine } from '@superserial/core';
+import { TerminalLog, formatStamp, type TermLine } from '@someterm/core';
 import { prefs } from './prefs.svelte';
 import { CaptureController } from './capture.svelte';
 import { defaultDisplay, type DisplaySettings, type TermSource } from './source';

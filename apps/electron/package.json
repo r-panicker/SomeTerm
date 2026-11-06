@@ -1,12 +1,12 @@
 {
-  "name": "@superserial/electron",
+  "name": "@someterm/electron",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "dist/main.cjs",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "pnpm --filter @superserial/web build && node scripts/build.mjs",
+    "build": "pnpm --filter @someterm/web build && node scripts/build.mjs",
     "dist": "pnpm run build && electron-builder",
     "dist:dir": "pnpm run build && electron-builder --dir",
     "typecheck": "tsc -p ."
@@ -19,14 +19,14 @@
     "electron": "^45.2.1",
     "electron-builder": "^26.18.0",
     "esbuild": "^0.28.2",
-    "@superserial/core": "workspace:*",
-    "@superserial/transport-node": "workspace:*"
+    "@someterm/core": "workspace:*",
+    "@someterm/transport-node": "workspace:*"
   },
   "description": "Serial terminal with plotting, capture and replay",
   "author": "Rajesh Panicker",
   "build": {
-    "appId": "io.superserial.app",
-    "productName": "SuperSerial",
+    "appId": "io.someterm.app",
+    "productName": "SomeTerm",
     "copyright": "Copyright © 2026 Rajesh Panicker",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
@@ -46,7 +46,7 @@
         "AppImage"
       ],
       "category": "Development",
-      "executableName": "superserial"
+      "executableName": "someterm"
     },
     "win": {
       "target": [
@@ -70,7 +70,7 @@
       "category": "public.app-category.developer-tools",
       "identity": "-"
     },
-    "executableName": "superserial",
+    "executableName": "someterm",
     "publish": null
   }
 }

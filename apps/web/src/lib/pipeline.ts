@@ -1,4 +1,4 @@
-import { RxPipeline, type NewlineMode, type RxBatch, type RxCommand } from '@superserial/core';
+import { RxPipeline, type NewlineMode, type RxBatch, type RxCommand } from '@someterm/core';
 
 const FLUSH_MS = 8;
 

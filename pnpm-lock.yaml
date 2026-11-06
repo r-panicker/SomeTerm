@@ -21,10 +21,10 @@ importers:
         specifier: ^13.0.0
         version: 13.0.0
     devDependencies:
-      '@superserial/core':
+      '@someterm/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@superserial/transport-node':
+      '@someterm/transport-node':
         specifier: workspace:*
         version: link:../../packages/transport-node
       '@types/node':
@@ -42,13 +42,13 @@ importers:
 
   apps/web:
     dependencies:
-      '@superserial/core':
+      '@someterm/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@superserial/transport-node':
+      '@someterm/transport-node':
         specifier: workspace:*
         version: link:../../packages/transport-node
-      '@superserial/transport-webserial':
+      '@someterm/transport-webserial':
         specifier: workspace:*
         version: link:../../packages/transport-webserial
       '@xterm/addon-fit':
@@ -81,7 +81,7 @@ importers:
 
   packages/transport-node:
     dependencies:
-      '@superserial/core':
+      '@someterm/core':
         specifier: workspace:*
         version: link:../core
       serialport:
@@ -97,7 +97,7 @@ importers:
 
   packages/transport-webserial:
     dependencies:
-      '@superserial/core':
+      '@someterm/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

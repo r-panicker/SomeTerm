@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { unsupportedOptions, type SerialOptions } from '@superserial/core';
+  import { unsupportedOptions, type SerialOptions } from '@someterm/core';
   import type { Session } from '../../lib/session.svelte';
 
   /** Serial framing rows for a `.form` grid. */

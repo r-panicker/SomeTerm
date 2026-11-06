@@ -17,7 +17,7 @@
     URL.revokeObjectURL(a.href);
   }
 
-  const fileName = (name: string) => `${name.replace(/[^\w.-]+/g, '-').replace(/^-|-$/g, '') || 'profile'}.superserial.json`;
+  const fileName = (name: string) => `${name.replace(/[^\w.-]+/g, '-').replace(/^-|-$/g, '') || 'profile'}.someterm.json`;
 
   async function imported() {
     const f = fileInput.files?.[0];
@@ -42,8 +42,8 @@
 
 <div class="actions">
   <input bind:this={fileInput} type="file" accept=".json,application/json" hidden onchange={imported} />
-  <button onclick={() => fileInput.click()} title="Add profiles from a .superserial.json file">Import…</button>
-  <button onclick={() => download(profiles.exportText(), 'profiles.superserial.json')} disabled={!profiles.list.length} title="Save every profile to one file">Export all</button>
+  <button onclick={() => fileInput.click()} title="Add profiles from a .someterm.json file">Import…</button>
+  <button onclick={() => download(profiles.exportText(), 'profiles.someterm.json')} disabled={!profiles.list.length} title="Save every profile to one file">Export all</button>
 </div>
 {#if message}<p class="msg" class:bad={failed}>{message}</p>{/if}
 

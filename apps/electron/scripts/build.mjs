@@ -17,7 +17,7 @@ export async function buildElectron() {
 export function copyWeb() {
   const from = fileURLToPath(new URL('../../web/dist', import.meta.url));
   const to = fileURLToPath(new URL('../web', import.meta.url));
-  if (!existsSync(from)) throw new Error('Build the web app first (pnpm --filter @superserial/web build)');
+  if (!existsSync(from)) throw new Error('Build the web app first (pnpm --filter @someterm/web build)');
   rmSync(to, { recursive: true, force: true });
   cpSync(from, to, { recursive: true });
 }

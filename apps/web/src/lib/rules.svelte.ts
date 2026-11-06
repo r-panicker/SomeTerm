@@ -1,6 +1,6 @@
-import { compileRules, type ColorRule, type CompiledRule } from '@superserial/core';
+import { compileRules, type ColorRule, type CompiledRule } from '@someterm/core';
 
-const STORAGE_KEY = 'superserial.rules.v1';
+const STORAGE_KEY = 'someterm.rules.v1';
 
 export const RULE_COLOR_NAMES = ['Red', 'Amber', 'Green', 'Blue', 'Purple', 'Cyan', 'Pink', 'Grey'];
 // Text colours for match rules, tuned per theme like the ANSI palette.

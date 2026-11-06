@@ -6,8 +6,8 @@ import type {
   TransportCapabilities,
   TransportState,
   Unsubscribe,
-} from '@superserial/core';
-import { unsupportedOptions } from '@superserial/core';
+} from '@someterm/core';
+import { unsupportedOptions } from '@someterm/core';
 
 export const WEB_SERIAL_CAPABILITIES: TransportCapabilities = {
   markSpaceParity: false,

@@ -44,7 +44,7 @@ jobs:
         run: |
           [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "::error::Tag must look like v1.2.3 or v1.2.3-rc.1, got '$TAG'"; exit 1; }
           echo "EB_ARGS=-c.extraMetadata.version=${TAG#v}" >> "$GITHUB_ENV"
-      - run: pnpm --filter @superserial/electron run build
+      - run: pnpm --filter @someterm/electron run build
       - run: pnpm exec electron-builder $EB_ARGS
         working-directory: apps/electron
         env:
@@ -52,7 +52,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
       - uses: actions/upload-artifact@v4
         with:
-          name: superserial-${{ matrix.os }}
+          name: someterm-${{ matrix.os }}
           path: |
             apps/electron/release/*.AppImage
             apps/electron/release/*.exe
@@ -69,16 +69,16 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @superserial/web build
+      - run: pnpm --filter @someterm/web build
       - name: Zip the web app
         run: |
           version=${TAG#v}
           [[ -n "$TAG" ]] || version=$(git rev-parse --short HEAD)
           mkdir -p out
-          (cd apps/web/dist && zip -qr "$GITHUB_WORKSPACE/out/SuperSerial-web-$version.zip" .)
+          (cd apps/web/dist && zip -qr "$GITHUB_WORKSPACE/out/SomeTerm-web-$version.zip" .)
       - uses: actions/upload-artifact@v4
         with:
-          name: superserial-web
+          name: someterm-web
           path: out/*.zip
           if-no-files-found: error
 
@@ -103,14 +103,14 @@ jobs:
           ls -l files
           if ! gh release view "$TAG" > /dev/null 2>&1; then
             pre=; [[ "$TAG" == *-* ]] && pre=--prerelease
-            gh release create "$TAG" --target "$GITHUB_SHA" --title "SuperSerial ${TAG#v}" --generate-notes $pre
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "SomeTerm ${TAG#v}" --generate-notes $pre
           fi
           gh release upload "$TAG" files/* --clobber
       # The `web` branch holds only the latest built web app, so raw.githack can serve it.
       - name: Publish the web app to the web branch
         run: |
           mkdir site && cd site
-          unzip -q ../files/SuperSerial-web-*.zip
+          unzip -q ../files/SomeTerm-web-*.zip
           git init -q -b web
           git add -A
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -qm "Web app $TAG"

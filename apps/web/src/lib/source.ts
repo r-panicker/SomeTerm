@@ -1,4 +1,4 @@
-import type { ByteRing, NewlineMode, NumType, RxBatch, TerminalLog } from '@superserial/core';
+import type { ByteRing, NewlineMode, NumType, RxBatch, TerminalLog } from '@someterm/core';
 
 export type DisplayFormat = 'ascii' | 'hex' | 'dec' | 'bin' | 'num' | 'screen';
 

@@ -8,8 +8,8 @@ import type {
   TransportCapabilities,
   TransportState,
   Unsubscribe,
-} from '@superserial/core';
-import { unsupportedOptions } from '@superserial/core';
+} from '@someterm/core';
+import { unsupportedOptions } from '@someterm/core';
 import { nodeCapabilities } from './capabilities';
 
 export { nodeCapabilities };

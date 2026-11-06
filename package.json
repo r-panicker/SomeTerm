@@ -1,12 +1,12 @@
 {
-  "name": "superserial",
+  "name": "someterm",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "scripts": {
-    "dev": "pnpm --filter @superserial/web dev",
-    "dev:electron": "pnpm --filter @superserial/electron dev",
-    "dist:electron": "pnpm --filter @superserial/electron dist",
+    "dev": "pnpm --filter @someterm/web dev",
+    "dev:electron": "pnpm --filter @someterm/electron dev",
+    "dist:electron": "pnpm --filter @someterm/electron dist",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
   },

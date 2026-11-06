@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CHECKSUMS, parseEscapes, parseHexBytes, toHex } from '@superserial/core';
+  import { CHECKSUMS, parseEscapes, parseHexBytes, toHex } from '@someterm/core';
   import type { Session } from '../lib/session.svelte';
   import { formatBytes } from '../lib/format';
 

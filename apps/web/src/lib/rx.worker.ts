@@ -1,4 +1,4 @@
-import { RxPipeline, type RxCommand } from '@superserial/core';
+import { RxPipeline, type RxCommand } from '@someterm/core';
 
 const FLUSH_MS = 8;
 const pipeline = new RxPipeline();

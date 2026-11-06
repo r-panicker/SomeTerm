@@ -1,4 +1,4 @@
-# SuperSerial user guide
+# SomeTerm user guide
 
 ## Running
 
@@ -27,7 +27,7 @@ pnpm dist:electron
 
 The result is in `apps/electron/release/`: an AppImage on Linux, an installer `.exe` on Windows, a `.dmg` on macOS. Each OS builds its own; the **Build and release** GitHub workflow builds all three, plus a zip of the web app, when started by hand. Builds are unsigned; the [README](../README.md#desktop-app) says how to get past SmartScreen and Gatekeeper on first launch.
 
-To publish a release, either push a version tag, or start **Build and release** from the repository's Actions tab with the tag (e.g. `v0.2.0`) typed into **Release tag**. The workflow builds everything, creates a GitHub release named after the tag with the installers and `SuperSerial-web-<version>.zip` attached, and updates the browser version on the `web` branch. A tag with a hyphen (`v0.3.0-rc.1`) is marked as a pre-release.
+To publish a release, either push a version tag, or start **Build and release** from the repository's Actions tab with the tag (e.g. `v0.2.0`) typed into **Release tag**. The workflow builds everything, creates a GitHub release named after the tag with the installers and `SomeTerm-web-<version>.zip` attached, and updates the browser version on the `web` branch. A tag with a hyphen (`v0.3.0-rc.1`) is marked as a pre-release.
 
 ```bash
 git tag v0.2.0
@@ -39,7 +39,7 @@ git push origin v0.2.0
 
 The web zip is a static site: serve it from any web server, or with `python -m http.server` in the unzipped folder for `http://localhost:8000`. Web Serial only works over HTTPS or on `localhost`, and not from a file opened directly.
 
-To use a port the OS does not list (socat, other virtual ports), start the desktop app with `SUPERSERIAL_EXTRA_PORTS=/dev/pts/5` (several separated by `:`, or `;` on Windows).
+To use a port the OS does not list (socat, other virtual ports), start the desktop app with `SOMETERM_EXTRA_PORTS=/dev/pts/5` (several separated by `:`, or `;` on Windows).
 
 ## Connecting
 
@@ -62,7 +62,7 @@ Settings live in the tabs under the terminal, the way RealTerm lays them out:
 
 Click the tab that is showing (or press Ctrl+,) to fold the panel away for more room; click any tab to bring it back. The status-bar summary, Plot view and REC bring their tab forward. **Reset to defaults** (App) keeps colour rules, auto-replies, quick-send buttons, send lines, text size and scrollback unless **All** is ticked; profiles are never deleted, and port settings stay while connected.
 
-If the device is unplugged or resets its USB connection, SuperSerial waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
+If the device is unplugged or resets its USB connection, SomeTerm waits for it (**Waiting…**) and reconnects with the same settings when it returns, even under a new port name. The terminal marks the gap with `── device lost ──` and `── reconnected ──`, and a running capture continues. Click **Waiting…** to stop waiting; **Disconnect** never waits. Disconnect to change settings.
 
 DTR and RTS toggle the output lines (green is asserted); a timed **Break** is on the Port tab. Input lines CTS, DSR, DCD and RI are shown in the status bar. Virtual ports often have no modem lines; DTR and RTS are then greyed out.
 
@@ -89,11 +89,11 @@ Save one on the Port tab: **Profile → Save as…**. With **Apply to … automa
 
 The status bar then reads `ESP32 · 115200 8N1`; a • means the settings have changed since, and **Update** saves them into the profile. Profiles can be applied only while disconnected.
 
-The **Profiles** tab renames, deletes, exports and imports them. An exported `.superserial.json` file leaves out serial numbers, so a profile shared for a lab matches every student's board of that model. Connections restored on launch keep their own settings; profiles apply when you choose a port, or a profile by hand. Network connections have no USB ID, so their profiles are only applied by hand.
+The **Profiles** tab renames, deletes, exports and imports them. An exported `.someterm.json` file leaves out serial numbers, so a profile shared for a lab matches every student's board of that model. Connections restored on launch keep their own settings; profiles apply when you choose a port, or a profile by hand. Network connections have no USB ID, so their profiles are only applied by hand.
 
 ## Several connections
 
-**+** opens another connection, starting from the settings of the one you were on (without its auto-replies or network target). Connections are lettered A, B, … along the top; a port open in one is greyed out in the others. Each has its own port and its own settings, and the tabs under the terminal always show the selected one's. Everything comes back the next time you open SuperSerial.
+**+** opens another connection, starting from the settings of the one you were on (without its auto-replies or network target). Connections are lettered A, B, … along the top; a port open in one is greyed out in the others. Each has its own port and its own settings, and the tabs under the terminal always show the selected one's. Everything comes back the next time you open SomeTerm.
 
 | Connection | Use |
 |---|---|

@@ -1,6 +1,6 @@
 # Working in this repo
 
-SuperSerial: a cross-platform serial terminal with RealTerm's serial feature parity, Arduino-style plotting, and a noticeably better UI/UX. TypeScript throughout. Runs in a browser (Web Serial) and as an Electron desktop app (Node `serialport`). Audience is academic: students and lab users, not industrial protocol work. Implemented from scratch; never copy or translate RealTerm source.
+SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity, Arduino-style plotting, and a noticeably better UI/UX. TypeScript throughout. Runs in a browser (Web Serial) and as an Electron desktop app (Node `serialport`). Audience is academic: students and lab users, not industrial protocol work. Implemented from scratch; never copy or translate RealTerm source.
 
 ## Workflow
 - Sole contributor, single branch. Commit straight to `main`: no feature branches, no PRs.
@@ -46,7 +46,7 @@ SuperSerial: a cross-platform serial terminal with RealTerm's serial feature par
 - `docs/user-guide.md` is written for a reasonably competent user, e.g. a 3rd-year engineering student: what to do, not a description of the UI or a log of what changed. Don't explain things that are obvious once seen, and don't re-explain the same fact in more than one place. State a cross-cutting fact once and point back to it.
 - Avoid AI-tell prose in user-facing writing: keep em-dashes rare, vary sentence rhythm, use plain punctuation over uniform dash constructions.
 - In-UI copy is not documentation, and unlike documentation it costs vertical space every time it's shown. A control's label plus its `title` tooltip is usually the whole budget. Prefer adding a button to an existing row over giving it a row of its own.
-- When mentioning other tools (RealTerm, Tera Term, GTKTerm, the Arduino plotter), credit their strengths and describe SuperSerial by its own (cross-platform, runs in a browser); never criticise them, in docs, UI, commits or chat. The repo is public and these projects are its inspiration.
+- When mentioning other tools (RealTerm, Tera Term, GTKTerm, the Arduino plotter), credit their strengths and describe SomeTerm by its own (cross-platform, runs in a browser); never criticise them, in docs, UI, commits or chat. The repo is public and these projects are its inspiration.
 - When editing a document that already exists, write in *its* register: match its sentence length, bullets vs prose, and how much it explains.
 - Prefer tables over paragraphs when they convey the same facts more densely.
 

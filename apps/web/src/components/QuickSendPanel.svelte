@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { parseEscapes, parseHexBytes } from '@superserial/core';
+  import { parseEscapes, parseHexBytes } from '@someterm/core';
   import type { Session } from '../lib/session.svelte';
 
   /** Editor for a connection's quick-send buttons (Automation tab). */

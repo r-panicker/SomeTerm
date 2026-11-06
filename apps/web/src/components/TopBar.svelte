@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { parseRecording, unsupportedOptions, type SerialOptions } from '@superserial/core';
-  import { isWebSerialAvailable } from '@superserial/transport-webserial';
+  import { parseRecording, unsupportedOptions, type SerialOptions } from '@someterm/core';
+  import { isWebSerialAvailable } from '@someterm/transport-webserial';
   import { native, type PortChoice, type Session, type View } from '../lib/session.svelte';
   import type { Workspace } from '../lib/workspace.svelte';
   import { portPanel, type PortTab } from '../lib/panel.svelte';
@@ -97,7 +97,7 @@
       {session.open ? 'Disconnect' : 'Connect'}
     </button>
   {/if}
-  <input bind:this={recInput} type="file" accept=".ssrec" hidden onchange={openRecording} />
+  <input bind:this={recInput} type="file" accept=".strec,.ssrec" hidden onchange={openRecording} />
   {#if session.player}
     {@const pl = session.player}
     <button class="play" onclick={() => session.togglePlay()} title={pl.playing ? 'Pause' : 'Play'}>{pl.playing ? '❚❚' : '▶'}</button>

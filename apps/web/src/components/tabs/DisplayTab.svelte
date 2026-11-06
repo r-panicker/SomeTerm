@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { NUM_TYPES, numInfo } from '@superserial/core';
+  import { NUM_TYPES, numInfo } from '@someterm/core';
   import type { DisplayFormat, TermSource } from '../../lib/source';
   import type { Session } from '../../lib/session.svelte';
   import { prefs, SCROLLBACK, TEXT_SIZES, type Theme } from '../../lib/prefs.svelte';

@@ -1,4 +1,4 @@
-import type { TransportCapabilities } from '@superserial/core';
+import type { TransportCapabilities } from '@someterm/core';
 
 /** What the native binding (@serialport/bindings-cpp) really implements on each OS. */
 export function nodeCapabilities(platform: string = process.platform): TransportCapabilities {

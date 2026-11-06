@@ -8,7 +8,7 @@ import {
   type TransportCapabilities,
   type TransportState,
   type Unsubscribe,
-} from '@superserial/core';
+} from '@someterm/core';
 import type { NativeSerialBridge } from './bridge';
 
 /** Electron wraps errors from the main process as "Error invoking remote method 'x': Error: reason"; keep the reason. */

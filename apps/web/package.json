@@ -1,5 +1,5 @@
 {
-  "name": "@superserial/web",
+  "name": "@someterm/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,9 +10,9 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@superserial/core": "workspace:*",
-    "@superserial/transport-node": "workspace:*",
-    "@superserial/transport-webserial": "workspace:*",
+    "@someterm/core": "workspace:*",
+    "@someterm/transport-node": "workspace:*",
+    "@someterm/transport-webserial": "workspace:*",
     "@xterm/addon-fit": "0.10.0",
     "@xterm/xterm": "5.5.0",
     "uplot": "1.6.31"

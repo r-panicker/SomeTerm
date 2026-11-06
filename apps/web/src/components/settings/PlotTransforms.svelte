@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { compileExpr } from '@superserial/core';
+  import { compileExpr } from '@someterm/core';
   import type { Session } from '../../lib/session.svelte';
 
   /** Per-series conversions (Plot tab). */

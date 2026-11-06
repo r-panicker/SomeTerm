@@ -41,7 +41,7 @@ import {
   netSpecProblem,
   parseNumbers,
   type NetSpec,
-} from '@superserial/core';
+} from '@someterm/core';
 import {
   WEB_SERIAL_CAPABILITIES,
   WebSerialTransport,
@@ -49,9 +49,9 @@ import {
   grantedWebSerialPorts,
   isWebSerialAvailable,
   requestWebSerialPort,
-} from '@superserial/transport-webserial';
-import type { NativePortSummary, NativeSerialBridge } from '@superserial/transport-node/bridge';
-import { IpcSerialTransport } from '@superserial/transport-node/ipc-client';
+} from '@someterm/transport-webserial';
+import type { NativePortSummary, NativeSerialBridge } from '@someterm/transport-node/bridge';
+import { IpcSerialTransport } from '@someterm/transport-node/ipc-client';
 import { CaptureController } from './capture.svelte';
 import { applySettings, profiles } from './profiles.svelte';
 import { defaultDisplay, type DisplaySettings, type TermSource } from './source';
@@ -59,7 +59,7 @@ import { PipelineClient } from './pipeline';
 import { prefs } from './prefs.svelte';
 
 /** Present when running inside the Electron app; serial I/O then goes through Node, not Web Serial. */
-export const native = (globalThis as { superserialNative?: NativeSerialBridge }).superserialNative;
+export const native = (globalThis as { sometermNative?: NativeSerialBridge }).sometermNative;
 
 export type PortChoice =
   | { kind: 'loopback' }

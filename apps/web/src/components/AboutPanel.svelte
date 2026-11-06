@@ -2,12 +2,12 @@
   import { native as nativeBridge } from '../lib/session.svelte';
 
   const version = import.meta.env.VITE_APP_VERSION || 'development build';
-  const REPO = 'https://github.com/r-panicker/SuperSerial';
+  const REPO = 'https://github.com/r-panicker/SomeTerm';
   const native = !!nativeBridge;
 </script>
 
 <div class="about">
-  <p class="name"><strong>SuperSerial</strong> <span>{version}</span></p>
+  <p class="name"><strong>SomeTerm</strong> <span>{version}</span></p>
   <p>Created by <strong>Rajesh Panicker</strong>.</p>
 
   <h4>Inspired by</h4>

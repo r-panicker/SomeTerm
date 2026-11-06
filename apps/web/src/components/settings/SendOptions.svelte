@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CHECKSUMS } from '@superserial/core';
+  import { CHECKSUMS } from '@someterm/core';
   import type { Session } from '../../lib/session.svelte';
 
   /** Framing and timing rows for a `.form` grid (Send tab). */

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CaptureFormat, CaptureOptions, CaptureSource, NewlineMode } from '@superserial/core';
+  import type { CaptureFormat, CaptureOptions, CaptureSource, NewlineMode } from '@someterm/core';
   import type { CaptureController } from '../lib/capture.svelte';
   import { canPickFolder, canSaveToFile } from '../lib/sinks';
   import { formatBytes } from '../lib/format';
@@ -98,7 +98,7 @@
       <option value="text">Text, timestamped lines</option>
       <option value="raw">Raw bytes</option>
       <option value="hex">Hex, timestamped chunks</option>
-      <option value="session">Session recording, replayable (.ssrec)</option>
+      <option value="session">Session recording, replayable (.strec)</option>
     </select>
   {/if}
   <button class="more" onclick={() => (more = !more)} disabled={advancedSet} aria-expanded={showMore}>{showMore ? '▾' : '▸'} More options</button>

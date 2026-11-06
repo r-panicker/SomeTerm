@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LoopbackTransport, FULL_CAPABILITIES, type SerialOptions } from '@superserial/core';
+import { LoopbackTransport, FULL_CAPABILITIES, type SerialOptions } from '@someterm/core';
 import { CHANNELS, type BridgeEvent, type NativeSerialBridge } from './bridge';
 import { serveSerialBridge } from './ipc-host';
 import { IpcSerialTransport } from './ipc-client';
@@ -93,7 +93,7 @@ describe('IPC bridge', () => {
 describe('ipcError', () => {
   it('keeps the reason from an Electron remote-method error', async () => {
     const { ipcError } = await import('./ipc-client');
-    expect(ipcError(new Error("Error invoking remote method 'superserial:open': Error: TCP 127.0.0.1:9: connect ECONNREFUSED 127.0.0.1:9")).message).toBe('TCP 127.0.0.1:9: connect ECONNREFUSED 127.0.0.1:9');
+    expect(ipcError(new Error("Error invoking remote method 'someterm:open': Error: TCP 127.0.0.1:9: connect ECONNREFUSED 127.0.0.1:9")).message).toBe('TCP 127.0.0.1:9: connect ECONNREFUSED 127.0.0.1:9');
     expect(ipcError(new Error('plain')).message).toBe('plain');
   });
 });

@@ -10,7 +10,7 @@ import {
   type TransportCapabilities,
   type TransportState,
   type Unsubscribe,
-} from '@superserial/core';
+} from '@someterm/core';
 
 type Listener<T extends unknown[]> = (...a: T) => void;
 

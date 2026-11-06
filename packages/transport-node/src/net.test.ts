@@ -1,6 +1,6 @@
 import net from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
-import { FULL_CAPABILITIES, type SerialOptions } from '@superserial/core';
+import { FULL_CAPABILITIES, type SerialOptions } from '@someterm/core';
 import { TcpTransport } from './net';
 import { CHANNELS, type BridgeEvent, type NativeSerialBridge } from './bridge';
 import { serveSerialBridge } from './ipc-host';

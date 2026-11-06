@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SerialOptions } from '@superserial/core';
+import type { SerialOptions } from '@someterm/core';
 import { WebSerialTransport, describePort } from './webserial';
 import { FakeSerialPort } from './fake-port';
 

@@ -1,5 +1,5 @@
 {
-  "name": "@superserial/transport-node",
+  "name": "@someterm/transport-node",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
-    "@superserial/core": "workspace:*",
+    "@someterm/core": "workspace:*",
     "serialport": "^13.0.0"
   },
   "devDependencies": {

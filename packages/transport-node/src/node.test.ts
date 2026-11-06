@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { SerialPortMock } from 'serialport';
-import type { SerialOptions } from '@superserial/core';
+import type { SerialOptions } from '@someterm/core';
 import { NodeSerialTransport, nodeCapabilities, type PortFactory } from './node';
 
 const opts: SerialOptions = { baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' };

@@ -1,4 +1,4 @@
-import type { CaptureSink } from '@superserial/core';
+import type { CaptureSink } from '@someterm/core';
 
 type SaveFilePicker = (opts: {
   suggestedName?: string;

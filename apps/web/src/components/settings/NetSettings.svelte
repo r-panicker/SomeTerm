@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { netSpecProblem, type NetSpec } from '@superserial/core';
+  import { netSpecProblem, type NetSpec } from '@someterm/core';
   import type { Session } from '../../lib/session.svelte';
 
   /** Rows for a `.form` grid: TCP/Telnet, client or server, host and port. */

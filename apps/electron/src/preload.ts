@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { CHANNELS, type BridgeEvent, type NativeSerialBridge } from '@superserial/transport-node/bridge';
-import { nodeCapabilities } from '@superserial/transport-node/capabilities';
+import { CHANNELS, type BridgeEvent, type NativeSerialBridge } from '@someterm/transport-node/bridge';
+import { nodeCapabilities } from '@someterm/transport-node/capabilities';
 
 const bridge: NativeSerialBridge = {
   capabilities: nodeCapabilities(process.platform),
@@ -18,4 +18,4 @@ const bridge: NativeSerialBridge = {
   },
 };
 
-contextBridge.exposeInMainWorld('superserialNative', bridge);
+contextBridge.exposeInMainWorld('sometermNative', bridge);

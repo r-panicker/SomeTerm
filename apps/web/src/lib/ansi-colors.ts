@@ -1,4 +1,4 @@
-import { RGB_FLAG, type AnsiColor } from '@superserial/core';
+import { RGB_FLAG, type AnsiColor } from '@someterm/core';
 
 // The 16 base colours are tuned per theme so that, for example, yellow stays
 // readable on a white background and black stays visible on a dark one.

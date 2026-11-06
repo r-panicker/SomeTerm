@@ -35,7 +35,7 @@ describe('export and import', () => {
 
   it('skips entries with bad settings or no name, ignores a malformed match', () => {
     const text = JSON.stringify({
-      format: 'superserial-profiles',
+      format: 'someterm-profiles',
       version: 1,
       profiles: [{ name: 'ok', settings: 1, match: { vid: 'x', pid: 2 } }, { name: '', settings: 1 }, { name: 'bad', settings: 'nope' }, null],
     });
@@ -44,8 +44,13 @@ describe('export and import', () => {
 
   it('rejects files that are not profile files, or from a newer version', () => {
     expect(() => parseProfiles('{', sanitize)).toThrow('Not a JSON file');
-    expect(() => parseProfiles('{"profiles":[]}', sanitize)).toThrow('Not a SuperSerial profile file');
-    expect(() => parseProfiles('{"format":"superserial-profiles","version":99,"profiles":[]}', sanitize)).toThrow('newer');
+    expect(() => parseProfiles('{"profiles":[]}', sanitize)).toThrow('Not a SomeTerm profile file');
+    expect(() => parseProfiles('{"format":"someterm-profiles","version":99,"profiles":[]}', sanitize)).toThrow('newer');
+  });
+
+  it('imports files saved under the earlier name', () => {
+    const text = JSON.stringify({ format: 'superserial-profiles', version: 1, profiles: [{ name: 'old', settings: 3 }] });
+    expect(parseProfiles(text, sanitize)).toEqual({ profiles: [{ name: 'old', settings: 3 }], skipped: 0 });
   });
 });
 

@@ -1,10 +1,10 @@
-import type { SerialOptions } from '@superserial/core';
+import type { SerialOptions } from '@someterm/core';
 import { Monitor } from './monitor.svelte';
 import { applySettings, sanitizeReplies, sanitizeQuickSends, sanitizeTransforms, sanitizeFields, sanitizeNet, settingsOf } from './profiles.svelte';
-import type { NetSpec } from '@superserial/core';
+import type { NetSpec } from '@someterm/core';
 import { Session, native, type PortChoice, type SendOptions, type View } from './session.svelte';
 
-const STORAGE_KEY = 'superserial.workspace.v1';
+const STORAGE_KEY = 'someterm.workspace.v1';
 
 /** What is restored on launch. Kept apart from device profiles, which may later apply settings on top. */
 interface SavedTab {

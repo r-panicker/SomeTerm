@@ -1,6 +1,6 @@
-const STORAGE_KEY = 'superserial.textSize.v1';
-const SCROLLBACK_KEY = 'superserial.scrollback.v1';
-const THEME_KEY = 'superserial.theme.v1';
+const STORAGE_KEY = 'someterm.textSize.v1';
+const SCROLLBACK_KEY = 'someterm.scrollback.v1';
+const THEME_KEY = 'someterm.theme.v1';
 
 export type Theme = 'system' | 'light' | 'dark';
 

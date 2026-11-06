@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { parseEscapes, parseNumbers, XMODEM_MODES } from '@superserial/core';
+  import { parseEscapes, parseNumbers, XMODEM_MODES } from '@someterm/core';
   import type { Session } from '../../lib/session.svelte';
   import { formatBytes } from '../../lib/format';
   import SendOptions from '../settings/SendOptions.svelte';
