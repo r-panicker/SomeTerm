@@ -51,11 +51,6 @@ describe('recording format', () => {
     expect(() => parseRecording(enc('STREC1\n{"version":9,"created":1}\n'))).toThrow('Unsupported');
   });
 
-  it('opens recordings saved under the earlier name', () => {
-    const r = parseRecording(Uint8Array.from([...enc('SSREC1\n{"version":1,"created":0}\n'), ...encodeRecord('rx', 1, enc('hi'))]));
-    expect(r.records.map((x) => String.fromCharCode(...x.data))).toEqual(['hi']);
-  });
-
   it('signal bits round-trip', () => {
     const s = { cts: false, dsr: true, dcd: false, ri: true, dtr: false, rts: true };
     expect(decodeSignals(encodeSignals(s))).toEqual(s);

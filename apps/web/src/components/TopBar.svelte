@@ -98,7 +98,7 @@
       {session.open ? 'Disconnect' : 'Connect'}
     </button>
   {/if}
-  <input bind:this={recInput} type="file" accept=".strec,.ssrec" hidden onchange={openRecording} />
+  <input bind:this={recInput} type="file" accept=".strec" hidden onchange={openRecording} />
   {#if session.player}
     {@const pl = session.player}
     <button class="play" onclick={() => session.togglePlay()} title={pl.playing ? 'Pause' : 'Play'}>{pl.playing ? '❚❚' : '▶'}</button>

@@ -16,7 +16,6 @@ export interface Profile<S> {
 }
 
 export const PROFILE_FILE_FORMAT = 'someterm-profiles';
-const LEGACY_PROFILE_FORMAT = 'superserial-profiles';
 export const PROFILE_FILE_VERSION = 1;
 
 /**
@@ -83,7 +82,7 @@ export function parseProfiles<S>(text: string, sanitize: (raw: unknown) => S | n
     throw new Error('Not a JSON file');
   }
   const d = data as { format?: unknown; version?: unknown; profiles?: unknown };
-  if (!d || (d.format !== PROFILE_FILE_FORMAT && d.format !== LEGACY_PROFILE_FORMAT) || !Array.isArray(d.profiles)) throw new Error('Not a SomeTerm profile file');
+  if (!d || d.format !== PROFILE_FILE_FORMAT || !Array.isArray(d.profiles)) throw new Error('Not a SomeTerm profile file');
   if (typeof d.version !== 'number' || d.version > PROFILE_FILE_VERSION) throw new Error('Made by a newer SomeTerm; update to import it');
   const profiles: ImportedProfile<S>[] = [];
   let skipped = 0;

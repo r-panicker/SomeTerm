@@ -2,8 +2,6 @@ import type { SerialOptions } from '../transport';
 
 export const RECORDING_MAGIC = 'STREC1\n';
 export const RECORDING_EXT = '.strec';
-/** Recordings made under the app's earlier name, still opened. */
-export const LEGACY_RECORDING = { magic: 'SSREC1\n', ext: '.ssrec' };
 
 export interface RecordingMeta {
   version: 1;
@@ -80,7 +78,7 @@ export function decodeSignals(data: Uint8Array): SignalState {
 /** Throws a readable error for files that are not recordings; a truncated tail is tolerated and reported. */
 export function parseRecording(bytes: Uint8Array): Recording {
   const magic = String.fromCharCode(...bytes.subarray(0, RECORDING_MAGIC.length));
-  if (magic !== RECORDING_MAGIC && magic !== LEGACY_RECORDING.magic) throw new Error('Not a SomeTerm recording');
+  if (magic !== RECORDING_MAGIC) throw new Error('Not a SomeTerm recording');
   const nl = bytes.indexOf(0x0a, RECORDING_MAGIC.length);
   if (nl < 0) throw new Error('Recording header is incomplete');
   let meta: RecordingMeta;

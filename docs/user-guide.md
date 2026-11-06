@@ -68,7 +68,7 @@ DTR and RTS toggle the output lines (green is asserted); a timed **Break** is on
 
 ## Recording and replay
 
-Choose **Session recording** as the capture format to save a replayable `.strec` file (older `.ssrec` files still open): both directions with their timing, plus line-signal changes (CTS, DSR, DCD, RI and your DTR/RTS toggles). A recording is always one file, so splitting is not offered for it.
+Choose **Session recording** as the capture format to save a replayable `.strec` file: both directions with their timing, plus line-signal changes (CTS, DSR, DCD, RI and your DTR/RTS toggles). A recording is always one file, so splitting is not offered for it.
 
 **Open recording…** in the port list loads one; **Connect** plays it like a live port, so the terminal, plot, find, spectrum, Monitor and capture all work on it. The status bar shows the port settings it was recorded with, and timestamps are the original times. Sent data appears as `→` lines; nothing is transmitted, and the send bar is off.
 

@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, Menu, shell, type MenuItemConstructorOptions } from 'electron';
-import { cpSync, existsSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { listNodePorts, serveSerialBridge } from '@someterm/transport-node';
 
@@ -16,15 +16,6 @@ async function listPorts() {
   const extra = EXTRA_PORTS.filter((p) => !found.some((f) => f.path === p)).map((p) => ({ path: p, label: p }));
   return [...found, ...extra];
 }
-// Saved settings from the app's earlier name carry over on first launch.
-{
-  const legacy = path.join(app.getPath('appData'), 'SuperSerial');
-  const current = app.getPath('userData');
-  if (existsSync(legacy) && !existsSync(current)) {
-    try { cpSync(legacy, current, { recursive: true }); } catch (e) { console.warn(`Could not carry over settings: ${(e as Error).message}`); }
-  }
-}
-
 const WINDOW_ICON = path.join(__dirname, '..', 'web', 'icon-512.png');
 let win: BrowserWindow | null = null;
 
