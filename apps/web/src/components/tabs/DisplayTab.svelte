@@ -15,9 +15,8 @@
     ['dec', 'Dec', 'Every byte as a decimal number, 0 to 255'],
     ['bin', 'Bin', 'Every byte in binary'],
     ['num', 'Int/Float', 'Groups of bytes decoded as 8, 16 or 32-bit integers or 32/64-bit floats'],
-    ['screen', 'xterm', 'Terminal emulator (VT100/xterm): the device draws the screen, for menus, top and editors. Keys always go to the device'],
   ];
-  const formats = $derived(source.ring ? FORMATS.filter(([f]) => f !== 'screen' || session) : FORMATS.filter(([f]) => f === 'ascii'));
+  const formats = $derived(source.ring ? FORMATS : FORMATS.filter(([f]) => f === 'ascii'));
   const xterm = $derived(disp.format === 'screen');
   // A smaller type cannot keep an alignment it does not have.
   $effect(() => { if (disp.align >= size) disp.align = 0; });
@@ -28,7 +27,7 @@
     <legend>Display as</legend>
     <div class="seg" role="group" aria-label="Display as">
       {#each formats as [f, label, title] (f)}
-        <button class:on={disp.format === f} onclick={() => (disp.format = f)} {title}>{label}</button>
+        <button class:on={disp.format === f && !xterm} onclick={() => (disp.format = f)} {title}>{label}</button>
       {/each}
     </div>
     {#if disp.format === 'num'}
@@ -74,7 +73,6 @@
   .row { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12.5px; }
   .text { flex: 1 1 360px; }
   .bare { border: 0; padding: 0; margin: 0; min-width: 0; }
-  .bare:disabled :global(label) { opacity: .45; cursor: default; }
   .cols { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, max-content)); column-gap: 18px; row-gap: 5px; }
   .cols :global(.row) { grid-column: 1 / -1; justify-content: flex-start; }
   .seg button { height: 26px; font-size: 12.5px; }

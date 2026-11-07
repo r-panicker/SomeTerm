@@ -14,7 +14,7 @@
 
   let { session, workspace, narrow, active }: { session: Session; workspace: Workspace; narrow: boolean; active: boolean } = $props();
   let terminal: Terminal | undefined = $state();
-  let sendBar: SendBar;
+  let sendBar: SendBar | undefined = $state();
   let main: HTMLElement;
   let split = $state(0.5);
   /** Shortcuts elsewhere on screen (the status-bar summary, REC, ✎, + Rule) bring their tab of the panel forward. */
@@ -70,7 +70,7 @@
       const q = session.quickSends[Number(e.code.slice(5)) - 1];
       if (q) { e.preventDefault(); void session.sendQuick(q); }
     } else if (e.key === 'Escape' && !(e.target instanceof HTMLSelectElement) && !(e.target instanceof HTMLInputElement && e.target.closest('.panel'))) {
-      sendBar.focus();
+      sendBar?.focus();
     }
   }
 
@@ -87,6 +87,7 @@
   }
 
   const showTerm = $derived(session.view !== 'plot');
+  const xtermShown = $derived(showTerm && session.display.format === 'screen');
   const showPlot = $derived(session.view !== 'terminal');
 </script>
 
@@ -104,8 +105,11 @@
     </div>
   {/if}
 </main>
-{#if session.quickSends.length}<QuickSendStrip {session} onedit={() => show('automation')} />{/if}
-<SendBar bind:this={sendBar} {session} />
+<!-- In xterm keys go straight to the device, so the send bar and quick sends step aside. -->
+{#if !xtermShown}
+  {#if session.quickSends.length}<QuickSendStrip {session} onedit={() => show('automation')} />{/if}
+  <SendBar bind:this={sendBar} {session} />
+{/if}
 <ControlPanel {session} {workspace} />
 <StatusBar {session} onCapture={() => show('capture')} onport={() => show('port')} />
 

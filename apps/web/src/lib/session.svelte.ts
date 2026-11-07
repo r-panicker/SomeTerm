@@ -168,6 +168,8 @@ export class Session implements TermSource {
   rate = $state(0);
   errors = $state(0);
   lastError = $state('');
+  /** Errors counted from failed connection attempts, dropped once a connection succeeds. */
+  private connectErrors = 0;
   dtr = $state(true);
   rts = $state(true);
   /** False when the open port has no modem control lines (ptys, many virtual ports). */
@@ -255,7 +257,20 @@ export class Session implements TermSource {
     if (c.kind === 'native') return c.label;
     if (c.kind === 'net') return describeNet(c.spec);
     if (c.kind === 'replay') return `▶ ${c.name}`;
-    return c.kind === 'loopback' ? 'Loopback' : c.kind === 'add' ? 'Add port…' : describePort(c.port);
+    return c.kind === 'loopback' ? 'Loopback' : c.kind === 'add' ? 'No port chosen' : describePort(c.port);
+  }
+
+  /** Opens the browser's port picker; the chosen port becomes this connection's. False if cancelled. */
+  async addPort(): Promise<boolean> {
+    try {
+      const w = await requestWebSerialPort();
+      await this.refreshPorts();
+      this.choosePort({ kind: 'webserial', port: this.granted.find((p) => p === w.port) ?? w.port });
+      return true;
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === 'NotFoundError')) { this.errors++; this.lastError = (e as Error).message; }
+      return false;
+    }
   }
 
   async refreshPorts(): Promise<void> {
@@ -330,6 +345,7 @@ export class Session implements TermSource {
       }
       else if (this.choice.kind === 'webserial') t = new WebSerialTransport(this.choice.port, now);
       else {
+        if (native) throw new Error('Choose a port first');
         const w = await requestWebSerialPort();
         await this.refreshPorts();
         this.choice = { kind: 'webserial', port: this.granted.find((p) => p === w.port) ?? w.port };
@@ -356,6 +372,12 @@ export class Session implements TermSource {
       }
       this.transport = t;
       this.open = true;
+      // Failed attempts before this one are no longer news.
+      if (this.connectErrors) {
+        this.errors = Math.max(0, this.errors - this.connectErrors);
+        if (this.errors === 0) this.lastError = '';
+        this.connectErrors = 0;
+      }
       if (this.replay) {
         this.t0 = this.replay.timeOrigin;
         this.clockOffset = this.replay.recording.meta.created - (performance.timeOrigin + this.replay.timeOrigin);
@@ -366,6 +388,7 @@ export class Session implements TermSource {
     } catch (e) {
       if (!silent && !(e instanceof DOMException && e.name === 'NotFoundError')) {
         this.errors++;
+        this.connectErrors++;
         this.lastError = (e as Error).message;
       }
     } finally {
@@ -751,13 +774,18 @@ export class Session implements TermSource {
     this.changed();
   }
 
+  clearErrors(): void {
+    this.errors = 0;
+    this.lastError = '';
+    this.connectErrors = 0;
+  }
+
   clear(): void {
     this.log.clear();
     this.series.clear();
     this.hexStart = this.ring.end;
     this.partialLine = null;
-    this.errors = 0;
-    this.lastError = '';
+    this.clearErrors();
     this.t0 = this.replay ? this.replay.timeOrigin : now();
     this.changed();
   }

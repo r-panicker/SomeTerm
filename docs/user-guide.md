@@ -41,11 +41,11 @@ git push origin v0.2.0
 
 The web zip is a static site: serve it from any web server, or with `python -m http.server` in the unzipped folder for `http://localhost:8000`. Web Serial only works over HTTPS or on `localhost`, and not from a file opened directly.
 
-To use a port the OS does not list (socat, other virtual ports), start the desktop app with `SOMETERM_EXTRA_PORTS=/dev/pts/5` (several separated by `:`, or `;` on Windows).
+**Enter path…** in the port list is the quick way to use a port the OS does not list. To have such ports listed from the start, launch the desktop app with `SOMETERM_EXTRA_PORTS=/dev/pts/5` (several separated by `:`, or `;` on Windows).
 
 ## Connecting
 
-The first list on the top bar picks the type of connection: **Serial**, **Network** (TCP or Telnet, desktop app), **Loopback** or **Open recording…**. Changing it opens the Port tab, where that type is set up. For Serial, pick the port in the list beside it, check its settings on the Port tab (the status bar shows them as `115200 8N1`), then Connect. The baud list has the common rates; **Other…** takes any rate the adapter supports, such as 31250 for MIDI. In the browser, **Add port…** opens the port picker, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports and refreshes the list while disconnected. **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
+The first list on the top bar picks the type of connection: **Serial**, **Network** (TCP or Telnet, desktop app), **Loopback** or **Open recording…**. Changing it opens the Port tab, where that type is set up. For Serial, pick the port in the list beside it, check its settings on the Port tab (the status bar shows them as `115200 8N1`), then Connect. The baud list has the common rates; **Other…** takes any rate the adapter supports, such as 31250 for MIDI. In the browser, **Add port…** opens the browser's port picker straight away, and ports you have granted before are listed by vendor and USB ID. The desktop app lists every port the OS reports, refreshed whenever you open the list; **Enter path…** takes one it doesn't list, such as a socat pty (`/dev/pts/5`, `COM7`). **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
 
 Settings a port cannot do are greyed out; hover for the reason.
 
@@ -53,7 +53,7 @@ Settings live in the tabs under the terminal, the way RealTerm lays them out:
 
 | Tab | Holds |
 |---|---|
-| Display | Display as (ASCII, Hex, Dec, Bin, Int/Float, xterm), line ending, timestamps, wrap, typing |
+| Display | Display as (ASCII, Hex, Dec, Bin, Int/Float), line ending, timestamps, wrap, typing |
 | Port | Baud and framing, or the TCP/Telnet connection; profile; Break; forwarding and bridging to another connection |
 | Send | Send lines (ASCII or numbers), +CR/+LF, checksum, repeat, delays, file |
 | Capture | Capture to file or memory |
@@ -162,7 +162,7 @@ ASCII shows lines as a terminal would draw them: UTF-8 text such as `°C` and `�
 
 The Display tab sets **Bytes per row** for these views (8, 16 or 32; Bin shows half as many) ; **Scrollback** on the App tab sets the lines each terminal keeps (10,000 to 500,000; older lines leave the view, not a capture).
 
-**xterm** shows the port through a terminal emulator (VT100/xterm), for anything that draws with the cursor rather than printing lines: boot menus, `top`, `vi`, `nano`. Keys go straight to the device, including Esc and Ctrl+L. Enter sends CR, as a terminal does, and it is the device's echo (CR LF from a shell) that moves to the next line; a peer that echoes nothing, such as another SomeTerm connection, leaves each line overwriting the last. For such a peer, or a device that ends its lines with CR alone, tick **New line on received CR** (Display tab, xterm only), like Tera Term's CR+LF receive setting; CR LF from other devices still gives a single new line. use Ctrl+Shift for app shortcuts. It opens showing the last 64 kB received, and the line log, plot and capture carry on underneath. The device decides what the screen shows, so the Text and typing options other than Backspace are greyed out.
+**xterm** on the top bar (beside Terminal, Split and Plot) shows the port through a terminal emulator (VT100/xterm), for anything that draws with the cursor rather than printing lines: boot menus, `top`, `vi`, `nano`. Keys go straight to the device, including Esc and Ctrl+L. Enter sends CR, as a terminal does, and it is the device's echo (CR LF from a shell) that moves to the next line; a peer that echoes nothing, such as another SomeTerm connection, leaves each line overwriting the last. For such a peer, or a device that ends its lines with CR alone, tick **New line on received CR** (Display tab, xterm only), like Tera Term's CR+LF receive setting; CR LF from other devices still gives a single new line. use Ctrl+Shift for app shortcuts. It opens showing the last 64 kB received, and the line log, plot and capture carry on underneath. The device decides what the screen shows, so the Text and typing options other than Backspace are greyed out, and the send bar, quick-send buttons and send lines step aside; **Send file** still works, e.g. for U-Boot's `loady`.
 
 The magnifier (Ctrl+F) searches the ASCII view, sent and received lines alike. Enter and Shift+Enter step through matches; **Aa** matches case, **.\*** takes a regular expression, and **Filter** hides lines without a match. New data is searched as it arrives. Esc closes find.
 

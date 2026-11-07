@@ -69,3 +69,4 @@ button.toggle.on::before { background: var(--ok); box-shadow: 0 0 4px var(--ok);
 .checks { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; }
 .checks label, label.check { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--fg); }
 .groups .form { font-size: 12.5px; }
+fieldset:disabled label, fieldset:disabled .foot > span { opacity: .45; cursor: default; }

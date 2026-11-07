@@ -6,6 +6,7 @@
 
   let { session }: { session: Session } = $props();
   const canSend = $derived(session.open && !session.player);
+  const xterm = $derived(session.display.format === 'screen' && session.view !== 'plot');
   const job = $derived(session.job);
   const eol = $derived(session.sendOptions.eol);
   const cr = $derived(eol.includes('\\r'));
@@ -23,7 +24,7 @@
 </script>
 
 <div class="groups">
-  <fieldset class="lines">
+  <fieldset class="lines" disabled={xterm} title={xterm ? 'Not used in xterm, where keys go straight to the device; Send file still works, e.g. for loady' : undefined}>
     <legend>Send lines</legend>
     {#each session.sendFields as _, i (i)}
       {@const numErr = problem(session.sendFields[i] ?? '', 'numbers')}

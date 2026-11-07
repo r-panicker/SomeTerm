@@ -61,7 +61,16 @@
     const s = Math.max(0, ms) / 1000;
     return `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
   };
-  const selectedKey = $derived(choices.find((x) => keyOf(x.c) === keyOf(session.choice))?.key ?? '');
+  const selectedKey = $derived(choices.find((x) => x.key !== 'add' && keyOf(x.c) === keyOf(session.choice))?.key ?? '');
+  /** Desktop: typing a port path the OS does not list (socat, other virtual ports). */
+  let manual = $state<string | null>(null);
+
+  function setManual(e: Event) {
+    const path = (manual ?? '').trim();
+    e.preventDefault();
+    manual = null;
+    if (path) session.choosePort({ kind: 'native', path, label: path });
+  }
 
   function keyOf(c: PortChoice): unknown {
     return c.kind === 'native' ? `n:${c.path}` : c.kind === 'webserial' ? c.port : c.kind;
@@ -76,13 +85,40 @@
     }
     if (k === 'network') session.choosePort({ kind: 'net', spec: session.lastNet });
     else if (k === 'loopback') session.choosePort({ kind: 'loopback' });
-    else if (choices[0]) session.choosePort(choices[0].c);
+    // With no port yet, Serial still shows the port list, holding Add port… or Enter path….
+    else session.choosePort(choices.find((x) => x.key !== 'add')?.c ?? { kind: 'add' });
     // Each type is set up on the Port tab.
     onshow('port');
   }
 
-  function pick(key: string) {
+  function pick(el: HTMLSelectElement) {
+    const key = el.value;
+    if (key === 'add' || key === 'manual') {
+      // Back to the current port until the picker or the typed path says otherwise.
+      el.value = selectedKey;
+      if (key === 'add') void session.addPort();
+      else manual = session.choice.kind === 'native' ? session.choice.path : '';
+      return;
+    }
     session.choosePort(choices.find((x) => x.key === key)!.c);
+  }
+
+  /** xterm is the terminal pane showing a terminal emulator rather than lines. */
+  type ViewButton = View | 'xterm';
+  const VIEWS: [ViewButton, string, string][] = [
+    ['terminal', 'Terminal', 'Received data as lines, hex, decimal, binary or numbers (set on the Display tab)'],
+    ['xterm', 'xterm', 'Terminal emulator (VT100/xterm) for boot menus, top and editors: the device draws the screen and keys go straight to it'],
+    ['split', 'Split', 'Terminal and plot side by side'],
+    ['plot', 'Plot', 'Plot only'],
+  ];
+  const xterm = $derived(session.display.format === 'screen');
+  const viewOn = (v: ViewButton) => (v === 'xterm' ? session.view === 'terminal' && xterm : v === 'terminal' ? session.view === 'terminal' && !xterm : session.view === v);
+
+  function pickView(v: ViewButton) {
+    if (v === 'xterm') session.display.format = 'screen';
+    else if (v === 'terminal' && xterm) session.display.format = 'ascii';
+    session.chooseView(v === 'xterm' ? 'terminal' : v);
+    if (v === 'split' || v === 'plot') onshow('plot');
   }
 
   /** In a browser there are no sockets, so the network choice is shown but cannot be picked. */
@@ -98,12 +134,20 @@
     <option value="loopback" title="Everything sent comes straight back; for trying things without a device">Loopback</option>
     <option value="recording" title="Replay a session recording (.strec)">Open recording…</option>
   </select>
-  {#if kind === 'serial'}
-    <select value={selectedKey} onchange={(e) => pick(e.currentTarget.value)} onfocus={() => session.refreshPorts()} disabled={locked || !choices.length} title="Port">
-      {#if !choices.length}<option value="">No serial ports found</option>{:else if !selectedKey}<option value="" disabled>{session.portLabel()}</option>{/if}
+  {#if kind === 'serial' && manual !== null}
+    <form class="manual" onsubmit={setManual}>
+      <!-- svelte-ignore a11y_autofocus -->
+      <input bind:value={manual} autofocus placeholder={navigator.platform.startsWith('Win') ? 'COM7' : '/dev/pts/5'} spellcheck="false" title="Port path, e.g. one made by socat. Enter to use it, Esc to cancel" onkeydown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); manual = null; } }} onblur={(e) => setManual(e)} />
+    </form>
+  {:else if kind === 'serial'}
+    <select value={selectedKey} onchange={(e) => pick(e.currentTarget)} onfocus={() => session.refreshPorts()} onpointerdown={() => session.refreshPorts()} disabled={locked} title="Port">
+      {#if !selectedKey}<option value="" disabled>{session.choice.kind === 'add' ? 'Choose a port' : session.portLabel()}</option>{/if}
       {#each choices as x (x.key)}
-        <option value={x.key} disabled={!!heldBy(x.c)} title={heldBy(x.c)}>{session.portLabel(x.c)}</option>
+        {#if x.key === 'add'}<option value="add" title="Grant this page access to a serial port">Add port…</option>
+        {:else}<option value={x.key} disabled={!!heldBy(x.c)} title={heldBy(x.c)}>{session.portLabel(x.c)}</option>{/if}
       {/each}
+      {#if native}<option value="manual" title="For ports the system does not list, such as ones made by socat">Enter path…</option>{/if}
+      {#if !choices.length && !native}<option value="" disabled>No serial ports</option>{/if}
     </select>
   {:else if kind === 'network' || kind === 'recording'}
     <button class="target" onclick={() => (kind === 'recording' && !locked ? recInput.click() : onshow('port'))} title={kind === 'recording' ? 'Open another recording' : 'Set on the Port tab'}>{session.portLabel()}</button>
@@ -111,7 +155,7 @@
   {#if session.waiting && !session.open}
     <button class="primary waiting" onclick={() => session.cancelWaiting()} title="The device was unplugged or reset; it reconnects when it comes back. Click to stop waiting.">Waiting…</button>
   {:else}
-    <button class="primary" onclick={() => (session.open ? session.disconnect() : session.connect())} disabled={session.busy || (!session.open && !!heldBy(session.choice))} title={heldBy(session.choice) && !session.open ? heldBy(session.choice) : `${session.open ? 'Disconnect' : 'Connect'} (Ctrl+Shift+Enter)`}>
+    <button class="primary" onclick={() => (session.open ? session.disconnect() : session.connect())} disabled={session.busy || (!session.open && (!!heldBy(session.choice) || (!!native && session.choice.kind === 'add')))} title={heldBy(session.choice) && !session.open ? heldBy(session.choice) : `${session.open ? 'Disconnect' : 'Connect'} (Ctrl+Shift+Enter)`}>
       {session.open ? 'Disconnect' : 'Connect'}
     </button>
   {/if}
@@ -134,8 +178,8 @@
   {/if}
   <span class="spacer"></span>
   <div class="seg" role="group" aria-label="View">
-    {#each [['terminal', 'Terminal'], ['split', 'Split'], ['plot', 'Plot']] as [v, l]}
-      <button class:on={session.view === v} onclick={() => { session.chooseView(v as View); if (v !== 'terminal') onshow('plot'); }}>{l}</button>
+    {#each VIEWS as [v, l, title] (v)}
+      <button class:on={viewOn(v)} onclick={() => pickView(v)} {title}>{l}</button>
     {/each}
   </div>
   {#if !others.length}<button onclick={() => workspace.openTab()} title="Open another connection, starting from this one's settings">+</button>{/if}
@@ -156,6 +200,7 @@
   select[title='Port'], .target { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   @media (max-width: 700px) { select[title='Port'], .target { max-width: 120px; } }
   .target { font: 12px var(--mono); }
+  .manual input { width: 150px; font: 12px var(--mono); }
   .kind { width: 7.4em; flex-shrink: 0; }
   .kind.rec { width: 10.6em; }
   .seekbar { flex: 1 1 80px; min-width: 60px; max-width: 260px; height: 20px; padding: 0; border: 0; background: none; }

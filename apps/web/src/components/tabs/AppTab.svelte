@@ -8,16 +8,16 @@
   let { session }: { session?: Session } = $props();
   let all = $state(false);
   const KEYS: [string, string][] = [
-    ['Ctrl+Shift+Enter', 'Connect'],
-    ['Ctrl+Shift+1…8', 'Panel tab'],
-    ['Ctrl+,', 'Fold panel'],
-    ['Ctrl+Shift+Space', 'Change view'],
+    ['Ctrl+Shift+Enter', 'Connect / disconnect'],
+    ['Ctrl+Shift+1…8', 'Settings tab'],
+    ['Ctrl+,', 'Fold the panel'],
+    ['Ctrl+Shift+Space', 'Next view'],
     ['Ctrl+F', 'Find'],
     ['Ctrl+L', 'Clear'],
-    ['Alt+1…9', 'Quick send'],
+    ['Alt+1…9', 'Quick-send button'],
     ['Ctrl+Tab', 'Next connection'],
     ['Alt+Enter', 'Full screen'],
-    ['Esc', 'Send bar'],
+    ['Esc', 'To the send bar'],
     ['Ctrl+wheel', 'Text size'],
   ];
 
@@ -63,9 +63,11 @@
   </div>
   <fieldset class="keys">
     <legend>Keys</legend>
-    <dl>
-      {#each KEYS as [k, what]}<div><dt>{k}</dt><dd>{what}</dd></div>{/each}
-    </dl>
+    <ul>
+      {#each KEYS as [k, what] (k)}
+        <li><span>{what}</span><span class="combo">{#each k.split('+') as part, i}{#if i}<i>+</i>{/if}<kbd>{part}</kbd>{/each}</span></li>
+      {/each}
+    </ul>
   </fieldset>
   <fieldset class="about">
     <legend>About</legend>
@@ -75,14 +77,15 @@
 
 <style>
   .row { display: flex; gap: 10px; align-items: center; font-size: 12.5px; }
-  .about { flex: 1 1 240px; }
-  .keys { flex: 2 1 330px; }
+  .about { flex: 1 1 200px; }
+  .keys { flex: 1 1 542px; }
   .stack { display: flex; flex-direction: column; gap: 8px; }
   .stack > fieldset { border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px 8px; margin: 0; }
   .stack > fieldset > legend { font-size: 11.5px; font-weight: 600; color: var(--muted); padding: 0 4px; }
   .stack .form { font-size: 12.5px; }
-  dl { margin: 0; columns: 13em; column-gap: 16px; font-size: 12px; }
-  dl div { display: flex; gap: 8px; break-inside: avoid; line-height: 1.55; }
-  dt { font-family: var(--mono); font-size: 11px; min-width: 9.2em; white-space: nowrap; }
-  dd { margin: 0; color: var(--muted); }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); column-gap: 20px; font-size: 12px; }
+  li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .combo { display: flex; align-items: center; gap: 2px; }
+  .combo i { font-style: normal; color: var(--muted); font-size: 10px; }
+  kbd { font: 10.5px var(--mono); padding: 0 3px; min-width: 1.4em; text-align: center; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; background: var(--bg); }
 </style>

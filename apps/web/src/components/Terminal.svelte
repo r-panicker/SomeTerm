@@ -408,6 +408,20 @@
     return true;
   }
 
+  /** Until someone has typed into a terminal once, an unfocused one says it takes keys. */
+  const HINT_KEY = 'someterm.typedInTerminal.v1';
+  let focused = $state(false);
+  let typedOnce = $state((() => { try { return !!localStorage.getItem(HINT_KEY); } catch { return true; } })());
+  const takesKeys = $derived(typing || (disp.format === 'screen' && !!screenSource?.open));
+  const hint = $derived(takesKeys && !focused && !typedOnce);
+  $effect(() => {
+    if (!takesKeys || !focused || typedOnce) return;
+    const done = () => { typedOnce = true; try { localStorage.setItem(HINT_KEY, '1'); } catch { /* shown again next time */ } };
+    // Capture: the terminal stops the keys it sends to the device.
+    window.addEventListener('keydown', done, { once: true, capture: true });
+    return () => window.removeEventListener('keydown', done, { capture: true });
+  });
+
   /** Scrolls to the line containing a stream offset, switching to ASCII if needed. */
   export function jumpToOffset(offset: number) {
     if (disp.format !== 'ascii') disp.format = 'ascii';
@@ -418,7 +432,7 @@
 </script>
 
 
-<section class="pane">
+<section class="pane" onfocusin={() => (focused = true)} onfocusout={(e) => (focused = !!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)))}>
   <div class="toolbar">
     {#if !findOpen}<span class="fmt" title="Set on the Display tab">{FORMAT_NAMES[disp.format]}{disp.format === 'num' ? ` · ${disp.numType} ${size > 1 ? (disp.littleEndian ? 'LE' : 'BE') : ''}` : ''}</span>{/if}
     {#if findOpen}
@@ -469,9 +483,11 @@
     <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} {continues} bind:cols wrapped={wrapping} onkey={typeKey} onpaste={typing ? typePaste : undefined} ontext={typing ? imeText : undefined} {typing} bind:follow />
     {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
   {/if}
+  {#if hint}<span class="typehint" aria-hidden="true">Click here to type to the device</span>{/if}
 </section>
 
 <style>
+  .typehint { position: absolute; right: 22px; bottom: 8px; font-size: 11.5px; color: var(--muted); opacity: .8; pointer-events: none; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
   .find { flex: 1; min-width: 6em; font-family: var(--mono); height: 23px; font-size: 12px; }
   .find.bad { border-color: var(--err); }
   .fmt { font-size: 12px; color: var(--muted); padding: 0 4px; }
