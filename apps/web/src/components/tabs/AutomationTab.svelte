@@ -6,6 +6,7 @@
 
   /** `session` is absent for the Monitor, which only has colour rules. */
   let { session }: { session?: Session } = $props();
+  const xterm = $derived(!!session && session.display.format === 'screen' && session.view !== 'plot');
 </script>
 
 <div class="groups">
@@ -14,7 +15,7 @@
       <legend>Auto-replies</legend>
       <AutoReplyPanel {session} />
     </fieldset>
-    <fieldset class="grow">
+    <fieldset class="grow" disabled={xterm} title={xterm ? 'Not available in xterm mode, where keys go straight to the device' : undefined}>
       <legend>Quick-send buttons <span class="hint">Alt+1…9</span></legend>
       <QuickSendPanel {session} />
     </fieldset>

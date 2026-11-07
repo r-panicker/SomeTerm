@@ -45,7 +45,7 @@
         </select>
       </label>
       <label>Scrollback
-        <select value={prefs.scrollback} onchange={(e) => prefs.setScrollback(Number(e.currentTarget.value))} title="Lines kept per terminal; older lines leave the view (captures are unaffected)">
+        <select value={prefs.scrollback} onchange={(e) => prefs.setScrollback(Number(e.currentTarget.value))} title="Lines kept per terminal; older lines leave the view (logs are unaffected)">
           {#each SCROLLBACK as n}<option value={n}>{n.toLocaleString()} lines</option>{/each}
         </select>
       </label>

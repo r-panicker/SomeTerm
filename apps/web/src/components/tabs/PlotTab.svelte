@@ -5,6 +5,7 @@
   let { session }: { session: Session } = $props();
   const PALETTE = ['#2f7ed8', '#e8590c', '#2b9348', '#c2255c', '#7048e8', '#0c8599', '#b08900', '#5c7cfa'];
   const WINDOWS = [[5, '5 s'], [10, '10 s'], [30, '30 s'], [60, '1 min'], [300, '5 min'], [0, 'All']] as const;
+  const off = $derived(session.view === 'terminal' ? `Not available in ${session.display.format === 'screen' ? 'xterm' : 'Terminal'} view; Plot or Split shows the plot` : '');
   const seriesNames = $derived.by(() => (void session.version, [...session.series.names]));
 
   function axisChange(v: string) {
@@ -14,7 +15,7 @@
 </script>
 
 <div class="groups">
-  <fieldset>
+  <fieldset disabled={!!off} title={off || undefined}>
     <legend>View</legend>
     <div class="form">
       <label>Window
@@ -35,7 +36,7 @@
     </div>
     {#if !seriesNames.length}<p class="note">Lines of numbers such as <code>12,34</code> or <code>temp:21.5</code> are plotted as they arrive.</p>{/if}
   </fieldset>
-  <fieldset class="grow">
+  <fieldset class="grow" disabled={!!off} title={off || undefined}>
     <legend>Conversions</legend>
     <PlotTransforms {session} colors={PALETTE} />
   </fieldset>

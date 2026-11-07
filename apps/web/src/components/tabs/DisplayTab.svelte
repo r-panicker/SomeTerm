@@ -18,12 +18,15 @@
   ];
   const formats = $derived(source.ring ? FORMATS : FORMATS.filter(([f]) => f === 'ascii'));
   const xterm = $derived(disp.format === 'screen');
+  /** Why the terminal's settings do nothing in the current view, or ''. */
+  const off = $derived(session?.view === 'plot' ? 'Not available in Plot view' : '');
+  const xtermOff = $derived(off || (xterm ? 'Not available in xterm mode' : ''));
   // A smaller type cannot keep an alignment it does not have.
   $effect(() => { if (disp.align >= size) disp.align = 0; });
 </script>
 
 <div class="groups">
-  <fieldset>
+  <fieldset disabled={!!xtermOff} title={xtermOff || undefined}>
     <legend>Display as</legend>
     <div class="seg" role="group" aria-label="Display as">
       {#each formats as [f, label, title] (f)}
@@ -51,9 +54,9 @@
     {/if}
   </fieldset>
 
-  <fieldset class="text">
+  <fieldset class="text" disabled={!!off} title={off || undefined}>
     <legend>Text and typing</legend>
-    <fieldset class="bare" disabled={xterm} title={xterm ? 'Not applicable in xterm mode: the device controls what the screen shows' : undefined}>
+    <fieldset class="bare" disabled={!!xtermOff} title={xtermOff || undefined}>
       <div class="checks cols"><DisplayOptions {source} /></div>
     </fieldset>
     {#if session}

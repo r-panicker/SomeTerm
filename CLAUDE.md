@@ -38,7 +38,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Reuse the closest existing pattern for a new control instead of inventing a bespoke widget.
 - Show a value in more than one form when its format is ambiguous (hex alongside decimal, signed alongside unsigned), toggleable rather than picking one.
 - Never show a value before it's meaningful: a disconnected port shows a clear not-connected state, not zeros.
-- A control irrelevant to the current mode or transport disappears (or is clearly disabled with a tooltip reason if hiding would hide a capability); it doesn't stay up apologizing.
+- A setting that does nothing in the current mode or view (xterm, Terminal, Plot) is disabled, with a tooltip saying "Not available in … mode/view"; it never silently changes the mode when touched. Controls that cannot exist on a transport (no modem lines, no sockets in a browser) follow the same rule, or disappear when showing them would only apologize.
 - Prevent an invalid state instead of handling it elsewhere. Disable the combination, don't tolerate it.
 - Debuggability is a feature: surfacing what the link is actually doing (line signals, byte/error counters, rates, timestamps, raw bytes behind a plotted point) is wanted, not clutter.
 

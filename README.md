@@ -27,7 +27,7 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 | **Profiles** | Save a board's settings once; they apply themselves when it's plugged in again. Share them as a file with a class. |
 | **Display your way** | ASCII, hex, decimal, binary, decoded integers and floats, an xterm screen for menus and editors, timestamps, colour rules. |
 | **Automation** | Auto-replies answer prompts, quick-send buttons hold your common commands, send lines repeat with timing and checksums. |
-| **Search and capture** | Regex find with a filter mode; capture to disk with triggers and rotation, or record a session and replay it later with no hardware. |
+| **Search and logging** | Regex find with a filter mode; log sent and received data to disk with triggers and rotation, or record a session and replay it later with no hardware. |
 | **Configurable, not cluttered** | RealTerm-depth settings in tabs under the terminal, one click away and folded when you don't need them. Keyboard shortcuts, dark and light themes, works on a phone. |
 | **Keeps up** | Comfortable at 921600 baud and beyond, with byte counts, rates and line signals shown when they mean something. |
 
@@ -76,16 +76,16 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 | Half duplex | Wait for each character's echo, or hold RTS while transmitting for RS-485 adapters |
 | Auto-replies | Answer prompts automatically: text or regex patterns with `$1` substitution and a loop guard |
 
-### Capture and replay
+### Logging and replay
 | | |
 |---|---|
-| Capture | Timestamped text, raw bytes or timestamped hex; RX, TX or both; straight to disk or in memory |
+| Logging | Timestamped text, raw bytes or timestamped hex; received, sent or both; straight to disk or in memory |
 | Triggers and limits | Start after N bytes or on a piece of text, stop after a size or time |
 | Rotation | Split into numbered files every N MB or N minutes for long unattended logs |
 | Record and replay | Save a session as `.strec` and play it back later, at speed or instantly, with seeking. Handy for marking and demos with no hardware |
 
 ### Settings in tabs, RealTerm style
-Every setting sits in a tab under the terminal: Display, Port, Send, Capture, Plot, Automation, Profiles and App. Each has one home, always one click away; click the showing tab to fold the panel for more room. The status bar keeps the essentials in view (profile, `115200 8N1`, any bridge) and opens the Port tab when clicked. On/off switches carry a light, so they never look like buttons. Light, dark or system theme, and it works on a phone.
+Every setting sits in a tab under the terminal: Display, Port, Send, Logging, Plot, Automation, Profiles and App. Each has one home, always one click away; click the showing tab to fold the panel for more room. The status bar keeps the essentials in view (profile, `115200 8N1`, any bridge) and opens the Port tab when clicked. On/off switches carry a light, so they never look like buttons. Light, dark or system theme, and it works on a phone.
 
 <img src="docs/images/settings-light.png" alt="The Send tab under the terminal and plot, with send lines, line ending, timing and file" width="900">
 

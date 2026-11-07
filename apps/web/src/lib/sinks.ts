@@ -46,7 +46,7 @@ export class FileSink implements CaptureSink {
     const picker = (window as unknown as { showSaveFilePicker: SaveFilePicker }).showSaveFilePicker;
     let handle: FileSystemFileHandle;
     try {
-      handle = await picker({ suggestedName, types: [{ description: 'Capture', accept: { 'text/plain': ['.txt', '.log', '.bin', '.csv'] } }] });
+      handle = await picker({ suggestedName, types: [{ description: 'Log', accept: { 'text/plain': ['.txt', '.log', '.bin', '.csv'] } }] });
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return null;
       throw e;

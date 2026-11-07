@@ -115,7 +115,7 @@
       {/if}
       <span>Start after</span>
       <div class="limits">
-        <input bind:value={startBytes} inputmode="numeric" placeholder="–" disabled={active || !!startText.trim()} title="Begin capturing after this many data bytes" /> bytes
+        <input bind:value={startBytes} inputmode="numeric" placeholder="–" disabled={active || !!startText.trim()} title="Begin logging after this many data bytes" /> bytes
         <input class="text" bind:value={startText} placeholder="or text" disabled={active || !!startBytes.trim()} title="Begin where this text first appears (included). Escapes like \r \n \xNN work" />
       </div>
       <span>Stop after</span>
@@ -127,13 +127,13 @@
   </fieldset>
 
   <fieldset class="run">
-    <legend>Capture</legend>
+    <legend>Log</legend>
     <div class="actions">
       {#if active && c}
         <button onclick={() => (c.state === 'paused' ? ctl.resume() : ctl.pause())}>{c.state === 'paused' ? 'Resume' : 'Pause'}</button>
         <button class="primary" onclick={() => ctl.stop()}>Stop</button>
       {:else}
-        <button class="primary" onclick={start} title={splitting ? 'Choose a folder; files are numbered -001, -002, …' : ''}>{splitting ? 'Choose folder…' : 'Start capture'}</button>
+        <button class="primary" onclick={start} title={splitting ? 'Choose a folder; files are numbered -001, -002, …' : ''}>{splitting ? 'Choose folder…' : 'Start logging'}</button>
       {/if}
     </div>
     {#if c}

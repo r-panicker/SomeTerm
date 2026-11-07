@@ -13,7 +13,7 @@
         <span class="dot" class:open={s.open}></span>
         <b style:color={color(s.letter)}>{s.letter}</b>
         <span class="name">{s.portLabel()}</span>
-        {#if s.capture.info?.state === 'running'}<span class="rec" title="Capturing">●</span>{/if}
+        {#if s.capture.info?.state === 'running'}<span class="rec" title="Logging">●</span>{/if}
         {#if s.forwardTo}<span class="fwd" title="Forwarding received data to {s.forwardTo.letter}">→{s.forwardTo.letter}</span>{/if}
       </button>
       <button class="close" onclick={() => workspace.close(s)} title={s.open ? 'Disconnect and close' : 'Close'}>×</button>

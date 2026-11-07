@@ -35,7 +35,7 @@
   {/if}
   {#if session.capture.info}
     {@const c = session.capture.info}
-    <button class="cap" class:rec={c.state === 'running'} onclick={onCapture} title="Capture: {c.name}">
+    <button class="cap" class:rec={c.state === 'running'} onclick={onCapture} title="Logging to {c.name}">
       {c.state === 'running' ? '● REC' : c.state === 'armed' ? '◌ ARMED' : c.state === 'paused' ? '❚❚ REC' : c.kind === 'memory' ? 'Capture' : 'Saved'} {bytes(c.captured)}
     </button>
   {/if}

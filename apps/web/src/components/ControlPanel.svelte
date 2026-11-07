@@ -14,7 +14,7 @@
 
   /** A connection's settings, in tabs the way RealTerm lays them out. */
   let { session, workspace }: { session: Session; workspace: Workspace } = $props();
-  const TABS: [PortTab, string][] = [['display', 'Display'], ['port', 'Port'], ['send', 'Send'], ['capture', 'Capture'], ['plot', 'Plot'], ['automation', 'Automation'], ['profiles', 'Profiles'], ['app', 'App']];
+  const TABS: [PortTab, string][] = [['display', 'Display'], ['port', 'Port'], ['send', 'Send'], ['capture', 'Logging'], ['plot', 'Plot'], ['automation', 'Automation'], ['profiles', 'Profiles'], ['app', 'App']];
 </script>
 
 <TabbedPanel tabs={TABS} state={portPanel}>

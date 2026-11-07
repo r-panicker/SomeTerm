@@ -11,7 +11,7 @@
   let { workspace }: { workspace: Workspace } = $props();
   const monitor = $derived(workspace.monitor);
   let terminal: Terminal | undefined = $state();
-  const TABS: [MonitorTab, string][] = [['display', 'Display'], ['capture', 'Capture'], ['automation', 'Colour rules'], ['app', 'App']];
+  const TABS: [MonitorTab, string][] = [['display', 'Display'], ['capture', 'Logging'], ['automation', 'Colour rules'], ['app', 'App']];
 
   export function handleKey(e: KeyboardEvent) {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && /^Digit[1-4]$/.test(e.code)) {
@@ -39,7 +39,7 @@
   {/each}
   <span class="spacer"></span>
   {#if monitor.errors}<span class="err" title={monitor.lastError}>⚠ {monitor.lastError}</span>{/if}
-  {#if monitor.capture.info?.state === 'running'}<button class="rec" onclick={() => monitorPanel.show('capture')} title="Capturing the merged timeline">● REC</button>{/if}
+  {#if monitor.capture.info?.state === 'running'}<button class="rec" onclick={() => monitorPanel.show('capture')} title="Logging the merged timeline">● REC</button>{/if}
 </header>
 <main>
   <div class="slot"><Terminal bind:this={terminal} source={monitor} onshow={() => monitorPanel.show('automation')} /></div>

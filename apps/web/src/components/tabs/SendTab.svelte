@@ -24,7 +24,7 @@
 </script>
 
 <div class="groups">
-  <fieldset class="lines" disabled={xterm} title={xterm ? 'Not used in xterm, where keys go straight to the device; Send file still works, e.g. for loady' : undefined}>
+  <fieldset class="lines" disabled={xterm} title={xterm ? 'Not available in xterm mode, where keys go straight to the device; Send file still works, e.g. for loady' : undefined}>
     <legend>Send lines</legend>
     {#each session.sendFields as _, i (i)}
       {@const numErr = problem(session.sendFields[i] ?? '', 'numbers')}
