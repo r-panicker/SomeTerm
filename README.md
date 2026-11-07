@@ -11,7 +11,7 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 [![Build and release](https://github.com/r-panicker/SomeTerm/actions/workflows/release.yml/badge.svg)](https://github.com/r-panicker/SomeTerm/actions/workflows/release.yml)
 [![Latest release](https://img.shields.io/github/v/release/r-panicker/SomeTerm?include_prereleases&sort=semver)](https://github.com/r-panicker/SomeTerm/releases)
 
-**[Open in the browser](https://r-panicker.github.io/SomeTerm/)** · [Download the desktop app](https://github.com/r-panicker/SomeTerm/releases/latest) · [User guide](docs/user-guide.md) · [Specs and changelog](docs/specs.md)
+**[Open in the browser](https://r-panicker.github.io/SomeTerm/)** · [Download the desktop app](https://github.com/r-panicker/SomeTerm/releases/latest) · [User guide](docs/user-guide.md) · [Design and RealTerm parity](docs/specs.md)
 
 <img src="docs/images/split-dark.png" alt="SomeTerm in Split view: timestamped terminal with colour-coded log lines next to a live plot of three series" width="900">
 
@@ -51,8 +51,8 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 | Terminal | Timestamps, ANSI colours, RealTerm-style `[CR]` `[LF]` control-character display, sent data inline |
 | Find | Live search with regex, case matching and a filter mode |
 | Colour rules | Keep errors red and OK/PASS green across every connection; one click turns a search into a rule |
-| Terminal mode | Click in the terminal and type: keys go straight to the device, like GTKTerm or TeraTerm, with optional coloured local echo |
-| xterm | Terminal emulator view (VT100/xterm) for boot menus, `top` and editors |
+| Terminal mode | Type in the terminal and keys go straight to the device, like GTKTerm or TeraTerm, with optional coloured local echo |
+| xterm | Terminal emulator view (VT100/xterm) for boot menus, `top` and editors, with Tera Term-style new line on CR |
 | Quick sends | Buttons for the commands you send most, Alt+1…9 |
 | File upload | Raw, XMODEM, XMODEM-1K or YMODEM, for bootloaders and U-Boot |
 
@@ -85,7 +85,7 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 | Record and replay | Save a session as `.strec` and play it back later, at speed or instantly, with seeking. Handy for marking and demos with no hardware |
 
 ### Settings in tabs, RealTerm style
-Every setting sits in a tab under the terminal: Display, Port, Send, Logging, Plot, Automation, Profiles and App. Each has one home, always one click away; click the showing tab to fold the panel for more room. The status bar keeps the essentials in view (profile, `115200 8N1`, any bridge) and opens the Port tab when clicked. On/off switches carry a light, so they never look like buttons. Light, dark or system theme, and it works on a phone.
+Every setting sits in a tab under the terminal: Display, Port, Send, Logging, Plot, Automation, Profiles and App. Each has one home, always one click away, and settings that do nothing in the current view are greyed out with the reason. **Hide** folds the panel for more room. The status bar keeps the essentials in view (profile, `115200 8N1`, any bridge) and opens the Port tab when clicked. On/off switches carry a light, so they never look like buttons. Light, dark or system theme, and keyboard shortcuts for the common actions.
 
 <img src="docs/images/settings-light.png" alt="The Send tab under the terminal and plot, with send lines, line ending, timing and file" width="900">
 
@@ -129,7 +129,8 @@ Both run the same app. The desktop version talks to the OS serial driver directl
 | Install | none | installer |
 | 5/6 data bits, XON/XOFF | no | yes |
 | Mark/space parity, 1.5 stop bits | no | Windows |
-| Ports the OS doesn't list (socat, ptys) | no | yes |
+| Port names | USB vendor and ID only; ports without one, and identical adapters, are numbered (`Serial port #1`) | the system's own (`COM3`, `/dev/ttyUSB0`) |
+| Ports the OS doesn't list (socat, ptys) | no | yes, with **Enter path…** |
 | RI input | yes | no |
 | TCP and Telnet | no | yes |
 

@@ -7,11 +7,11 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Commit and push without asking once a coherent unit of work is done. Multiple small, honestly-scoped commits are preferred over one large one.
 - No backward compatibility with earlier versions (saved settings, file formats, names): pre-1.0 with no installed base to protect, so just change things.
 - Before any risky git operation, check `git status` first; investigate unexpected working-tree state (e.g. files missing without a matching commit) rather than assuming it was intentional.
-- Update `docs/specs.md`'s changelog *and* `docs/user-guide.md` as changes are made, not only the specs doc. Same standard either way: the specs entry is free to narrate what changed and why; the user guide only gets a change if it affects what a user should actually do.
+- Keep `docs/user-guide.md`, the README and `docs/specs.md` (design, layout, parity status) current as changes are made. There is no changelog: how we got here lives in commit messages, and the docs describe only what is true now. The user guide only gets a change if it affects what a user should actually do.
 - Learn from corrections automatically. When the user corrects or suggests the same kind of thing more than once, or states a durable, generalizable preference, add it to this file (or the relevant memory file) without being asked, so it survives past the conversation. Keep it lean: a general principle plus why, not a growing pile of every incident. A one-off instruction is not a preference.
 
 ## Architecture (decided)
-- Monorepo, strict boundaries: `core` (pure TS, no DOM, no Node APIs), `transport-webserial`, `transport-node`, `ui` (shared components), `app-web`, `app-electron`.
+- Monorepo, strict boundaries: `packages/core` (pure TS, no DOM, no Node APIs), `packages/transport-webserial`, `packages/transport-node`, `apps/web` (the Svelte UI, also loaded by Electron), `apps/electron`.
 - All I/O, serial ports and TCP/Telnet connections alike (desktop only; browsers have no sockets), goes through a `SerialTransport` interface. The core never knows which driver is underneath. Features a transport can't support (Web Serial has no XON/XOFF, mark/space parity, or VID/PID metadata) are shown as unavailable on that transport, never silently ignored.
 - Incoming data path: transport, ring buffer, Web Worker (timestamp, split, parse), views. The main thread never parses or formats bulk data. Design for sustained 921600 baud and up.
 - Terminal and hex views are virtualized/canvas-based; no DOM node per line.
@@ -43,7 +43,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Debuggability is a feature: surfacing what the link is actually doing (line signals, byte/error counters, rates, timestamps, raw bytes behind a plotted point) is wanted, not clutter.
 
 ## Writing (code comments, docs, commit messages)
-- Comments explain non-obvious *current* behavior: a hidden constraint, why the less-obvious approach was chosen. They are never a changelog; that history belongs in the commit message and `docs/specs.md`'s version-history table.
+- Comments explain non-obvious *current* behavior: a hidden constraint, why the less-obvious approach was chosen. They are never a changelog; that history belongs in the commit message.
 - Don't add comments to justify a change that's simple enough to read on its own.
 - `docs/user-guide.md` is written for a reasonably competent user, e.g. a 3rd-year engineering student: what to do, not a description of the UI or a log of what changed. Don't explain things that are obvious once seen, and don't re-explain the same fact in more than one place. State a cross-cutting fact once and point back to it.
 - Avoid AI-tell prose in user-facing writing: keep em-dashes rare, vary sentence rhythm, use plain punctuation over uniform dash constructions.
