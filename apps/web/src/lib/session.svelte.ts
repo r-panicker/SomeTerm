@@ -257,7 +257,7 @@ export class Session implements TermSource {
     if (c.kind === 'native') return c.label;
     if (c.kind === 'net') return describeNet(c.spec);
     if (c.kind === 'replay') return `▶ ${c.name}`;
-    return c.kind === 'loopback' ? 'Loopback' : c.kind === 'add' ? 'No port chosen' : describePort(c.port);
+    return c.kind === 'loopback' ? 'Loopback' : c.kind === 'add' ? 'No port chosen' : describePort(c.port, this.granted);
   }
 
   /** Opens the browser's port picker; the chosen port becomes this connection's. False if cancelled. */

@@ -37,9 +37,19 @@ const USB_VENDORS: Record<number, string> = {
 };
 
 /** Short human label for a port; Web Serial exposes only USB IDs, not names. */
-export function describePort(port: SerialPort): string {
-  const { usbVendorId: v, usbProductId: p } = port.getInfo();
-  if (v === undefined) return 'Serial port';
+export function describePort(port: SerialPort, among: readonly SerialPort[] = []): string {
+  const base = baseName(port);
+  // Web Serial gives no port name, so ports without USB IDs (built-in, Bluetooth, virtual) or two
+  // identical adapters would read the same; number them in the order they were granted.
+  const same = among.filter((o) => baseName(o) === base);
+  const i = same.indexOf(port);
+  return same.length > 1 && i >= 0 ? `${base} #${i + 1}` : base;
+}
+
+function baseName(port: SerialPort): string {
+  const info = port.getInfo() as SerialPortInfo & { bluetoothServiceClassId?: number | string };
+  const { usbVendorId: v, usbProductId: p } = info;
+  if (v === undefined) return info.bluetoothServiceClassId !== undefined ? 'Bluetooth serial' : 'Serial port';
   const hex = (n: number) => n.toString(16).padStart(4, '0').toUpperCase();
   const id = p === undefined ? hex(v) : `${hex(v)}:${hex(p)}`;
   return USB_VENDORS[v] ? `${USB_VENDORS[v]} ${id}` : `USB ${id}`;

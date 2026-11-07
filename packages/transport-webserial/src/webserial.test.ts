@@ -121,4 +121,11 @@ describe('describePort', () => {
     expect(describePort(port(0xabcd, 0x1))).toBe('USB ABCD:0001');
     expect(describePort(port())).toBe('Serial port');
   });
+
+  it('numbers ports that would otherwise read the same, in grant order', () => {
+    const a = port(), b = port(), c = port(0x2341, 0x43), d = port(0x2341, 0x43), e = port(0x0403, 0x6001);
+    const all = [a, c, b, e, d];
+    expect(all.map((x) => describePort(x, all))).toEqual(['Serial port #1', 'Arduino 2341:0043 #1', 'Serial port #2', 'FTDI 0403:6001', 'Arduino 2341:0043 #2']);
+    expect(describePort(port(), all)).toBe('Serial port');
+  });
 });
