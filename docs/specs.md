@@ -97,7 +97,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 | Zoom/pan, cursors, min/max/mean | | done |
 | Per-series scale/offset/expression | | done |
 | XY mode, FFT | | done |
-| Export PNG/CSV | | partial: CSV only |
+| Export PNG/CSV | | done |
 | Click point to jump to raw bytes | | done |
 
 ### Gaps found in a review against RealTerm and TeraTerm (serial only)
@@ -113,7 +113,7 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 | Function keys F1–F12, Backspace as BS or DEL | TeraTerm | | done |
 | Scrollback size and hex bytes-per-row settings | RealTerm, TeraTerm | | done |
 | Paced or confirmed multi-line paste | TeraTerm | sent at once | todo |
-| Plot PNG export | (beyond both) | CSV only | todo |
+| Plot PNG export | (beyond both) | | done |
 | Full-screen VT100 (cursor addressing for menus, `top`, `vi`) | TeraTerm | xterm view (xterm.js) | done |
 | ZMODEM/Kermit, XMODEM/YMODEM receive, TTL scripting, bit invert / 7-bit mask, Modbus | TeraTerm, RealTerm | no | not planned: niche for the audience, and dedicated tools do them well |
 

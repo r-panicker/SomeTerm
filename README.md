@@ -62,7 +62,7 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 | Arduino-style | Any line of numbers is plotted: `1,2,3`, `1 2 3`, `temp:23.1,hum:41`, `temp=23.1 hum=41` |
 | Analyse | Zoom, pause, A/B cursors with Δt and frequency, min/max/mean/σ over the visible range |
 | Modes | Against time, **XY** (Lissajous figures, I–V curves), and **spectrum** (FFT in dB with peak readout) |
-| Conversions | Per-series expression and unit, e.g. `x*3.3/4095` in V; CSV export with units |
+| Conversions | Per-series expression and unit, e.g. `x*3.3/4095` in V; PNG export for reports, CSV with units |
 
 <img src="docs/images/spectrum-light.png" alt="Spectrum view in the light theme with the peak frequency of each series in the toolbar" width="900">
 

@@ -194,7 +194,7 @@ The first such line switches to Split view. Click a point to jump to its line in
 
 **Conversions** (Plot tab) convert a series for display: an expression in `x` (the received value) and a unit, e.g. `x*3.3/4095` in `V` for a 12-bit ADC, or `(x-500)/10` in `°C`. Available: `+ - * / ^`, `pi`, `e`, `abs sqrt exp ln log sin cos tan min max pow round floor ceil`. The terminal still shows the raw numbers. Conversions are saved with the tab and in profiles.
 
-CSV exports everything plotted since the last Clear, converted, with units in the header.
+**PNG** saves the plot as shown, with its legend, for a report. **CSV** exports everything plotted since the last Clear, converted, with units in the header.
 
 ## Logging
 

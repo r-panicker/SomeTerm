@@ -379,6 +379,47 @@
     if (d !== builtDark) { builtDark = d; untrack(() => build()); }
   });
 
+  /** The plot as drawn, with its legend underneath, for a lab report. */
+  function exportPng() {
+    if (!plot) return;
+    const src = plot.ctx.canvas;
+    const dpr = src.width / plot.width;
+    const u = plot;
+    // uPlot keeps each series' stroke as a function once built.
+    const shown = u.series.map((s, i) => ({ s, i })).filter(({ s, i }) => i > 0 && s.show && s.label)
+      .map(({ s, i }) => ({ label: String(s.label), color: String(typeof s.stroke === 'function' ? s.stroke(u, i) : s.stroke) }));
+    const font = 12 * dpr;
+    const band = shown.length ? Math.round(font * 2.2) : 0;
+    const out = document.createElement('canvas');
+    out.width = src.width;
+    out.height = src.height + band;
+    const g = out.getContext('2d')!;
+    g.fillStyle = css('--panel');
+    g.fillRect(0, 0, out.width, out.height);
+    g.drawImage(src, 0, 0);
+    g.font = `${font}px ui-monospace, Menlo, Consolas, monospace`;
+    g.textBaseline = 'middle';
+    let x = 12 * dpr;
+    const y = src.height + band / 2;
+    for (const s of shown) {
+      g.fillStyle = s.color;
+      g.fillRect(x, y - font * 0.35, font * 0.7, font * 0.7);
+      x += font;
+      g.fillStyle = css('--fg');
+      const text = s.label;
+      g.fillText(text, x, y);
+      x += g.measureText(text).width + font * 1.5;
+    }
+    out.toBlob((blob) => {
+      if (!blob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'someterm-plot.png';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  }
+
   function exportCsv() {
     const s = session.series;
     // Exports what the plot shows: transformed values, with units in the header.
@@ -414,6 +455,7 @@
     {#if hasData && !(session.plotX && !session.plotFft && seriesNames.includes(session.plotX))}
       <button class="toggle" class:on={cursorsOn} onclick={toggleCursors} title="Cursors: click the plot to place A, then B">A|B</button>
     {/if}
+    <button onclick={exportPng} disabled={!hasData} title="Save the plot as shown, with its legend, as a PNG image">PNG</button>
     <button onclick={exportCsv} disabled={!hasData} title="Export all plotted data as CSV">CSV</button>
   </div>
   <div class="plot" bind:this={host}></div>
