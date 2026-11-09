@@ -17,7 +17,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Terminal and hex views are virtualized/canvas-based; no DOM node per line.
 - Plotting uses a canvas/WebGL library (uPlot or equivalent), fed from the same stream as the terminal.
 - UI framework: Svelte 5 + Vite. Electron is packaged with `electron-builder`; the Build and release workflow builds every OS.
-- Out of scope for now: protocol decoders (Modbus, SLIP, COBS, frame descriptors), I2C and other non-serial RealTerm features, mobile/Android.
+- Out of scope: protocol decoders and masters (Modbus, SLIP, COBS), ZMODEM, Kermit, XMODEM/YMODEM receive, bit invert/7-bit mask, I2C and other non-serial RealTerm features, mobile/Android. Dedicated tools do these well.
 
 ## Testing
 - Core logic is unit-tested with a mock transport and a loopback transport; no test should need real hardware.
@@ -54,6 +54,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Pitch copy (README, descriptions, About) sells what a user gets: multiple connections, bridging, plotting, profiles, display options, automation, search. Implementation details (workers, canvas, frameworks) belong in specs, not the pitch.
 
 ## Scope
+- Avoid bloat: build what most students and lab users need on a serial bench. A feature only a niche of users would touch, and that dedicated tools already do well, stays out even if a reference tool has it.
 - Ideate before implementing anything structural or UX-shaped: present options and a recommendation, wait for direction, rather than building first.
 - Choosing between next steps of similar value (build order, which piece first) is not a decision to hand back: pick one, say which, and proceed.
 - When a fix reveals the same latent pattern elsewhere, flag it and ask before touching more files than asked.

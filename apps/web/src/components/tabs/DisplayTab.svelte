@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { NUM_TYPES, numInfo } from '@someterm/core';
+  import { NUM_TYPES, numInfo, parseHexBytes } from '@someterm/core';
   import type { DisplayFormat, TermSource } from '../../lib/source';
   import type { Session } from '../../lib/session.svelte';
   import DisplayOptions from '../settings/DisplayOptions.svelte';
@@ -18,6 +18,12 @@
   ];
   const formats = $derived(source.ring ? FORMATS : FORMATS.filter(([f]) => f === 'ascii'));
   const xterm = $derived(disp.format === 'screen');
+  const syncProblem = $derived.by(() => {
+    if (disp.frame !== 'sync') return '';
+    if (!disp.frameSync.trim()) return 'Type the hex bytes that start each frame';
+    try { parseHexBytes(disp.frameSync); return ''; } catch (e) { return (e as Error).message; }
+  });
+  const framed = $derived(disp.frame === 'gap' || (disp.frame === 'sync' && !syncProblem));
   /** Why the terminal's settings do nothing in the current view, or ''. */
   const off = $derived(session?.view === 'plot' ? 'Not available in Plot view' : '');
   const xtermOff = $derived(off || (xterm ? 'Not available in xterm mode' : ''));
@@ -41,16 +47,30 @@
             <button class:on={disp.littleEndian} onclick={() => (disp.littleEndian = true)} title="Little endian: least significant byte first, as most microcontrollers send">LE</button>
             <button class:on={!disp.littleEndian} onclick={() => (disp.littleEndian = false)} title="Big endian: most significant byte first">BE</button>
           </div>
-          <select bind:value={disp.align} title="Skip bytes until values line up with the sender's framing">
+          <select bind:value={disp.align} disabled={framed} title={framed ? 'Each frame starts aligned; not used when rows are cut into frames' : "Skip bytes until values line up with the sender's framing"}>
             {#each Array.from({ length: size }, (_, i) => i) as a}<option value={a}>skip {a}</option>{/each}
           </select>
         {/if}
       </div>
     {/if}
     {#if disp.format !== 'ascii' && disp.format !== 'screen'}
-      <label class="row">Bytes per row
-        <select bind:value={disp.perRow} title="Bin shows half as many">{#each [8, 16, 32] as n}<option value={n}>{n}</option>{/each}</select>
-      </label>
+      <div class="row">
+        <label class="inline">Bytes per row
+          <select bind:value={disp.perRow} title="Bin shows half as many; a longer frame continues on the next row">{#each [8, 16, 32] as n}<option value={n}>{n}</option>{/each}</select>
+        </label>
+        <label class="inline">New row
+          <select bind:value={disp.frame} title="Start each frame (packet) on its own row, so packets line up and can be told apart">
+            <option value="none">when full</option>
+            <option value="gap">after a pause</option>
+            <option value="sync">at sync bytes</option>
+          </select>
+        </label>
+        {#if disp.frame === 'gap'}
+          <input class="num" type="number" min="1" max="60000" value={disp.frameGapMs} onchange={(e) => { const v = Number(e.currentTarget.value); if (v > 0 && v <= 60000) disp.frameGapMs = v; else e.currentTarget.value = String(disp.frameGapMs); }} title="A pause in received data of at least this long starts a new frame. Data arrives in chunks, so very short pauses at high baud rates are approximate" aria-label="Pause in ms" /> ms
+        {:else if disp.frame === 'sync'}
+          <input class="sync" class:bad={!!syncProblem} bind:value={disp.frameSync} placeholder="AA 55" spellcheck="false" title={syncProblem || 'Hex bytes that start every frame, e.g. AA 55 or 0x7E'} aria-label="Sync bytes" />
+        {/if}
+      </div>
     {/if}
   </fieldset>
 
@@ -79,4 +99,8 @@
   .cols { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, max-content)); column-gap: 18px; row-gap: 5px; }
   .cols :global(.row) { grid-column: 1 / -1; justify-content: flex-start; }
   .seg button { height: 26px; font-size: 12.5px; }
+  .inline { display: flex; align-items: center; gap: 6px; }
+  .row .num { width: 5em; }
+  .row .sync { width: 8em; font-family: var(--mono); }
+  .bad { border-color: var(--err); }
 </style>

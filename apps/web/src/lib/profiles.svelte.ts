@@ -228,6 +228,9 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
       perRow: pick(d.perRow, [8, 16, 32] as const, 16),
       wrap: bool(d.wrap, false),
       crNewline: bool(d.crNewline, false),
+      frame: pick(d.frame, ['none', 'gap', 'sync'] as const, 'none'),
+      frameGapMs: typeof d.frameGapMs === 'number' && d.frameGapMs > 0 && d.frameGapMs <= 60_000 ? d.frameGapMs : 5,
+      frameSync: typeof d.frameSync === 'string' ? d.frameSync.slice(0, 64) : '',
     },
     send: {
       eol: pick(s.eol, ['\\r\\n', '\\n', '\\r', ''], '\\r\\n'),

@@ -64,7 +64,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 | Timestamps (absolute, delta) per line/chunk | | done |
 | Scrollback limit, pause/freeze, auto-scroll | Freeze must not drop data | done (pause = scroll up) |
 | Find, filter, highlight rules | Regex | done |
-| Display of sync/"frame" boundaries by gap time | Idle-gap splitting | todo |
+| Display of sync/"frame" boundaries by gap time | Idle-gap or sync-pattern splitting in the byte views | done |
 
 ### Send
 | Feature | Notes | Status |
@@ -109,13 +109,13 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 | Quick-send buttons / macros | RealTerm, TeraTerm (TTL) | buttons; no scripting | done |
 | Text zoom (Ctrl+= / Ctrl+-), for projectors | TeraTerm | | done |
 | XMODEM/YMODEM send for bootloaders | TeraTerm | send only | done |
-| Split rows on a sync pattern, fixed byte count or idle gap | RealTerm | newline modes only | todo |
+| Split rows on a sync pattern, fixed byte count or idle gap | RealTerm | New row: when full, after a pause, at sync bytes | done |
 | Function keys F1–F12, Backspace as BS or DEL | TeraTerm | | done |
 | Scrollback size and hex bytes-per-row settings | RealTerm, TeraTerm | | done |
 | Paced or confirmed multi-line paste | TeraTerm | sent at once | todo |
 | Plot PNG export | (beyond both) | CSV only | todo |
 | Full-screen VT100 (cursor addressing for menus, `top`, `vi`) | TeraTerm | xterm view (xterm.js) | done |
-| ZMODEM/Kermit, TTL scripting, bit invert / 7-bit mask | TeraTerm, RealTerm | no | not planned |
+| ZMODEM/Kermit, XMODEM/YMODEM receive, TTL scripting, bit invert / 7-bit mask, Modbus | TeraTerm, RealTerm | no | not planned: niche for the audience, and dedicated tools do them well |
 
 ### Layout
 | Region | Contents |

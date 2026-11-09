@@ -47,7 +47,7 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 ### See the data
 | | |
 |---|---|
-| Views | ASCII, Hex, Dec (each byte 0–255), Bin, and **Int/Float**: decode the stream as int8–int32 or float32/64, either byte order, with alignment |
+| Views | ASCII, Hex, Dec (each byte 0–255), Bin, and **Int/Float**: decode the stream as int8–int32 or float32/64, either byte order, with alignment. Binary packets can each start a row, split on a pause or on sync bytes |
 | Terminal | Timestamps, ANSI colours, RealTerm-style `[CR]` `[LF]` control-character display, sent data inline |
 | Find | Live search with regex, case matching and a filter mode |
 | Colour rules | Keep errors red and OK/PASS green across every connection; one click turns a search into a rule |

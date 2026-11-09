@@ -1,4 +1,4 @@
-import type { ByteRing, NewlineMode, NumType, RxBatch, TerminalLog } from '@someterm/core';
+import type { ByteRing, FrameIndex, NewlineMode, NumType, RxBatch, TerminalLog } from '@someterm/core';
 
 export type DisplayFormat = 'ascii' | 'hex' | 'dec' | 'bin' | 'num' | 'screen';
 
@@ -18,9 +18,14 @@ export interface DisplaySettings {
   wrap: boolean;
   /** xterm view: a received CR also starts a new line, for devices that end lines with CR alone. */
   crNewline: boolean;
+  /** Byte views: start a new row only at the row width, after an idle gap, or at a sync pattern. */
+  frame: 'none' | 'gap' | 'sync';
+  frameGapMs: number;
+  /** Hex bytes, as typed. */
+  frameSync: string;
 }
 
-export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16, wrap: false, crNewline: false });
+export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16, wrap: false, crNewline: false, frame: 'none', frameGapMs: 5, frameSync: '' });
 
 /** What the terminal view needs from whatever feeds it: one port, or several merged. */
 export interface TermSource {
@@ -34,6 +39,9 @@ export interface TermSource {
   /** Raw received bytes for the Hex/Dec/Bin/Int/Float views; absent for merged views. */
   readonly ring?: ByteRing;
   readonly hexStart?: number;
+  /** Frame boundaries for the byte views, when the Display tab cuts rows into frames. */
+  frameIndex?(): FrameIndex | null;
+  frameFrom?(): number;
   readonly newline?: NewlineMode;
   setNewline?(mode: NewlineMode): void;
   echo?: boolean;

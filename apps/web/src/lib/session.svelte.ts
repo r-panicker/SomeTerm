@@ -3,6 +3,8 @@ import {
   frame,
   parseEscapes,
   parseHexBytes,
+  FrameIndex,
+  type FrameRule,
   xmodemSend,
   ByteQueue,
   XmodemError,
@@ -232,6 +234,10 @@ export class Session implements TermSource {
   readonly series = new SeriesStore();
   /** Stream offset where the hex view starts; moved by Clear. */
   hexStart = 0;
+  /** Offset and arrival time of each received chunk, so frames can be rebuilt when the frame setting changes. */
+  private chunkAt: number[] = [];
+  private chunkTs: number[] = [];
+  private frames: { key: string; index: FrameIndex } | null = null;
   /** Time origin for the plot's x axis. */
   t0 = 0;
 
@@ -780,6 +786,37 @@ export class Session implements TermSource {
     this.connectErrors = 0;
   }
 
+  /** Where the byte views start: after Clear, and never before the oldest byte still held. */
+  frameFrom(): number {
+    return Math.max(this.hexStart, this.ring.start);
+  }
+
+  /**
+   * Frame boundaries for the byte views, or null when rows are cut only by width or
+   * the sync pattern is not valid hex. Built from the chunk records when the setting
+   * changes, so it applies to data already received.
+   */
+  frameIndex(): FrameIndex | null {
+    const d = this.display;
+    let rule: FrameRule | null = null;
+    if (d.frame === 'gap' && d.frameGapMs > 0) rule = { kind: 'gap', ms: d.frameGapMs };
+    if (d.frame === 'sync') {
+      try { const p = parseHexBytes(d.frameSync); if (p.length) rule = { kind: 'sync', pattern: p }; } catch { /* shown as a problem on the Display tab */ }
+    }
+    if (!rule) { this.frames = null; return null; }
+    const key = rule.kind === 'gap' ? `gap:${rule.ms}` : `sync:${Array.from(rule.pattern).join(',')}`;
+    if (this.frames?.key === key) return this.frames.index;
+    const start = this.ring.start;
+    const index = new FrameIndex(rule, start);
+    for (let i = 0; i < this.chunkAt.length; i++) {
+      const to = this.chunkAt[i + 1] ?? this.ring.end;
+      if (to <= start) continue;
+      index.push(this.ring.slice(Math.max(start, this.chunkAt[i]!), to), this.chunkTs[i]!);
+    }
+    this.frames = { key, index };
+    return index;
+  }
+
   clear(): void {
     this.log.clear();
     this.series.clear();
@@ -797,7 +834,16 @@ export class Session implements TermSource {
 
   private receive(chunk: Uint8Array, ts: number): void {
     this.rx += chunk.length;
+    this.chunkAt.push(this.ring.end);
+    this.chunkTs.push(ts);
+    this.frames?.index.push(chunk, ts);
     this.ring.push(chunk);
+    // Chunk records and frames older than the ring go, in batches.
+    if (this.chunkAt.length > 4096 && this.chunkAt[2048]! < this.ring.start) {
+      this.chunkAt.splice(0, 2048);
+      this.chunkTs.splice(0, 2048);
+      this.frames?.index.prune(this.frameFrom());
+    }
     this.capture.rx(chunk, performance.timeOrigin + ts);
     for (const fn of this.rawListeners) fn(chunk);
     if (this.protocolTap) { this.protocolTap(chunk, ts); return; }

@@ -76,6 +76,11 @@
     bin: { per: per / 2, skip: 0, fmt: (b) => toBinary(b), width: (per / 2) * 9 - 1, side: (b) => toAscii(b) },
   });
 
+  /** Byte views cut into frames by the Display tab; null when rows are cut by width alone. */
+  const frames = $derived.by(() => {
+    void disp.frame; void disp.frameGapMs; void disp.frameSync;
+    return disp.format !== 'ascii' && disp.format !== 'screen' && source.frameIndex ? source.frameIndex() : null;
+  });
   const size = $derived(numInfo(disp.numType).size);
   // Changing to a smaller type must not leave an alignment it cannot have.
   $effect(() => { if (disp.align >= size) disp.align = 0; });
@@ -83,7 +88,8 @@
   /** Numeric rows show the raw bytes beside the values. */
   const numDump = $derived<Dump>({
     per,
-    skip: disp.align,
+    // Each frame starts aligned, so the skip only applies to rows cut by width.
+    skip: frames ? 0 : disp.align,
     fmt: (b) => decodeNumbers(b, disp.numType, disp.littleEndian).map((v) => formatNumber(v, disp.numType)).join(' '),
     width: (per / size) * (numInfo(disp.numType).width + 1) - 1,
     side: (b) => toHex(b),
@@ -253,6 +259,7 @@
     if (filtering) return index.hits.length;
     if (disp.format === 'ascii') return source.log.length + (source.partial || typing ? 1 : 0);
     if (!source.ring) return 0;
+    if (frames) return frames.count(source.frameFrom!(), dump.per);
     return Math.max(0, Math.ceil((source.ring.end - dumpStart()) / dump.per));
   });
 
@@ -335,11 +342,14 @@
       return spans;
     }
     const d = dump;
-    const at = dumpStart() + i * d.per;
     const ring = source.ring!;
-    const bytes = ring.slice(at, Math.min(at + d.per, ring.end));
+    const fr = frames?.row(i, source.frameFrom!(), d.per);
+    const at = fr ? fr.at : dumpStart() + i * d.per;
+    const bytes = ring.slice(at, fr ? at + fr.len : Math.min(at + d.per, ring.end));
+    // A frame's arrival time on its first row; continuation rows leave the column blank.
+    const time = fr && disp.stamps ? (fr.first && !Number.isNaN(fr.time) ? stamp(fr.time) : ' '.repeat(13)) : '';
     return [
-      { text: at.toString(16).padStart(8, '0') + '  ', tone: 'muted' },
+      { text: at.toString(16).padStart(8, '0') + '  ' + time, tone: 'muted' },
       { text: d.fmt(bytes).padEnd(d.width) + '  ', tone: 'fg' },
       { text: d.side(bytes), tone: 'accent' },
     ];
@@ -372,6 +382,8 @@
 
 
   function rowBg(r: number): string | undefined {
+    // Alternate frames are shaded so where one ends and the next starts is plain.
+    if (frames) return frames.row(r, source.frameFrom!(), dump.per).n % 2 ? (dark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.035)') : undefined;
     if (disp.format !== 'ascii' || !rules.compiled.length) return undefined;
     const i = toLogical(r);
     const li = filtering ? index.hits[i]!.abs - source.log.dropped : i;
@@ -386,7 +398,7 @@
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
-  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${per}|${disp.stamps}|${wrapping}|${cols}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${typing}|${source.typed}|${source.localEcho}|${cur?.abs}:${cur?.k}|${rules.version}`);
+  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${per}|${disp.stamps}|${wrapping}|${cols}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${typing}|${source.typed}|${source.localEcho}|${cur?.abs}:${cur?.k}|${rules.version}|${disp.frame}|${disp.frameGapMs}|${disp.frameSync}`);
 
   const rowText = (i: number) => row(i).filter((s) => !s.decor).map((s) => s.text).join('');
   /** A wrapped continuation: copied without a line break before it. */
