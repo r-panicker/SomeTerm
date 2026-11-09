@@ -76,7 +76,7 @@
 <svelte:window onkeydown={key} />
 
 {#if ready}
-  {#if workspace.sessions.length > 1}<TabStrip {workspace} />{/if}
+  <TabStrip {workspace} />
   {#each workspace.sessions as s (s.id)}
     <!-- Inactive tabs stay mounted so their scroll, find and view state survive switching. -->
     <div class="ws" hidden={workspace.active !== s.letter}>

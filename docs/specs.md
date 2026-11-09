@@ -120,8 +120,8 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 ### Layout
 | Region | Contents |
 |---|---|
-| Connection strip | Lettered connections A, B, … plus the Monitor, shown once there is a second connection |
-| Top bar | Connection type (Serial, Network, Loopback, Open recording…), port, Connect, DTR/RTS; views xterm / Terminal / Plot / Split; new connection; full screen |
+| Connection strip | Lettered connections A, B, …, then the Monitor once there are two, then **+** for another |
+| Top bar | Connection type (Serial, Network, Loopback, Open recording…), port, Connect, DTR/RTS; views xterm / Terminal / Plot / Split; full screen |
 | Main | Terminal and plot over the same stream; split is resizable; clicking a plot point scrolls the terminal to its line |
 | Pane toolbars | One thin row per pane: format, find, text size, clear; plot pause, statistics, cursors, CSV |
 | Send bar | Text/Hex, input with history, what will be added, Send; quick-send strip above it once buttons exist |

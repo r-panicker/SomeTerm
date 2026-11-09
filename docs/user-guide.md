@@ -98,7 +98,7 @@ The **Profiles** tab renames, deletes, exports and imports them. An exported `.s
 
 ## Several connections
 
-**+** opens another connection, starting from the settings of the one you were on (without its auto-replies or network target). Connections are lettered A, B, … along the top; a port open in one is greyed out in the others. Each has its own port and its own settings, and the tabs under the terminal always show the selected one's. Everything comes back the next time you open SomeTerm.
+**+** at the end of the connection strip opens another connection, starting from the settings of the one you were on (without its auto-replies or network target). Connections are lettered A, B, … along the top; a port open in one is greyed out in the others. Each has its own port and its own settings, and the tabs under the terminal always show the selected one's. Everything comes back the next time you open SomeTerm.
 
 | Connection | Use |
 |---|---|

@@ -16,12 +16,14 @@
         {#if s.capture.info?.state === 'running'}<span class="rec" title="Logging">●</span>{/if}
         {#if s.forwardTo}<span class="fwd" title="Forwarding received data to {s.forwardTo.letter}">→{s.forwardTo.letter}</span>{/if}
       </button>
-      <button class="close" onclick={() => workspace.close(s)} title={s.open ? 'Disconnect and close' : 'Close'}>×</button>
+      {#if workspace.sessions.length > 1}<button class="close" onclick={() => workspace.close(s)} title={s.open ? 'Disconnect and close' : 'Close'}>×</button>{:else}<span class="pad"></span>{/if}
     </div>
   {/each}
-  <div class="tab" class:on={workspace.active === 'monitor'} role="tab" aria-selected={workspace.active === 'monitor'}>
-    <button class="pick" onclick={() => (workspace.active = 'monitor')} title="All ports on one timeline">Monitor</button>
-  </div>
+  {#if workspace.sessions.length > 1}
+    <div class="tab" class:on={workspace.active === 'monitor'} role="tab" aria-selected={workspace.active === 'monitor'}>
+      <button class="pick" onclick={() => (workspace.active = 'monitor')} title="All connections on one timeline">Monitor</button>
+    </div>
+  {/if}
   <button class="add" onclick={() => workspace.openTab()} title="Open another connection, starting from the current one's settings">+</button>
 </div>
 
@@ -41,4 +43,5 @@
   .close:hover { color: var(--fg); }
   .add { border: 0; background: none; height: 26px; color: var(--muted); font-size: 15px; padding: 0 8px; }
   .add:hover { color: var(--fg); }
+  .pad { width: 6px; }
 </style>

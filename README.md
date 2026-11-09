@@ -4,8 +4,8 @@
 
 # SomeTerm
 
-**Serial, TCP and Telnet terminal with live plotting, for the lab bench.**
-In the tradition of RealTerm and Tera Term, with an Arduino-style plotter built in.
+**A serial terminal with live plotting, for learning and working with low-level serial communication.**
+In the tradition of RealTerm and Tera Term, with an Arduino-style plotter built in, and TCP and Telnet to reach and bridge devices.
 Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, macOS and Linux.
 
 [![Build and release](https://github.com/r-panicker/SomeTerm/actions/workflows/release.yml/badge.svg)](https://github.com/r-panicker/SomeTerm/actions/workflows/release.yml)
@@ -170,7 +170,14 @@ apps/
 
 All I/O, serial and network alike, goes through one `SerialTransport` interface, so the core never knows which driver is underneath. A loopback and a replay transport make every feature testable without hardware.
 
-## Status
+## Scope
+
+SomeTerm is about low-level serial communication, made for teaching labs and students: seeing exactly what goes over the wire, plotting it, and talking to boards and bootloaders. TCP and Telnet are there to reach and bridge serial devices, not as a general network toolkit. For other jobs, these are excellent:
+
+| For | Try |
+|---|---|
+| SSH and SFTP in one window, in the mould of MobaXterm and WinSCP | [Tabby](https://tabby.sh/) or [Submarine](https://github.com/sinaxhpm/submarine) |
+| Sending and receiving TCP, UDP, SSL and HTTP for network testing | [Packet Sender](https://packetsender.com/) |
 
 Usable and actively developed. Serial parity with RealTerm is close: see the [parity checklist](docs/specs.md#realterm-parity-checklist) for what's done. Not planned for now: protocol decoders (Modbus, SLIP, COBS), I2C and other non-serial RealTerm features, and mobile.
 
