@@ -3,10 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Serial, TCP and Telnet terminal in the browser: multiple connections, plotting, bridging, capture, profiles and auto-replies." />
+    <meta name="description" content="Serial, TCP and Telnet terminal in the browser: multiple connections, plotting, bridging, logging, profiles and auto-replies." />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <title>SomeTerm</title>
+    <!-- Visit counts (GoatCounter: no cookies, no personal data), only on the public site; the desktop app and self-hosted copies send nothing. -->
+    <script>
+      if (location.hostname === 'r-panicker.github.io') {
+        window.goatcounter = { endpoint: 'https://someterm.goatcounter.com/count' };
+        const s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://gc.zgo.at/count.js';
+        s.dataset.goatcounter = 'https://someterm.goatcounter.com/count';
+        document.head.appendChild(s);
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>

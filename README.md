@@ -113,7 +113,7 @@ Nothing to install. Open this link in Chrome or Edge:
 
 **https://r-panicker.github.io/SomeTerm/**
 
-It always runs the latest code on `main`. To run a copy yourself, unzip `SomeTerm-web-<version>.zip` from a release, start a local server in that folder, and open http://localhost:8000:
+It always runs the latest code on `main`. Visits to this page are counted with [GoatCounter](https://www.goatcounter.com/), which uses no cookies and collects no personal data; the desktop app and copies you host yourself send nothing. To run a copy yourself, unzip `SomeTerm-web-<version>.zip` from a release, start a local server in that folder, and open http://localhost:8000:
 
 ```bash
 python -m http.server 8000
