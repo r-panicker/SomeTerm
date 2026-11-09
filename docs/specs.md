@@ -125,7 +125,7 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 | Main | Terminal and plot over the same stream; split is resizable; clicking a plot point scrolls the terminal to its line |
 | Pane toolbars | One thin row per pane: format, find, text size, clear; plot pause, statistics, cursors, CSV |
 | Send bar | Text/Hex, input with history, what will be added, Send; quick-send strip above it once buttons exist |
-| Settings panel | RealTerm-style tabs: Display, Port, Send, Logging, Plot, Automation, Profiles, App; folds away |
+| Settings panel | RealTerm-style tabs: Send, Display, Plot, Automation, Logging, Port, Profiles, App; folds away |
 | Status bar | Profile and framing (opens the Port tab), CTS/DSR/DCD/RI, logging indicator, errors, byte counts and rate; each shown only when it carries information |
 
 - Output line controls (DTR, RTS) sit with Connect; input signals sit in the status bar.

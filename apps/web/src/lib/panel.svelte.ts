@@ -35,10 +35,10 @@ class PanelState<T extends string> {
   }
 }
 
-export const PORT_TABS = ['display', 'port', 'send', 'capture', 'plot', 'automation', 'profiles', 'app'] as const;
+export const PORT_TABS = ['send', 'display', 'plot', 'automation', 'capture', 'port', 'profiles', 'app'] as const;
 export type PortTab = (typeof PORT_TABS)[number];
-export const portPanel = new PanelState<PortTab>('someterm.panel.v1', 'display', PORT_TABS);
+export const portPanel = new PanelState<PortTab>('someterm.panel.v1', 'send', PORT_TABS);
 
-export const MONITOR_TABS = ['display', 'capture', 'automation', 'app'] as const;
+export const MONITOR_TABS = ['display', 'automation', 'capture', 'app'] as const;
 export type MonitorTab = (typeof MONITOR_TABS)[number];
 export const monitorPanel = new PanelState<MonitorTab>('someterm.monitorPanel.v1', 'display', MONITOR_TABS);

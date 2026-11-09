@@ -56,12 +56,12 @@ Settings live in the tabs under the terminal, the way RealTerm lays them out:
 
 | Tab | Holds |
 |---|---|
-| Display | Display as (ASCII, Hex, Dec, Bin, Int/Float), line ending, timestamps, wrap, typing |
-| Port | Baud and framing, or the TCP/Telnet connection; profile; Break; forwarding and bridging to another connection |
 | Send | Send lines (ASCII or numbers), +CR/+LF, checksum, repeat, delays, file |
-| Logging | Log received and/or sent data to a file or memory |
+| Display | Display as (ASCII, Hex, Dec, Bin, Int/Float), line ending, timestamps, wrap, typing |
 | Plot | Window, horizontal axis (time, XY, spectrum), conversions |
 | Automation | Auto-replies, quick-send buttons, colour rules |
+| Logging | Log received and/or sent data to a file or memory |
+| Port | Baud and framing, or the TCP/Telnet connection; profile; Break; forwarding and bridging to another connection |
 | Profiles | Saved profiles: rename, export, import |
 | App | Theme, scrollback, reset to defaults, keys, version and credits |
 
@@ -218,7 +218,7 @@ Logging is on the Logging tab and records sent data as well as received. It is i
 | Key | Action |
 |---|---|
 | Ctrl+Shift+Enter | Connect or disconnect |
-| Ctrl+Shift+1…8 | Show a settings tab (Display … App); again folds the panel |
+| Ctrl+Shift+1…8 | Show a settings tab (Send … App); again folds the panel |
 | Ctrl+, | Fold or open the settings panel |
 | Ctrl+Shift+Space | Next view: Terminal, Split, Plot |
 | Ctrl+F | Find in terminal |

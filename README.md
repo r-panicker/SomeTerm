@@ -85,7 +85,7 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 | Record and replay | Save a session as `.strec` and play it back later, at speed or instantly, with seeking. Handy for marking and demos with no hardware |
 
 ### Settings in tabs, RealTerm style
-Every setting sits in a tab under the terminal: Display, Port, Send, Logging, Plot, Automation, Profiles and App. Each has one home, always one click away, and settings that do nothing in the current view are greyed out with the reason. **Hide** folds the panel for more room. The status bar keeps the essentials in view (profile, `115200 8N1`, any bridge) and opens the Port tab when clicked. On/off switches carry a light, so they never look like buttons. Light, dark or system theme, and keyboard shortcuts for the common actions.
+Every setting sits in a tab under the terminal: Send, Display, Plot, Automation, Logging, Port, Profiles and App. Each has one home, always one click away, and settings that do nothing in the current view are greyed out with the reason. **Hide** folds the panel for more room. The status bar keeps the essentials in view (profile, `115200 8N1`, any bridge) and opens the Port tab when clicked. On/off switches carry a light, so they never look like buttons. Light, dark or system theme, and keyboard shortcuts for the common actions.
 
 <img src="docs/images/settings-light.png" alt="The Send tab under the terminal and plot, with send lines, line ending, timing and file" width="900">
 

@@ -11,7 +11,7 @@
   let { workspace }: { workspace: Workspace } = $props();
   const monitor = $derived(workspace.monitor);
   let terminal: Terminal | undefined = $state();
-  const TABS: [MonitorTab, string][] = [['display', 'Display'], ['capture', 'Logging'], ['automation', 'Colour rules'], ['app', 'App']];
+  const TABS: [MonitorTab, string][] = [['display', 'Display'], ['automation', 'Colour rules'], ['capture', 'Logging'], ['app', 'App']];
 
   export function handleKey(e: KeyboardEvent) {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && /^Digit[1-4]$/.test(e.code)) {
