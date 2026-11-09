@@ -479,6 +479,45 @@ export class Session implements TermSource {
     this.changed();
   }
 
+  /**
+   * Text pasted into the terminal. Several lines go out as one job, each ended with
+   * the send-bar line ending and paced by the Send tab's delays and echo wait, so a
+   * slow device does not drop characters; Stop cancels between writes.
+   */
+  async pasteText(text: string, lineEnd?: string): Promise<void> {
+    if (!this.open || this.player || this.job || !this.transport) return;
+    const lines = text.split(/\r?\n|\r/);
+    if (lines.length === 1) { this.typeKeys(new TextEncoder().encode(text), 'text', text); return; }
+    const eol = lineEnd !== undefined ? new TextEncoder().encode(lineEnd) : parseEscapes(this.sendOptions.eol || '\\r');
+    const enc = new TextEncoder();
+    // A trailing newline ends the last line rather than adding an empty one.
+    const ended = lines.at(-1) === '';
+    const pieces = (ended ? lines.slice(0, -1) : lines).map((l, i, all) => {
+      const body = enc.encode(l);
+      if (i === all.length - 1 && !ended) return { text: l, bytes: body };
+      const b = new Uint8Array(body.length + eol.length);
+      b.set(body);
+      b.set(eol, body.length);
+      return { text: l, bytes: b };
+    });
+    const total = pieces.reduce((n, p) => n + p.bytes.length, 0);
+    await this.runJob({ kind: 'paced', label: `Pasting ${pieces.length} lines`, done: 0, total }, async (t) => {
+      let done = 0;
+      for (const p of pieces) {
+        if (t.cancelled) return;
+        // Each line echoes as it goes out, so replies interleave as they would when typed.
+        const line: TermLine = { dir: 'tx', text: this.typed + p.text, via: 'typed', time: now(), offset: -1 };
+        this.typed = '';
+        this.onLine?.(line);
+        if (this.echo || this.localEcho) { this.log.push(line); this.changed(); }
+        await this.transmit(p.bytes, t, (n) => this.progress(done + n), null);
+        done += p.bytes.length;
+        // The Send tab's line delay, which within one write only falls between lines.
+        if (this.sendOptions.lineDelayMs > 0 && p !== pieces.at(-1)) await sleep(this.sendOptions.lineDelayMs);
+      }
+    });
+  }
+
   cancelWaiting(): void {
     clearInterval(this.waitTimer);
     this.waitTimer = undefined;
@@ -647,11 +686,12 @@ export class Session implements TermSource {
   }
 
   /** One transmission: echo, optional RTS framing, paced writes with capture of each piece. */
-  private async transmit(bytes: Uint8Array, token: CancelToken, onProgress?: (n: number) => void, echoText?: string): Promise<void> {
+  /** `echoText` null: the caller has already echoed what is sent. */
+  private async transmit(bytes: Uint8Array, token: CancelToken, onProgress?: (n: number) => void, echoText?: string | null): Promise<void> {
     const t = this.transport;
     if (!t) return;
     // Echo happens before the write so it precedes any reply it provokes.
-    if (this.echo || this.onLine) {
+    if (echoText !== null && (this.echo || this.onLine)) {
       const line: TermLine = { dir: 'tx', text: echoText ?? echoLine(bytes), ...(!echoText && { raw: toAscii(bytes, { controlPictures: true }), bytes: bytes.slice() }), time: now(), offset: -1 };
       this.onLine?.(line);
       if (this.echo) {

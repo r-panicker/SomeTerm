@@ -54,6 +54,7 @@
 
   function typePaste(text: string) {
     if (!typing || !source.typeKeys) return;
+    if (source.pasteText) { source.pasteText(text); return; }
     text.split(/\r?\n|\r/).forEach((part, i, all) => {
       if (part) source.typeKeys!(utf8.encode(part), 'text', part);
       if (i < all.length - 1) source.typeKeys!(new Uint8Array(0), 'enter');

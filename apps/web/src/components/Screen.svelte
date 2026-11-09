@@ -68,6 +68,8 @@
       if (!session.open) return;
       // xterm.js sends DEL for Backspace; follow the connection's Backspace setting.
       if (s === '\x7f' && session.sendOptions.backspace === 'bs') s = '\b';
+      // A multi-line paste is paced like one in the line view; a terminal ends lines with CR.
+      if (s.length > 1 && /[\r\n]/.test(s) && !s.startsWith('\x1b')) { void session.pasteText(s, '\r'); return; }
       void session.sendRaw(new TextEncoder().encode(s));
     });
     const ro = new ResizeObserver(() => fit?.fit());

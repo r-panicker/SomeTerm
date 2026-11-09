@@ -112,7 +112,7 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 | Split rows on a sync pattern, fixed byte count or idle gap | RealTerm | New row: when full, after a pause, at sync bytes | done |
 | Function keys F1–F12, Backspace as BS or DEL | TeraTerm | | done |
 | Scrollback size and hex bytes-per-row settings | RealTerm, TeraTerm | | done |
-| Paced or confirmed multi-line paste | TeraTerm | sent at once | todo |
+| Paced or confirmed multi-line paste | TeraTerm | Send tab delays and echo wait | done |
 | Plot PNG export | (beyond both) | | done |
 | Full-screen VT100 (cursor addressing for menus, `top`, `vi`) | TeraTerm | xterm view (xterm.js) | done |
 | ZMODEM/Kermit, XMODEM/YMODEM receive, TTL scripting, bit invert / 7-bit mask, Modbus | TeraTerm, RealTerm | no | not planned: niche for the audience, and dedicated tools do them well |

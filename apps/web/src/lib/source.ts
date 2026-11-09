@@ -47,6 +47,8 @@ export interface TermSource {
   echo?: boolean;
   /** Terminal mode: send keystrokes straight to the port. Absent where nothing can be sent. */
   typeKeys?(bytes: Uint8Array, key: 'text' | 'enter' | 'backspace' | 'other', text?: string): void;
+  /** Pasted text, sent paced as one job when it has several lines. */
+  pasteText?(text: string): void;
   /** Typed but not yet entered, shown inline when local echo is on. */
   readonly typed?: string;
   localEcho?: boolean;
