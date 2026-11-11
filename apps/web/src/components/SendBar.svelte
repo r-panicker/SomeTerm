@@ -19,9 +19,10 @@
   const canSend = $derived(session.open && !session.player);
   const job = $derived(session.job);
 
-  const preview = $derived.by(() => {
-    if (mode !== 'hex' || !input.trim()) return '';
-    try { return toHex(parseHexBytes(input)); } catch { return ''; }
+  /** Hex input is checked as it is typed, so a bad byte never reaches Send. */
+  const hex = $derived.by(() => {
+    if (mode !== 'hex' || !input.trim()) return { preview: '', error: '' };
+    try { return { preview: toHex(parseHexBytes(input)), error: '' }; } catch (e) { return { preview: '', error: (e as Error).message }; }
   });
 
   /** Only options that change what gets sent are worth a label. */
@@ -50,6 +51,7 @@
   async function send(e: SubmitEvent) {
     e.preventDefault();
     if (job) { session.cancelJob(); return; }
+    if (hex.error) return;
     let payload: Uint8Array;
     try {
       payload = mode === 'hex' ? parseHexBytes(input) : parseEscapes(input);
@@ -107,7 +109,7 @@
       onkeydown={key}
       placeholder={session.player ? 'Replaying a recording' : mode === 'hex' ? '0D 0A 41' : 'Text, \\r \\n \\xNN'}
       title={mode === 'hex' ? 'Hex bytes separated by spaces or commas' : 'Escapes: \\r \\n \\t \\0 \\\\ \\xNN. ↑/↓ for history'}
-      class:bad={!!error}
+      class:bad={!!(error || hex.error)}
       disabled={!canSend}
       spellcheck="false"
       autocomplete="off"
@@ -117,8 +119,8 @@
   {#if !job}
     <button type="button" class="star" onclick={saveQuick} disabled={!input.trim()} title="Save as a quick-send button (Alt+1…9 send them)" aria-label="Save as a quick-send button">☆</button>
   {/if}
-  <button class="primary" disabled={!canSend}>{job ? 'Stop' : sendLabel}</button>
-  {#if error}<span class="err">{error}</span>{:else if preview && !job}<span class="preview">{preview}</span>{/if}
+  <button class="primary" disabled={!canSend || (!job && !!hex.error)}>{job ? 'Stop' : sendLabel}</button>
+  {#if error || hex.error}<span class="err">{error || hex.error}</span>{:else if hex.preview && !job}<span class="preview">{hex.preview}</span>{/if}
 </form>
 
 <style>

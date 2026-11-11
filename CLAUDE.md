@@ -55,6 +55,6 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 
 ## Scope
 - Avoid bloat: build what most students and lab users need on a serial bench. A feature only a niche of users would touch, and that dedicated tools already do well, stays out even if a reference tool has it.
-- Ideate before implementing anything structural or UX-shaped: present options and a recommendation, wait for direction, rather than building first.
+- Ideate before implementing anything structural or UX-shaped: present options and a recommendation, wait for direction, rather than building first. When the user shares loose thoughts or observations, fix the clear bugs among them and discuss the rest; only an explicit go-ahead turns an idea into work.
 - Choosing between next steps of similar value (build order, which piece first) is not a decision to hand back: pick one, say which, and proceed.
 - When a fix reveals the same latent pattern elsewhere, flag it and ask before touching more files than asked.

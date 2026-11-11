@@ -49,8 +49,9 @@ export interface TermSource {
   typeKeys?(bytes: Uint8Array, key: 'text' | 'enter' | 'backspace' | 'other', text?: string): void;
   /** Pasted text, sent paced as one job when it has several lines. */
   pasteText?(text: string): void;
-  /** Typed but not yet entered, shown inline when local echo is on. */
+  /** Typed but not yet entered, and the part of it local echo showed. */
   readonly typed?: string;
+  readonly echoed?: string;
   localEcho?: boolean;
   typeToDevice?: boolean;
   /** Auto-reply rules, for the toolbar indicator; absent where nothing can be sent. */

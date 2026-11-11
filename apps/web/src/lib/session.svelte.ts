@@ -203,6 +203,8 @@ export class Session implements TermSource {
   private replier = new AutoReplier(now);
   /** Terminal mode: the line being typed, and whether to show it (devices that echo make that redundant). */
   typed = $state('');
+  /** The part of `typed` shown on screen: keys pressed while local echo was on. Toggling echo leaves it as is. */
+  echoed = $state('');
   localEcho = $state(false);
   /** Keys pressed in the focused ASCII view go to the device. */
   typeToDevice = $state(true);
@@ -468,13 +470,15 @@ export class Session implements TermSource {
     if (key === 'enter' && !bytes.length) bytes = parseEscapes(this.sendOptions.eol || '\\r');
     if (key === 'backspace') bytes = Uint8Array.of(this.sendOptions.backspace === 'del' ? 0x7f : 0x08);
     void this.sendRaw(bytes);
-    if (key === 'text') this.typed += text;
-    else if (key === 'backspace') this.typed = [...this.typed].slice(0, -1).join('');
+    const drop = (t: string) => [...t].slice(0, -1).join('');
+    if (key === 'text') { this.typed += text; if (this.localEcho) this.echoed += text; }
+    else if (key === 'backspace') { this.typed = drop(this.typed); if (this.localEcho) this.echoed = drop(this.echoed); }
     else if (key === 'enter') {
       const line: TermLine = { dir: 'tx', text: this.typed, via: 'typed', time: now(), offset: -1 };
-      this.typed = '';
+      const shown = this.echoed;
+      this.typed = this.echoed = '';
       this.onLine?.(line);
-      if (this.localEcho) this.log.push(line);
+      if (this.localEcho || shown) this.log.push({ ...line, text: shown });
     }
     this.changed();
   }
@@ -507,9 +511,10 @@ export class Session implements TermSource {
         if (t.cancelled) return;
         // Each line echoes as it goes out, so replies interleave as they would when typed.
         const line: TermLine = { dir: 'tx', text: this.typed + p.text, via: 'typed', time: now(), offset: -1 };
-        this.typed = '';
+        const shown = this.echoed;
+        this.typed = this.echoed = '';
         this.onLine?.(line);
-        if (this.echo || this.localEcho) { this.log.push(line); this.changed(); }
+        if (this.echo || this.localEcho) { this.log.push({ ...line, text: shown + p.text }); this.changed(); }
         await this.transmit(p.bytes, t, (n) => this.progress(done + n), null);
         done += p.bytes.length;
         // The Send tab's line delay, which within one write only falls between lines.

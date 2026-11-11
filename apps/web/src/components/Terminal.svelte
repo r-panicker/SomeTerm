@@ -287,14 +287,14 @@
     else if (disp.ctrl) n += (l.dir === 'tx' ? pre : 0) + expanded(l).text.length;
     else if (l.dir === 'tx') n += pre + l.text.length;
     else n += (disp.ansi ? l.text : (l.raw ?? l.text)).length;
-    if (typing && li === source.log.length) n += (source.localEcho ? source.typed?.length ?? 0 : 0) + 1;
+    if (typing && li === source.log.length) n += (source.echoed?.length ?? 0) + 1;
     return n;
   }
 
   const count = $derived.by(() => {
     const n = logicalCount;
     if (!wrapping) return n;
-    void source.typed;
+    void source.echoed;
     const settled = filtering ? n : Math.min(n, source.log.length);
     const key = `${cols}|${disp.stamps}|${disp.ctrl}|${disp.ansi}|${filtering ? findRev : 'all'}`;
     wrap.update(key, source.log.dropped, settled, n, cols, logicalLen);
@@ -337,7 +337,7 @@
       else if (disp.ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? [], ruled));
       else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, [], ruled));
       if (typing && li === source.log.length) {
-        if (source.localEcho && source.typed) spans.push({ text: source.typed, tone: 'tx' });
+        if (source.echoed) spans.push({ text: source.echoed, tone: 'tx' });
         spans.push({ text: '▏', tone: 'accent', decor: true });
       }
       return spans;
@@ -399,7 +399,7 @@
   }
 
   /** Anything that changes what rows look like must force a redraw, not only new data. */
-  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${per}|${disp.stamps}|${wrapping}|${cols}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${typing}|${source.typed}|${source.localEcho}|${cur?.abs}:${cur?.k}|${rules.version}|${disp.frame}|${disp.frameGapMs}|${disp.frameSync}`);
+  const revision = $derived(`${source.version}|${disp.format}|${disp.numType}|${disp.littleEndian}|${disp.align}|${per}|${disp.stamps}|${wrapping}|${cols}|${findRev}|${filtering}|${disp.ansi}|${disp.ctrl}|${dark}|${typing}|${source.echoed}|${cur?.abs}:${cur?.k}|${rules.version}|${disp.frame}|${disp.frameGapMs}|${disp.frameSync}`);
 
   const rowText = (i: number) => row(i).filter((s) => !s.decor).map((s) => s.text).join('');
   /** A wrapped continuation: copied without a line break before it. */
