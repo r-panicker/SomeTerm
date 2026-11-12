@@ -62,7 +62,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 | Newline handling: CR, LF, CRLF, auto, "newline on N bytes" | | done |
 | ANSI/VT100 escape handling | Colors, cursor, clear | done: SGR colour/styles; cursor and erase sequences removed (line-oriented by design) |
 | Timestamps (absolute, delta) per line/chunk | | done |
-| Scrollback limit, pause/freeze, auto-scroll | Freeze must not drop data | done (pause = scroll up) |
+| Scrollback limit, pause/freeze, auto-scroll | Freeze must not drop data | done: Pause holds every view, up to the ring size |
 | Find, filter, highlight rules | Regex | done |
 | Display of sync/"frame" boundaries by gap time | Idle-gap or sync-pattern splitting in the byte views | done |
 
@@ -70,7 +70,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 | Feature | Notes | Status |
 |---|---|---|
 | Text with escapes (`\r \n \xNN`) | | done |
-| Hex/byte entry | | done |
+| Hex/byte entry | | done: numbers in any base, as on the Send tab |
 | Append CR/LF/custom, checksum/CRC | Common CRCs | done |
 | Send file, with inter-byte and inter-line delay | Progress, cancel | done |
 | Repeat N / forever, interval | | done |
@@ -123,8 +123,8 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 | Connection strip | Lettered connections A, B, …, then the Monitor once there are two, then **+** for another |
 | Top bar | Connection type (Serial, Network, Loopback, Open recording…), port, Connect, DTR/RTS; views xterm / Terminal / Plot / Split; full screen |
 | Main | Terminal and plot over the same stream; split is resizable; clicking a plot point scrolls the terminal to its line |
-| Pane toolbars | One thin row per pane: format, find, text size, clear; plot pause, statistics, cursors, CSV |
-| Send bar | Text/Hex, input with history, what will be added, Send; quick-send strip above it once buttons exist |
+| Pane toolbars | One thin row per pane: format, pause, find, text size, clear; plot pause, statistics, cursors, PNG, CSV |
+| Send bar | Text/Numbers, input with history, what will be added, Send; quick-send strip above it once buttons exist |
 | Settings panel | RealTerm-style tabs: Send, Display, Plot, Automation, Logging, Port, Profiles, App; folds away |
 | Status bar | Profile and framing (opens the Port tab), CTS/DSR/DCD/RI, logging indicator, errors, byte counts and rate; each shown only when it carries information |
 

@@ -69,8 +69,8 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 ### Send
 | | |
 |---|---|
-| Input | Text with `\r \n \t \xNN` escapes, or raw hex; history with ↑/↓ |
-| Send lines | RealTerm-style lines with **Send ASCII** and **Send Numbers** (`65 0x41 $41 41h 0b1000001 'A'`) |
+| Input | Text with `\r \n \t \xNN` escapes, or bytes as numbers (`65 0x41 $41 41h 0b1000001 'A'`); history with ↑/↓ |
+| Send lines | RealTerm-style lines with **Send ASCII** and **Send Numbers** |
 | Framing | Line ending plus Sum8, XOR8, CRC-8, CRC-16 (Modbus, CCITT) or CRC-32 |
 | Timing | Repeat N times or forever, inter-byte and inter-line delays (also for pasted text, so slow consoles keep up), choose a file then send it with progress |
 | Half duplex | Wait for each character's echo, or hold RTS while transmitting for RS-485 adapters |

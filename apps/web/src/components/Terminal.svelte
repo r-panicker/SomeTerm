@@ -6,6 +6,7 @@
   import { WrapMap, sliceSpans } from '../lib/wrap';
   import { prefs, TEXT_SIZES } from '../lib/prefs.svelte';
   import type { Session } from '../lib/session.svelte';
+  import { formatBytes } from '../lib/format';
   import { ansiColor } from '../lib/ansi-colors';
   import { rules, ruleText, ruleTint } from '../lib/rules.svelte';
   import { applyRules, RGB_FLAG, type RuleRun, type TermLine } from '@someterm/core';
@@ -476,6 +477,9 @@
     {/if}
     {#if !findOpen}<span class="spacer"></span>{/if}
     {#if !follow}<button onclick={() => (follow = true)} title="Scroll to newest">↓ Live</button>{/if}
+    {#if !findOpen && source.setPaused}
+      <button class="toggle" class:on={source.paused} onclick={() => source.setPaused?.(!source.paused)} title={source.paused ? 'Resume: show what arrived meanwhile' : 'Hold the views still; data keeps arriving, logging and auto-replies carry on'}>{source.paused ? `Paused · +${formatBytes(source.heldBytes ?? 0)}` : 'Pause'}</button>
+    {/if}
     {#if !findOpen && disp.format === 'ascii'}
       <button class="icon" onclick={openFind} title="Find (Ctrl+F)" aria-label="Find">
         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M10 10l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>

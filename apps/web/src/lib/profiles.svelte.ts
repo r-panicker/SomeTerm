@@ -23,7 +23,7 @@ export interface ProfileSettings {
   dtr: boolean;
   rts: boolean;
   newline: NewlineMode;
-  echo: boolean;
+  localEcho: boolean;
   display: DisplaySettings;
   send: Pick<SendOptions, 'eol' | 'checksum' | 'byteDelayMs' | 'lineDelayMs' | 'rtsWhileSending' | 'echoWaitMs' | 'backspace' | 'fileProtocol'>;
   view: View;
@@ -46,7 +46,7 @@ export function settingsOf(s: Session): ProfileSettings {
     dtr: s.dtr,
     rts: s.rts,
     newline: s.newline,
-    echo: s.echo,
+    localEcho: s.localEcho,
     display: $state.snapshot(s.display),
     send: { eol: o.eol, checksum: o.checksum, byteDelayMs: o.byteDelayMs, lineDelayMs: o.lineDelayMs, rtsWhileSending: o.rtsWhileSending, echoWaitMs: o.echoWaitMs, backspace: o.backspace, fileProtocol: o.fileProtocol },
     view: s.view,
@@ -75,7 +75,7 @@ export function resetSettings(s: Session, everything = false): void {
     dtr: true,
     rts: true,
     newline: 'auto',
-    echo: false,
+    localEcho: false,
     display: defaultDisplay(),
     send,
     view: s.view,
@@ -86,7 +86,7 @@ export function resetSettings(s: Session, everything = false): void {
     plotFs: null,
     autoReplies: everything ? [] : s.autoReplies,
     quickSends: everything ? [] : s.quickSends,
-    sendFields: everything ? ['', '', '', ''] : s.sendFields,
+    sendFields: everything ? ['', ''] : s.sendFields,
   });
   if (everything) {
     rules.clear();
@@ -97,7 +97,6 @@ export function resetSettings(s: Session, everything = false): void {
   s.sendOptions.repeat = send.repeat;
   s.sendOptions.intervalMs = send.intervalMs;
   s.typeToDevice = true;
-  s.localEcho = false;
 }
 
 export function applySettings(s: Session, p: ProfileSettings): void {
@@ -105,7 +104,7 @@ export function applySettings(s: Session, p: ProfileSettings): void {
   s.dtr = p.dtr;
   s.rts = p.rts;
   if (p.newline !== s.newline) s.setNewline(p.newline);
-  s.echo = p.echo;
+  s.localEcho = p.localEcho;
   Object.assign(s.display, p.display);
   Object.assign(s.sendOptions, p.send);
   s.chooseView(p.view);
@@ -152,7 +151,7 @@ export function sanitizeQuickSends(raw: unknown): QuickSend[] {
       id: typeof q.id === 'string' ? q.id : `q${Math.random().toString(36).slice(2, 9)}`,
       label: typeof q.label === 'string' ? q.label.slice(0, 40) : '',
       text: q.text.slice(0, 2000),
-      hex: q.hex === true,
+      numbers: q.numbers === true,
     }];
   });
 }
@@ -160,7 +159,7 @@ export function sanitizeQuickSends(raw: unknown): QuickSend[] {
 /** Send-tab lines: always four or more strings, each bounded. */
 export function sanitizeFields(raw: unknown): string[] {
   const list = Array.isArray(raw) ? raw.slice(0, 16).map((x) => (typeof x === 'string' ? x.slice(0, 2000) : '')) : [];
-  while (list.length < 4) list.push('');
+  while (list.length < 2) list.push('');
   return list;
 }
 
@@ -216,7 +215,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
     dtr: bool(r.dtr, true),
     rts: bool(r.rts, true),
     newline: pick(r.newline, ['auto', 'lf', 'cr', 'crlf'] as const, 'auto'),
-    echo: bool(r.echo, false),
+    localEcho: bool(r.localEcho, false),
     display: {
       format: pick(d.format, ['ascii', 'hex', 'dec', 'bin', 'num', 'screen'] as const, 'ascii'),
       numType: pick(d.numType, NUM_TYPES.map((n) => n.type), 'int16'),

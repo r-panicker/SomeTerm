@@ -8,7 +8,7 @@
 
 <div class="strip" role="toolbar" aria-label="Quick sends">
   {#each session.quickSends as q, i (q.id)}
-    <button onclick={() => session.sendQuick(q)} disabled={!canSend || !q.text} title="{q.hex ? 'Hex ' : ''}{q.text}{i < 9 ? ` (Alt+${i + 1})` : ''}">{q.label || q.text || '…'}</button>
+    <button onclick={() => session.sendQuick(q)} disabled={!canSend || !q.text} title="{q.numbers ? 'Numbers ' : ''}{q.text}{i < 9 ? ` (Alt+${i + 1})` : ''}">{q.label || q.text || '…'}</button>
   {/each}
   <button class="edit" onclick={onedit} title="Edit quick-send buttons" aria-label="Edit quick-send buttons">✎</button>
 </div>

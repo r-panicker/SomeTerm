@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CHECKSUMS, parseEscapes, parseHexBytes, toHex } from '@someterm/core';
+  import { CHECKSUMS, parseEscapes, parseNumbers, toHex } from '@someterm/core';
   import type { Session } from '../lib/session.svelte';
   import { formatBytes } from '../lib/format';
 
@@ -7,7 +7,7 @@
   let { session }: { session: Session } = $props();
 
   const HISTORY_MAX = 100;
-  let mode = $state<'text' | 'hex'>('text');
+  let mode = $state<'text' | 'numbers'>('text');
   let input = $state('');
   let error = $state('');
   let history: string[] = [];
@@ -19,10 +19,10 @@
   const canSend = $derived(session.open && !session.player);
   const job = $derived(session.job);
 
-  /** Hex input is checked as it is typed, so a bad byte never reaches Send. */
+  /** Numbers are checked as they are typed, so a bad one never reaches Send. */
   const hex = $derived.by(() => {
-    if (mode !== 'hex' || !input.trim()) return { preview: '', error: '' };
-    try { return { preview: toHex(parseHexBytes(input)), error: '' }; } catch (e) { return { preview: '', error: (e as Error).message }; }
+    if (mode !== 'numbers' || !input.trim()) return { preview: '', error: '' };
+    try { return { preview: toHex(parseNumbers(input)), error: '' }; } catch (e) { return { preview: '', error: (e as Error).message }; }
   });
 
   /** Only options that change what gets sent are worth a label. */
@@ -54,7 +54,7 @@
     if (hex.error) return;
     let payload: Uint8Array;
     try {
-      payload = mode === 'hex' ? parseHexBytes(input) : parseEscapes(input);
+      payload = mode === 'numbers' ? parseNumbers(input) : parseEscapes(input);
     } catch (err) {
       error = (err as Error).message;
       return;
@@ -71,7 +71,7 @@
     const text = input.trim() ? input : '';
     if (!text) return;
     const label = [...text].length > 16 ? `${[...text].slice(0, 15).join('')}…` : text;
-    session.quickSends.push({ id: `q${Date.now().toString(36)}`, label, text, hex: mode === 'hex' });
+    session.quickSends.push({ id: `q${Date.now().toString(36)}`, label, text, numbers: mode === 'numbers' });
   }
 
   function key(e: KeyboardEvent) {
@@ -94,7 +94,7 @@
 <form onsubmit={send}>
   <div class="seg" role="group" aria-label="Send as">
     <button type="button" class:on={mode === 'text'} onclick={() => (mode = 'text')}>Text</button>
-    <button type="button" class:on={mode === 'hex'} onclick={() => (mode = 'hex')}>Hex</button>
+    <button type="button" class:on={mode === 'numbers'} onclick={() => (mode = 'numbers')} title="Bytes as numbers: 65 0x41 $41 41h 0b1000001 'A' are all 0x41; no line ending">Numbers</button>
   </div>
   {#if job}
     <div class="progress" role="status">
@@ -107,8 +107,8 @@
       bind:value={input}
       oninput={() => (error = '')}
       onkeydown={key}
-      placeholder={session.player ? 'Replaying a recording' : mode === 'hex' ? '0D 0A 41' : 'Text, \\r \\n \\xNN'}
-      title={mode === 'hex' ? 'Hex bytes separated by spaces or commas' : 'Escapes: \\r \\n \\t \\0 \\\\ \\xNN. ↑/↓ for history'}
+      placeholder={session.player ? 'Replaying a recording' : mode === 'numbers' ? '0x0D, 10, $41' : 'Text, \\r \\n \\xNN'}
+      title={mode === 'numbers' ? 'Numbers separated by spaces or commas: 65 0x41 $41 41h 0b1000001 \'A\'' : 'Escapes: \\r \\n \\t \\0 \\\\ \\xNN. ↑/↓ for history'}
       class:bad={!!(error || hex.error)}
       disabled={!canSend}
       spellcheck="false"

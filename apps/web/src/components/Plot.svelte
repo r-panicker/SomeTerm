@@ -5,6 +5,7 @@
   import { compileExpr, decimateMinMax, estimateRate, largestPow2, nearestIndex, peakFrequency, rangeStats, spectrum, type Fn, type Stats } from '@someterm/core';
   import 'uplot/dist/uPlot.min.css';
   import type { Session } from '../lib/session.svelte';
+  import { formatBytes } from '../lib/format';
 
   let { session, onpick }: { session: Session; onpick: (offset: number) => void } = $props();
 
@@ -17,7 +18,7 @@
   const hasData = $derived.by(() => (void session.version, session.series.length > 0));
   // Series names are plain data; the version tick makes the list reactive.
   const seriesNames = $derived.by(() => (void session.version, [...session.series.names]));
-  let paused = $state(false);
+  const paused = $derived(session.paused);
   let shownRows: number[] = [];
   /** XY mode: for each drawn series, the source row of each point. */
   let shownXY: { col: number; rows: number[] }[] = [];
@@ -438,7 +439,7 @@
 
 <section class="pane">
   <div class="toolbar">
-    <button class="toggle" class:on={paused} onclick={() => { paused = !paused; update(true); }} title="Pause plot (data keeps arriving)">Pause</button>
+    <button class="toggle" class:on={paused} onclick={() => { session.setPaused(!paused); update(true); }} title={paused ? 'Resume: show what arrived meanwhile' : 'Hold the views still; data keeps arriving, logging and auto-replies carry on'}>{paused ? `Paused · +${formatBytes(session.heldBytes)}` : 'Pause'}</button>
     <span class="mode" title="Set on the Plot tab">{session.plotFft ? 'Spectrum' : `${WINDOWS.find(([v]) => v === session.plotWindow)?.[1] ?? ''} · ${session.plotX && seriesNames.includes(session.plotX) ? `vs ${session.plotX}` : 'vs time'}`}{fxActive ? ' · converted' : ''}</span>
     {#if session.plotFft}
       {#if fftInfo}<span class="peaks" title="{fftInfo.n} samples, {(fftInfo.fs / fftInfo.n).toPrecision(3)} Hz per bin{session.plotFs ? '' : '; sample rate estimated from arrival times, set it on the Plot tab'}">{session.plotFs ? '' : '≈'}{fftInfo.fs.toPrecision(4)} Hz</span>{/if}

@@ -34,6 +34,10 @@ export interface TermSource {
   readonly version: number;
   readonly open: boolean;
   clear(): void;
+  /** Pause holds the views still while data keeps arriving; absent where there is nothing to hold. */
+  readonly paused?: boolean;
+  readonly heldBytes?: number;
+  setPaused?(on: boolean): void;
   wallClock(t: number): Date;
   readonly display: DisplaySettings;
   /** Raw received bytes for the Hex/Dec/Bin/Int/Float views; absent for merged views. */
@@ -44,7 +48,6 @@ export interface TermSource {
   frameFrom?(): number;
   readonly newline?: NewlineMode;
   setNewline?(mode: NewlineMode): void;
-  echo?: boolean;
   /** Terminal mode: send keystrokes straight to the port. Absent where nothing can be sent. */
   typeKeys?(bytes: Uint8Array, key: 'text' | 'enter' | 'backspace' | 'other', text?: string): void;
   /** Pasted text, sent paced as one job when it has several lines. */

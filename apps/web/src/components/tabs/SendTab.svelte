@@ -37,6 +37,7 @@
     {/each}
     <div class="foot">
       {#if session.sendFields.length < 16}<button class="add" onclick={() => session.sendFields.push('')} title="Another line">+</button>{/if}
+      {#if session.sendFields.length > 2}<button class="add" onclick={() => session.sendFields.pop()} title="Remove the last line">−</button>{/if}
       <span class="spacer"></span>
       <span title="Added after Send ASCII, the send bar's text, and Enter when typing in the terminal">ASCII line ending</span>
       <label class="check"><input type="checkbox" checked={cr} onchange={(e) => setEol(e.currentTarget.checked, lf)} /> +CR</label>

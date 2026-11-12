@@ -12,7 +12,6 @@ interface SavedTab {
   options: SerialOptions;
   sendOptions: SendOptions;
   view: View;
-  echo: boolean;
   newline: Session['newline'];
   forwardTo: string | null;
   profileId?: string | null;
@@ -74,7 +73,6 @@ export class Workspace {
       const { net: _net, ...settings } = settingsOf(from);
       applySettings(s, { ...settings, autoReplies: [] });
       s.typeToDevice = from.typeToDevice;
-      s.localEcho = from.localEcho;
     }
     return s;
   }
@@ -115,7 +113,6 @@ export class Workspace {
       options: $state.snapshot(s.options),
       sendOptions: $state.snapshot(s.sendOptions),
       view: s.view,
-      echo: s.echo,
       typeToDevice: s.typeToDevice,
       localEcho: s.localEcho,
       newline: s.newline,
@@ -168,7 +165,6 @@ export class Workspace {
       if (c) s.choosePort(c, true);
       Object.assign(s.options, t.options);
       Object.assign(s.sendOptions, t.sendOptions);
-      s.echo = t.echo;
       if (typeof t.typeToDevice === 'boolean') s.typeToDevice = t.typeToDevice;
       if (typeof t.localEcho === 'boolean') s.localEcho = t.localEcho;
       if (t.display) Object.assign(s.display, t.display);

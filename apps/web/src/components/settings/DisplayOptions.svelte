@@ -20,12 +20,7 @@
 <label class="check" title="Show CR, LF, TAB, NUL and every other non-printing byte, line endings included"><input type="checkbox" bind:checked={disp.ctrl} /> Control characters</label>
 {#if source.typeKeys}
   <label class="check" title="Keys pressed in the terminal go to the device, like a terminal emulator. Ctrl+Shift keeps app shortcuts"><input type="checkbox" checked={source.typeToDevice} onchange={(e) => (source.typeToDevice = e.currentTarget.checked)} /> Keyboard to device</label>
-  {#if source.typeToDevice}
-    <label class="check" title="Show what you type; leave off for devices that echo"><input type="checkbox" checked={source.localEcho} onchange={(e) => (source.localEcho = e.currentTarget.checked)} /> Local echo</label>
-  {/if}
-{/if}
-{#if source.echo !== undefined}
-  <label class="check" title="Show what you send, as → lines"><input type="checkbox" checked={source.echo} onchange={(e) => (source.echo = e.currentTarget.checked)} /> Show sent data</label>
+  <label class="check" title="Show what you type and send; leave off for devices that echo"><input type="checkbox" checked={source.localEcho} onchange={(e) => (source.localEcho = e.currentTarget.checked)} /> Local echo</label>
 {/if}
 
 <style>

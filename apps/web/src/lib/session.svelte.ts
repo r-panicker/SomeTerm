@@ -94,7 +94,7 @@ export interface QuickSend {
   label: string;
   /** Send-box text (escapes allowed), or hex bytes when `hex`. */
   text: string;
-  hex: boolean;
+  numbers: boolean;
 }
 
 export interface SendOptions {
@@ -178,7 +178,6 @@ export class Session implements TermSource {
   lineControl = $state(true);
   signals = $state<InputSignals | null>(null);
   view = $state<View>('terminal');
-  echo = $state(false);
   newline = $state<NewlineMode>('auto');
   display = $state<DisplaySettings>(defaultDisplay());
   /** Plot time window in seconds; 0 shows everything. */
@@ -195,13 +194,13 @@ export class Session implements TermSource {
   autoReplies = $state<AutoReply[]>([]);
   quickSends = $state<QuickSend[]>([]);
   /** The Send tab's lines, each sent as ASCII or as numbers. */
-  sendFields = $state<string[]>(['', '', '', '']);
+  sendFields = $state<string[]>(['', '']);
   /** Chosen on the Send tab and sent by a separate click, so choosing a file never sends it. */
   fileToSend = $state.raw<File | null>(null);
   /** The last network settings used, so switching back to TCP/Telnet keeps them. */
   lastNet = $state.raw<NetSpec>({ mode: 'client', protocol: 'tcp', host: '127.0.0.1', port: 23 });
   private replier = new AutoReplier(now);
-  /** Terminal mode: the line being typed, and whether to show it (devices that echo make that redundant). */
+  /** The line being typed, and whether what is typed and sent is shown (devices that echo make that redundant). */
   typed = $state('');
   /** The part of `typed` shown on screen: keys pressed while local echo was on. Toggling echo leaves it as is. */
   echoed = $state('');
@@ -229,6 +228,14 @@ export class Session implements TermSource {
   /** Receives incoming bytes instead of the line parser during an XMODEM/YMODEM transfer. */
   private protocolTap: ((chunk: Uint8Array, ts: number) => void) | null = null;
   private rawListeners = new Set<(chunk: Uint8Array) => void>();
+  /**
+   * Pause holds every view still. Data keeps being counted, logged, forwarded and
+   * answered by auto-replies; what the views would have shown waits here, in order.
+   */
+  paused = $state(false);
+  /** Bytes received since Pause was pressed. */
+  heldBytes = $state(0);
+  private held: (() => void)[] = [];
   private token: CancelToken | null = null;
 
   readonly log = new TerminalLog(() => prefs.scrollback);
@@ -423,7 +430,7 @@ export class Session implements TermSource {
         void this.sendRaw(a.bytes);
         const line: TermLine = { dir: 'tx', text: echoLine(a.bytes), bytes: a.bytes, via: 'auto', time: now(), offset: -1 };
         this.onLine?.(line);
-        if (this.echo) { this.log.push(line); this.changed(); }
+        if (this.localEcho) { this.show(line); this.changed(); }
       };
       if (a.rule.delayMs > 0) setTimeout(go, a.rule.delayMs);
       else go();
@@ -478,7 +485,7 @@ export class Session implements TermSource {
       const shown = this.echoed;
       this.typed = this.echoed = '';
       this.onLine?.(line);
-      if (this.localEcho || shown) this.log.push({ ...line, text: shown });
+      if (this.localEcho || shown) this.show({ ...line, text: shown });
     }
     this.changed();
   }
@@ -514,7 +521,7 @@ export class Session implements TermSource {
         const shown = this.echoed;
         this.typed = this.echoed = '';
         this.onLine?.(line);
-        if (this.echo || this.localEcho) { this.log.push({ ...line, text: shown + p.text }); this.changed(); }
+        if (this.localEcho || shown) { this.show({ ...line, text: shown + p.text }); this.changed(); }
         await this.transmit(p.bytes, t, (n) => this.progress(done + n), null);
         done += p.bytes.length;
         // The Send tab's line delay, which within one write only falls between lines.
@@ -534,7 +541,7 @@ export class Session implements TermSource {
     const d = new Date();
     const p = (n: number) => String(n).padStart(2, '0');
     const line: TermLine = { dir: 'sys', text: `── ${text} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} ──`, time: now(), offset: -1 };
-    this.log.push(line);
+    this.show(line);
     this.onLine?.(line);
     this.changed();
   }
@@ -599,13 +606,13 @@ export class Session implements TermSource {
   async sendQuick(q: QuickSend): Promise<void> {
     let payload: Uint8Array;
     try {
-      payload = q.hex ? parseHexBytes(q.text) : parseEscapes(q.text);
+      payload = q.numbers ? parseNumbers(q.text) : parseEscapes(q.text);
     } catch (e) {
       this.errors++;
       this.lastError = `Quick send “${q.label || q.text}”: ${(e as Error).message}`;
       return;
     }
-    await this.sendMessage(payload, q.hex ? new Uint8Array(0) : parseEscapes(this.sendOptions.eol), true);
+    await this.sendMessage(payload, q.numbers ? new Uint8Array(0) : parseEscapes(this.sendOptions.eol), true);
   }
 
   /** A Send tab line: as ASCII (escapes, then the line ending) or as numbers (exact bytes). */
@@ -696,11 +703,11 @@ export class Session implements TermSource {
     const t = this.transport;
     if (!t) return;
     // Echo happens before the write so it precedes any reply it provokes.
-    if (echoText !== null && (this.echo || this.onLine)) {
+    if (echoText !== null && (this.localEcho || this.onLine)) {
       const line: TermLine = { dir: 'tx', text: echoText ?? echoLine(bytes), ...(!echoText && { raw: toAscii(bytes, { controlPictures: true }), bytes: bytes.slice() }), time: now(), offset: -1 };
       this.onLine?.(line);
-      if (this.echo) {
-        this.log.push(line);
+      if (this.localEcho) {
+        this.show(line);
         this.changed();
       }
     }
@@ -761,7 +768,7 @@ export class Session implements TermSource {
     t.onTx((chunk, at) => {
       const line: TermLine = { dir: 'tx', text: echoLine(chunk), time: at, offset: -1 };
       this.onLine?.(line);
-      if (this.echo) { this.log.push(line); this.changed(); }
+      if (this.localEcho) { this.show(line); this.changed(); }
     });
     t.onSignals((s) => { if (this.player) { this.player.dtr = s.dtr; this.player.rts = s.rts; } });
     this.player = { playing: true, speed: 1, position: 0, duration: rec.duration, dtr: false, rts: false };
@@ -862,7 +869,32 @@ export class Session implements TermSource {
     return index;
   }
 
+  setPaused(on: boolean): void {
+    if (on === this.paused) return;
+    this.paused = on;
+    if (!on) this.release();
+  }
+
+  private release(): void {
+    const held = this.held;
+    this.held = [];
+    this.heldBytes = 0;
+    for (const f of held) f();
+    this.changed();
+  }
+
+  private hold(f: () => void): void {
+    if (this.paused) this.held.push(f);
+    else f();
+  }
+
+  private show(line: TermLine): void {
+    this.hold(() => this.log.push(line));
+  }
+
   clear(): void {
+    // The ring must still see every byte, so held data goes in before it is cleared.
+    if (this.held.length) this.release();
     this.log.clear();
     this.series.clear();
     this.hexStart = this.ring.end;
@@ -879,18 +911,25 @@ export class Session implements TermSource {
 
   private receive(chunk: Uint8Array, ts: number): void {
     this.rx += chunk.length;
-    this.chunkAt.push(this.ring.end);
-    this.chunkTs.push(ts);
-    this.frames?.index.push(chunk, ts);
-    this.ring.push(chunk);
-    // Chunk records and frames older than the ring go, in batches.
-    if (this.chunkAt.length > 4096 && this.chunkAt[2048]! < this.ring.start) {
-      this.chunkAt.splice(0, 2048);
-      this.chunkTs.splice(0, 2048);
-      this.frames?.index.prune(this.frameFrom());
+    this.hold(() => {
+      this.chunkAt.push(this.ring.end);
+      this.chunkTs.push(ts);
+      this.frames?.index.push(chunk, ts);
+      this.ring.push(chunk);
+      // Chunk records and frames older than the ring go, in batches.
+      if (this.chunkAt.length > 4096 && this.chunkAt[2048]! < this.ring.start) {
+        this.chunkAt.splice(0, 2048);
+        this.chunkTs.splice(0, 2048);
+        this.frames?.index.prune(this.frameFrom());
+      }
+      for (const fn of this.rawListeners) fn(chunk);
+    });
+    if (this.paused) {
+      this.heldBytes += chunk.length;
+      // Beyond the ring's size, the paused view would be overwritten anyway.
+      if (this.heldBytes > RING_BYTES) this.setPaused(false);
     }
     this.capture.rx(chunk, performance.timeOrigin + ts);
-    for (const fn of this.rawListeners) fn(chunk);
     if (this.protocolTap) { this.protocolTap(chunk, ts); return; }
     this.pipeline.data(chunk, ts);
     this.echoes.feed(chunk);
@@ -930,19 +969,25 @@ export class Session implements TermSource {
   private onBatch(b: RxBatch): void {
     const replying = this.open && !this.player && this.autoReplies.some((r) => r.enabled);
     if (replying) this.replier.setRules($state.snapshot(this.autoReplies));
+    const lines: TermLine[] = [];
     for (const l of b.lines) {
       if (replying) this.handleReplies(l.text, l.offset);
       const line: TermLine = { dir: 'rx', text: l.text, runs: l.runs, raw: l.raw, time: l.time, offset: l.offset, len: l.len };
-      this.log.pushRx(line);
+      lines.push(line);
       this.onLine?.(line);
-      if (l.samples) {
-        this.series.push((l.time - this.t0) / 1000, l.offset, l.samples);
-        if (!this.viewChosen && this.view === 'terminal') this.view = 'split';
-      }
     }
-    this.partialLine = b.partial;
     // A prompt without a newline yet ("Password:") still gets its answer.
     if (replying && b.partial) this.handleReplies(b.partial.text, b.partial.offset);
+    this.hold(() => {
+      b.lines.forEach((l, i) => {
+        this.log.pushRx(lines[i]!);
+        if (l.samples) {
+          this.series.push((l.time - this.t0) / 1000, l.offset, l.samples);
+          if (!this.viewChosen && this.view === 'terminal') this.view = 'split';
+        }
+      });
+      this.partialLine = b.partial;
+    });
     this.changed();
   }
 
@@ -952,6 +997,7 @@ export class Session implements TermSource {
     this.timers.forEach(clearInterval);
     this.timers = [];
     this.transport = null;
+    this.setPaused(false);
     this.open = false;
     this.signals = null;
     this.rate = 0;

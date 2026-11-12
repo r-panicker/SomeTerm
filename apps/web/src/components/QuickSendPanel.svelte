@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { parseEscapes, parseHexBytes } from '@someterm/core';
+  import { parseEscapes, parseNumbers } from '@someterm/core';
   import type { Session } from '../lib/session.svelte';
 
   /** Editor for a connection's quick-send buttons (Automation tab). */
@@ -7,9 +7,9 @@
 
   const newId = () => `q${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
-  function problem(text: string, hex: boolean): string {
+  function problem(text: string, numbers: boolean): string {
     try {
-      if (hex) parseHexBytes(text);
+      if (numbers) parseNumbers(text);
       else parseEscapes(text);
       return '';
     } catch (e) {
@@ -26,18 +26,18 @@
 </script>
 
 {#each session.quickSends as q, i (q.id)}
-  {@const err = problem(q.text, q.hex)}
+  {@const err = problem(q.text, q.numbers)}
   <div class="row">
     <span class="key" title={i < 9 ? `Alt+${i + 1}` : ''}>{i < 9 ? i + 1 : ''}</span>
     <input class="label" bind:value={q.label} placeholder="Label" title="Button label" spellcheck="false" />
-    <input class="text" class:bad={!!err} bind:value={q.text} placeholder={q.hex ? '0D 0A 41' : 'Text, \\r \\n \\xNN'} title={err || (q.hex ? 'Hex bytes' : 'Sent with the line ending; escapes \\r \\n \\t \\0 \\\\ \\xNN')} spellcheck="false" />
-    <button class="toggle" class:on={q.hex} onclick={() => (q.hex = !q.hex)} title="Hex bytes instead of text">Hex</button>
+    <input class="text" class:bad={!!err} bind:value={q.text} placeholder={q.numbers ? '0x0D, 10, $41' : 'Text, \\r \\n \\xNN'} title={err || (q.numbers ? 'Bytes as numbers: 65 0x41 $41 41h 0b1000001 \'A\'; no line ending' : 'Sent with the line ending; escapes \\r \\n \\t \\0 \\\\ \\xNN')} spellcheck="false" />
+    <button class="toggle" class:on={q.numbers} onclick={() => (q.numbers = !q.numbers)} title="Numbers instead of text">Numbers</button>
     <button class="mv" onclick={() => move(i, -1)} disabled={i === 0} title="Move left" aria-label="Move left">↑</button>
     <button class="del" onclick={() => session.quickSends.splice(i, 1)} title="Delete" aria-label="Delete">×</button>
   </div>
 {/each}
 
-<button class="add" onclick={() => session.quickSends.push({ id: newId(), label: '', text: '', hex: false })} title="Add a quick-send button">+</button>
+<button class="add" onclick={() => session.quickSends.push({ id: newId(), label: '', text: '', numbers: false })} title="Add a quick-send button">+</button>
 
 <style>
   .row { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
