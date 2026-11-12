@@ -93,7 +93,7 @@
 
 <form onsubmit={send}>
   <div class="seg" role="group" aria-label="Send as">
-    <button type="button" class:on={mode === 'text'} onclick={() => (mode = 'text')}>Text</button>
+    <button type="button" class:on={mode === 'text'} onclick={() => (mode = 'text')}>ASCII</button>
     <button type="button" class:on={mode === 'numbers'} onclick={() => (mode = 'numbers')} title="Bytes as numbers: 65 0x41 $41 41h 0b1000001 'A' are all 0x41; no line ending">Numbers</button>
   </div>
   {#if job}
