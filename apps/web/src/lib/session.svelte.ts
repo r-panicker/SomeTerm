@@ -827,14 +827,16 @@ export class Session implements TermSource {
 
   setNewline(mode: NewlineMode): void {
     this.newline = mode;
-    this.pipeline.reset(mode, this.ring.end);
-    this.partialLine = null;
-    this.changed();
+    this.pipeline.setMode(mode);
   }
 
-  setPipelineShowBsAndCrAsSymbols(show: boolean): void {
-    this.pipeline.setShowBsAndCrAsSymbols(show);
-    this.changed();
+  private rowWidth = 80;
+  /** Line ending none cuts rows at the terminal's width; the terminal reports it. */
+  setRowWidth(cols: number): void {
+    const w = Math.max(8, Math.floor(cols));
+    if (w === this.rowWidth) return;
+    this.rowWidth = w;
+    this.pipeline.setWidth(w);
   }
 
   clearErrors(): void {
@@ -904,7 +906,7 @@ export class Session implements TermSource {
     this.series.clear();
     this.hexStart = this.ring.end;
     this.partialLine = null;
-    // Reset the pipeline to discard any pending data in the splitter (e.g. in 'none' mode).
+    // The unfinished line goes too, or it would come back with the next byte.
     this.pipeline.reset(this.newline, this.ring.end);
     this.clearErrors();
     this.t0 = this.replay ? this.replay.timeOrigin : now();

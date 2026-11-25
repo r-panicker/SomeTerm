@@ -36,7 +36,7 @@ describe('renderLine', () => {
   });
 
   it('without edit, BS and CR stay visible', () => {
-    expect(renderLine(enc('a\bb\rc'), [], false).text).toBe('a␈b␍c');
+    expect(renderLine(enc('a\bb\rc'), [], 'none').text).toBe('a␈b␍c');
   });
 
   it('maps style runs from byte to text positions', () => {

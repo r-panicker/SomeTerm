@@ -16,13 +16,54 @@ describe('RxPipeline', () => {
     });
   });
 
-  it('a trailing CR (CRLF sender, LF mode) returns to the line start as on a terminal, and still plots', () => {
-    const p = new RxPipeline('lf');
-    p.apply({ type: 'data', chunk: enc('5,6\r\n'), time: 0 });
-    const [l] = p.drain()!.lines;
-    expect(l!.text).toBe('5,6');
+  it('LF mode shows the CR of a CRLF sender, as CR mode shows its LF, and both still plot', () => {
+    const lf = new RxPipeline('lf');
+    lf.apply({ type: 'data', chunk: enc('5,6\r\n'), time: 0 });
+    const [l] = lf.drain()!.lines;
+    expect(l!.text).toBe('5,6␍');
     expect(l!.len).toBe(4);
     expect(l!.samples).toEqual([{ name: '1', value: 5 }, { name: '2', value: 6 }]);
+    const cr = new RxPipeline('cr');
+    cr.apply({ type: 'data', chunk: enc('1,2\r\n3,4\r\n'), time: 0 });
+    const [, m] = cr.drain()!.lines;
+    expect(m!.text).toBe('␊3,4');
+    expect(m!.samples).toEqual([{ name: '1', value: 3 }, { name: '2', value: 4 }]);
+  });
+
+  it('only auto returns to the line start on a lone CR; a chosen ending shows it, and BS still erases', () => {
+    const auto = new RxPipeline('auto');
+    auto.apply({ type: 'data', chunk: enc('x\n10%\r55%\n'), time: 0 });
+    expect(auto.drain()!.lines.map((l) => l.text)).toEqual(['x', '55%']);
+    const lf = new RxPipeline('lf');
+    lf.apply({ type: 'data', chunk: enc('10%\r55%\nab\b \bc\n'), time: 0 });
+    expect(lf.drain()!.lines.map((l) => l.text)).toEqual(['10%␍55%', 'ac']);
+  });
+
+  it('a new line ending applies from the unfinished line on, keeping it on screen', () => {
+    const p = new RxPipeline('lf');
+    p.apply({ type: 'data', chunk: enc('one\ntwo\rthr'), time: 0 });
+    expect(p.drain()).toMatchObject({ lines: [{ text: 'one' }], partial: { text: 'two␍thr', offset: 4 } });
+    p.apply({ type: 'mode', mode: 'cr' });
+    expect(p.drain()).toMatchObject({ lines: [{ text: 'two', offset: 4 }], partial: { text: 'thr', offset: 8 } });
+    p.apply({ type: 'data', chunk: enc('ee\r'), time: 1 });
+    expect(p.drain()!.lines.map((l) => [l.text, l.offset])).toEqual([['three', 8]]);
+  });
+
+  it('CR+LF split by a change of line ending is not lost', () => {
+    const p = new RxPipeline('crlf');
+    p.apply({ type: 'data', chunk: enc('ab\r'), time: 0 });
+    p.apply({ type: 'mode', mode: 'auto' });
+    p.apply({ type: 'data', chunk: enc('\ncd\n'), time: 1 });
+    expect(p.drain()!.lines.map((l) => l.text)).toEqual(['ab', 'cd']);
+  });
+
+  it('line ending none cuts rows at the set width, shows CR and LF, and never plots', () => {
+    const p = new RxPipeline('none');
+    p.apply({ type: 'width', width: 4 });
+    p.apply({ type: 'data', chunk: enc('1,2\r\n3,4\r\n'), time: 0 });
+    const b = p.drain()!;
+    expect(b.lines.map((l) => [l.text, l.offset, l.samples])).toEqual([['1,2␍', 0, null], ['␊3,4', 4, null]]);
+    expect(b.partial).toMatchObject({ text: '␍␊', offset: 8 });
   });
 
   it('coloured numeric output still plots; raw kept only for lines with escapes', () => {

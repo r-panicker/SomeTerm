@@ -66,9 +66,14 @@ export class PipelineClient {
     this.send({ type: 'reset', mode, offset, ack } as RxCommand);
   }
 
-  setShowBsAndCrAsSymbols(show: boolean): void {
-    if (this.inline) this.inline.showBsAndCrAsSymbols = show;
-    if (this.worker) this.worker.postMessage({ type: 'config', showBsAndCrAsSymbols: show });
+  /** A new line ending, applied from the unfinished line on. */
+  setMode(mode: NewlineMode): void {
+    this.send({ type: 'mode', mode });
+  }
+
+  /** Row length for line ending none. */
+  setWidth(width: number): void {
+    this.send({ type: 'width', width });
   }
 
   dispose(): void {

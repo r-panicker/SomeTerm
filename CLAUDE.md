@@ -36,6 +36,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Settings live in RealTerm-style tabs under the terminal, always visible and one click away. Each setting has exactly one home; nothing opens settings somewhere else (no popovers, drawers or ⋯ menus for settings). Toolbars hold actions and read-only state. The user found the alternatives (inline popovers plus a drawer, then a single drawer) confusing.
 - On/off switches look different from buttons that act or choose (they carry a light); labels say what a thing is in plain words (Int/Float, not Num).
 - Reuse the closest existing pattern for a new control instead of inventing a bespoke widget.
+- Before adding a setting, check whether an existing one already does it or could absorb it; two toggles that overlap (Show sent data vs Local echo, Backspace-as-symbol vs Control characters) confuse more than one that does a little more.
 - Show a value in more than one form when its format is ambiguous (hex alongside decimal, signed alongside unsigned), toggleable rather than picking one.
 - Never show a value before it's meaningful: a disconnected port shows a clear not-connected state, not zeros.
 - A setting that does nothing in the current mode or view (xterm, Terminal, Plot) is disabled, with a tooltip saying "Not available in … mode/view"; it never silently changes the mode when touched. Controls that cannot exist on a transport (no modem lines, no sockets in a browser) follow the same rule, or disappear when showing them would only apologize.

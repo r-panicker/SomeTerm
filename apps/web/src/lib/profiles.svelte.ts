@@ -214,7 +214,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
     },
     dtr: bool(r.dtr, true),
     rts: bool(r.rts, true),
-    newline: pick(r.newline, ['auto', 'lf', 'cr', 'crlf'] as const, 'auto'),
+    newline: pick(r.newline, ['auto', 'lf', 'cr', 'crlf', 'none'] as const, 'auto'),
     localEcho: bool(r.localEcho, false),
     display: {
       format: pick(d.format, ['ascii', 'hex', 'dec', 'bin', 'num', 'screen'] as const, 'ascii'),
@@ -226,7 +226,6 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
       ctrl: bool(d.ctrl, false),
       perRow: pick(d.perRow, [8, 16, 32] as const, 16),
       wrap: bool(d.wrap, false),
-      showBsAndCrAsSymbols: bool(d.showBsAndCrAsSymbols, false),
       crNewline: bool(d.crNewline, false),
       frame: pick(d.frame, ['none', 'gap', 'sync'] as const, 'none'),
       frameGapMs: typeof d.frameGapMs === 'number' && d.frameGapMs > 0 && d.frameGapMs <= 60_000 ? d.frameGapMs : 5,

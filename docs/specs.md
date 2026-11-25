@@ -59,7 +59,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 | Hex, hex+ASCII, binary, decimal | Configurable bytes per row | done |
 | int8/16/32, uint, float32/64, endian | | done (plus byte alignment) |
 | Rx/Tx interleaved vs split views | Tx echo shown in distinct color | done |
-| Newline handling: CR, LF, CRLF, auto, "newline on N bytes" | | done |
+| Newline handling: CR, LF, CRLF, auto, none (rows cut at the view width) | | done |
 | ANSI/VT100 escape handling | Colors, cursor, clear | done: SGR colour/styles; cursor and erase sequences removed (line-oriented by design) |
 | Timestamps (absolute, delta) per line/chunk | | done |
 | Scrollback limit, pause/freeze, auto-scroll | Freeze must not drop data | done: Pause holds every view, up to the ring size |
@@ -104,7 +104,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 Checked live over Loopback where possible. Ordered by value to the lab audience.
 | Feature | Seen in | Today | Status |
 |---|---|---|---|
-| Backspace and lone CR edit the current line (shell echo `x\b \b`, `10%\r55%` progress) | TeraTerm | | done |
+| Backspace edits the current line (shell echo `x\b \b`); in Auto a lone CR returns to its start (`10%\r55%` progress), with a chosen ending it shows as ␍ | TeraTerm | | done |
 | UTF-8 text (`°C`, `µA`) | TeraTerm | | done |
 | Quick-send buttons / macros | RealTerm, TeraTerm (TTL) | buttons; no scripting | done |
 | Text zoom (Ctrl+= / Ctrl+-), for projectors | TeraTerm | | done |

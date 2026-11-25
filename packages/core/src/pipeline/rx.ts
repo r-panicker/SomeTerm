@@ -25,7 +25,11 @@ export interface RxBatch {
 
 export type RxCommand =
   | { type: 'data'; chunk: Uint8Array; time: number }
-  | { type: 'reset'; mode: NewlineMode; offset: number };
+  | { type: 'reset'; mode: NewlineMode; offset: number }
+  /** A new line ending from the current, unfinished line on; completed lines stay as they are. */
+  | { type: 'mode'; mode: NewlineMode }
+  /** Row length in bytes for line ending `none`. */
+  | { type: 'width'; width: number };
 
 /**
  * Receive-side parsing: split into lines, render for display, extract plot
@@ -36,23 +40,44 @@ export class RxPipeline {
   private ansi = new AnsiParser();
   private lines: RxLine[] = [];
   private dirty = false;
-  showBsAndCrAsSymbols = false;
+  private mode: NewlineMode;
+  private width = 80;
 
   constructor(mode: NewlineMode = 'auto', offset = 0) {
-    this.splitter = new LineSplitter(mode, offset);
+    this.mode = mode;
+    this.splitter = new LineSplitter(mode, offset, this.width);
   }
 
   apply(cmd: RxCommand): void {
     if (cmd.type === 'reset') {
-      this.splitter = new LineSplitter(cmd.mode, cmd.offset);
+      this.mode = cmd.mode;
+      this.splitter = new LineSplitter(cmd.mode, cmd.offset, this.width);
       this.ansi.reset();
       this.lines = [];
       this.dirty = true;
       return;
     }
-    for (const l of this.splitter.push(cmd.chunk, cmd.time)) {
+    if (cmd.type === 'mode') {
+      const u = this.splitter.unfinished();
+      this.mode = cmd.mode;
+      this.splitter = new LineSplitter(cmd.mode, u.offset, this.width);
+      this.split(u.bytes, u.timestamp);
+      return;
+    }
+    if (cmd.type === 'width') {
+      this.width = cmd.width;
+      this.splitter.width = cmd.width;
+      return;
+    }
+    this.split(cmd.chunk, cmd.time);
+  }
+
+  private split(chunk: Uint8Array, time: number): void {
+    for (const l of this.splitter.push(chunk, time)) {
       const { text, runs, raw } = this.render(l.bytes, true);
-      const samples = parseNumericLine(text);
+      // Rows cut by width are not lines, so they carry no plot values. The other half of a
+      // CRLF, shown when the line ending is set to CR or LF alone, does not stop a line plotting.
+      const samples = this.mode === 'none' ? null : parseNumericLine(text.replace(/^[␊␍]+|[␊␍]+$/g, ''));
       this.lines.push({ text, runs, ...(raw !== undefined && { raw }), time: l.timestamp, offset: l.offset, len: l.bytes.length, samples });
     }
     this.dirty = true;
@@ -73,9 +98,10 @@ export class RxPipeline {
 
   private render(bytes: Uint8Array, commit: boolean): { text: string; runs: StyleRun[]; raw?: string } {
     const r = this.ansi.parse(bytes, () => '', commit);
-    const edit = !this.showBsAndCrAsSymbols;
-    const { text, runs } = renderLine(r.kept, r.runs, edit);
+    // Only auto treats a CR inside a line as a return to its start; with a line ending
+    // chosen by hand, a CR that does not end the line is shown, as a stray LF is.
+    const { text, runs } = renderLine(r.kept, r.runs, this.mode === 'auto' ? 'screen' : 'bs');
     // The escapes-visible form is the raw stream, so BS and CR stay as ␈ and ␍ there.
-    return r.hadEscape ? { text, runs, raw: renderLine(bytes, [], false).text } : { text, runs };
+    return r.hadEscape ? { text, runs, raw: renderLine(bytes, [], 'none').text } : { text, runs };
   }
 }

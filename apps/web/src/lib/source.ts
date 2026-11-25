@@ -16,8 +16,6 @@ export interface DisplaySettings {
   perRow: number;
   /** Long lines continue on the next row instead of scrolling sideways. */
   wrap: boolean;
-  /** Show backspace and CR as symbols (␈ ␍) instead of as terminal operations (erase left, return to start). */
-  showBsAndCrAsSymbols: boolean;
   /** xterm view: a received CR also starts a new line, for devices that end lines with CR alone. */
   crNewline: boolean;
   /** Byte views: start a new row only at the row width, after an idle gap, or at a sync pattern. */
@@ -27,7 +25,7 @@ export interface DisplaySettings {
   frameSync: string;
 }
 
-export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16, wrap: false, showBsAndCrAsSymbols: false, crNewline: false, frame: 'none', frameGapMs: 5, frameSync: '' });
+export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16, wrap: false, crNewline: false, frame: 'none', frameGapMs: 5, frameSync: '' });
 
 /** What the terminal view needs from whatever feeds it: one port, or several merged. */
 export interface TermSource {
@@ -50,6 +48,7 @@ export interface TermSource {
   frameFrom?(): number;
   readonly newline?: NewlineMode;
   setNewline?(mode: NewlineMode): void;
+  setRowWidth?(cols: number): void;
   /** Terminal mode: send keystrokes straight to the port. Absent where nothing can be sent. */
   typeKeys?(bytes: Uint8Array, key: 'text' | 'enter' | 'backspace' | 'other', text?: string): void;
   /** Pasted text, sent paced as one job when it has several lines. */

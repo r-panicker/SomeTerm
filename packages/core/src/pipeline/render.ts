@@ -31,18 +31,25 @@ function asciiChar(b: number): string {
 }
 
 /**
+ * How BS and CR inside a line are drawn: `screen` applies both as a terminal does
+ * (BS moves left and the next character overwrites, CR returns to the start of the
+ * line), so a shell's echoed Backspace or a `10%\r55%` counter reads as the screen
+ * would show it; `bs` applies BS and shows CR as ␍; `none` shows both as ␈ ␍.
+ */
+export type LineEdit = 'screen' | 'bs' | 'none';
+
+/**
  * Turns one line's bytes (escape sequences already removed) into display text.
  * UTF-8 is decoded; bytes that are not part of a valid sequence show as '.', and
- * control bytes as control pictures (␀ ␉ …). With `edit`, BS and CR act as on a
- * terminal: BS moves left and the next character overwrites, CR returns to the
- * start of the line, so a shell's echoed Backspace or a `10%\r55%` counter reads
- * as the screen would show it. `runs` are positions in `bytes` and come back as
- * positions in the text.
+ * control bytes as control pictures (␀ ␉ …). `runs` are positions in `bytes` and
+ * come back as positions in the text.
  */
-export function renderLine(bytes: Uint8Array, runs: StyleRun[], edit = true): { text: string; runs: StyleRun[] } {
+export function renderLine(bytes: Uint8Array, runs: StyleRun[], edit: LineEdit = 'screen'): { text: string; runs: StyleRun[] } {
+  const editBs = edit !== 'none';
+  const editCr = edit === 'screen';
   let simple = true;
   for (const b of bytes) {
-    if (b >= 0x80 || (edit && (b === BS || b === CR))) { simple = false; break; }
+    if (b >= 0x80 || (editBs && b === BS) || (editCr && b === CR)) { simple = false; break; }
   }
   if (simple) {
     let text = '';
@@ -60,8 +67,8 @@ export function renderLine(bytes: Uint8Array, runs: StyleRun[], edit = true): { 
 
   for (let i = 0; i < bytes.length; ) {
     const b = bytes[i]!;
-    if (edit && b === BS) { if (col > 0) col--; backspaced = true; i++; continue; }
-    if (edit && b === CR) { col = 0; i++; continue; }
+    if (editBs && b === BS) { if (col > 0) col--; backspaced = true; i++; continue; }
+    if (editCr && b === CR) { col = 0; i++; continue; }
     if (b < 0x80) { put(asciiChar(b), styleOf[i]!); i++; continue; }
     const n = seqLength(b);
     const cp = n ? decodeAt(bytes, i, n) : -1;
