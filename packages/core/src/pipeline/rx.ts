@@ -36,6 +36,7 @@ export class RxPipeline {
   private ansi = new AnsiParser();
   private lines: RxLine[] = [];
   private dirty = false;
+  showBsAndCrAsSymbols = false;
 
   constructor(mode: NewlineMode = 'auto', offset = 0) {
     this.splitter = new LineSplitter(mode, offset);
@@ -72,7 +73,8 @@ export class RxPipeline {
 
   private render(bytes: Uint8Array, commit: boolean): { text: string; runs: StyleRun[]; raw?: string } {
     const r = this.ansi.parse(bytes, () => '', commit);
-    const { text, runs } = renderLine(r.kept, r.runs);
+    const edit = !this.showBsAndCrAsSymbols;
+    const { text, runs } = renderLine(r.kept, r.runs, edit);
     // The escapes-visible form is the raw stream, so BS and CR stay as ␈ and ␍ there.
     return r.hadEscape ? { text, runs, raw: renderLine(bytes, [], false).text } : { text, runs };
   }

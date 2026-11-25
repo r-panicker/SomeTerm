@@ -66,6 +66,11 @@ export class PipelineClient {
     this.send({ type: 'reset', mode, offset, ack } as RxCommand);
   }
 
+  setShowBsAndCrAsSymbols(show: boolean): void {
+    if (this.inline) this.inline.showBsAndCrAsSymbols = show;
+    if (this.worker) this.worker.postMessage({ type: 'config', showBsAndCrAsSymbols: show });
+  }
+
   dispose(): void {
     this.worker?.terminate();
     clearTimeout(this.timer);

@@ -1,4 +1,4 @@
-export type NewlineMode = 'cr' | 'lf' | 'crlf' | 'auto';
+export type NewlineMode = 'cr' | 'lf' | 'crlf' | 'auto' | 'none';
 
 export interface Line {
   /** Content bytes, terminator excluded. */
@@ -52,6 +52,10 @@ export class LineSplitter {
   }
 
   private step(b: number, t: number, out: Line[]): void {
+    if (this.mode === 'none') {
+      this.append(b, this.offset, t);
+      return;
+    }
     if (this.mode === 'auto') {
       if (this.sawCr) {
         this.sawCr = false;

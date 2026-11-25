@@ -86,6 +86,12 @@
   const size = $derived(numInfo(disp.numType).size);
   // Changing to a smaller type must not leave an alignment it cannot have.
   $effect(() => { if (disp.align >= size) disp.align = 0; });
+  // Sync backspace/CR display mode with the pipeline
+  $effect(() => {
+    void disp.showBsAndCrAsSymbols;
+    const session = source as unknown as { setPipelineShowBsAndCrAsSymbols?(v: boolean): void };
+    session.setPipelineShowBsAndCrAsSymbols?.(disp.showBsAndCrAsSymbols);
+  });
 
   /** Numeric rows show the raw bytes beside the values. */
   const numDump = $derived<Dump>({

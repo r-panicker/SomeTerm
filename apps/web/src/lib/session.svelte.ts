@@ -832,6 +832,11 @@ export class Session implements TermSource {
     this.changed();
   }
 
+  setPipelineShowBsAndCrAsSymbols(show: boolean): void {
+    this.pipeline.setShowBsAndCrAsSymbols(show);
+    this.changed();
+  }
+
   clearErrors(): void {
     this.errors = 0;
     this.lastError = '';
