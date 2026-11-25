@@ -214,7 +214,7 @@ export function sanitizeSettings(raw: unknown, trusted = false): ProfileSettings
     },
     dtr: bool(r.dtr, true),
     rts: bool(r.rts, true),
-    newline: pick(r.newline, ['auto', 'lf', 'cr', 'crlf', 'none'] as const, 'auto'),
+    newline: pick(r.newline, ['auto', 'lf', 'cr', 'crlf'] as const, 'auto'),
     localEcho: bool(r.localEcho, false),
     display: {
       format: pick(d.format, ['ascii', 'hex', 'dec', 'bin', 'num', 'screen'] as const, 'ascii'),

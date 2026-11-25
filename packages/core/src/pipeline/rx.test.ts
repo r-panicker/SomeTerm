@@ -57,13 +57,20 @@ describe('RxPipeline', () => {
     expect(p.drain()!.lines.map((l) => l.text)).toEqual(['ab', 'cd']);
   });
 
-  it('line ending none cuts rows at the set width, shows CR and LF, and never plots', () => {
-    const p = new RxPipeline('none');
-    p.apply({ type: 'width', width: 4 });
-    p.apply({ type: 'data', chunk: enc('1,2\r\n3,4\r\n'), time: 0 });
+  it('rows show every byte cut at the width, while lines keep plotting by the line ending', () => {
+    const p = new RxPipeline('lf');
+    p.apply({ type: 'width', width: 8 });
+    p.apply({ type: 'data', chunk: enc('1,2\r\n3,'), time: 0 });
+    expect(p.drain()).toMatchObject({ lines: [{ text: '1,2␍' }], partial: { text: '3,' } });
+    // The unfinished line starts the rows; [CR] and [LF] take four characters each.
+    p.apply({ type: 'rows', on: true });
+    p.apply({ type: 'data', chunk: enc('4\r\nab\bcdefgh'), time: 1 });
     const b = p.drain()!;
-    expect(b.lines.map((l) => [l.text, l.offset, l.samples])).toEqual([['1,2␍', 0, null], ['␊3,4', 4, null]]);
-    expect(b.partial).toMatchObject({ text: '␍␊', offset: 8 });
+    expect(b.lines.map((l) => [l.text, l.samples])).toEqual([['3,4␍', [{ name: '1', value: 3 }, { name: '2', value: 4 }]]]);
+    expect(b.rows!.done.map((r) => [r.text, r.offset, r.len])).toEqual([['3,4␍', 5, 4], ['␊ab', 9, 3], ['␈cdef', 12, 5]]);
+    expect(b.rows!.partial).toMatchObject({ text: 'gh', offset: 17 });
+    p.apply({ type: 'rows', on: false });
+    expect(p.drain()!.rows).toBeUndefined();
   });
 
   it('coloured numeric output still plots; raw kept only for lines with escapes', () => {

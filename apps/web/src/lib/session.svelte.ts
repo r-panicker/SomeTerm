@@ -830,8 +830,10 @@ export class Session implements TermSource {
     this.pipeline.setMode(mode);
   }
 
+  /** Whether the pipeline cuts rows for Control characters. */
+  private rowsOn = false;
   private rowWidth = 80;
-  /** Line ending none cuts rows at the terminal's width; the terminal reports it. */
+  /** With Control characters on, rows are cut at the terminal's width; the terminal reports it. */
   setRowWidth(cols: number): void {
     const w = Math.max(8, Math.floor(cols));
     if (w === this.rowWidth) return;
@@ -940,6 +942,8 @@ export class Session implements TermSource {
     }
     this.capture.rx(chunk, performance.timeOrigin + ts);
     if (this.protocolTap) { this.protocolTap(chunk, ts); return; }
+    // Followed when data arrives rather than when ticked, so profiles and restore need no hook.
+    if (this.display.ctrl !== this.rowsOn) { this.rowsOn = this.display.ctrl; this.pipeline.setRows(this.rowsOn); }
     this.pipeline.data(chunk, ts);
     this.echoes.feed(chunk);
     const to = this.forwardTo;
@@ -987,15 +991,17 @@ export class Session implements TermSource {
     }
     // A prompt without a newline yet ("Password:") still gets its answer.
     if (replying && b.partial) this.handleReplies(b.partial.text, b.partial.offset);
+    const rows = b.rows;
     this.hold(() => {
       b.lines.forEach((l, i) => {
-        this.log.pushRx(lines[i]!);
+        if (!rows) this.log.pushRx(lines[i]!);
         if (l.samples) {
           this.series.push((l.time - this.t0) / 1000, l.offset, l.samples);
           if (!this.viewChosen && this.view === 'terminal') this.view = 'split';
         }
       });
-      this.partialLine = b.partial;
+      if (rows) for (const r of rows.done) this.log.pushRx({ dir: 'rx', ...r, cut: true });
+      this.partialLine = rows ? rows.partial && { ...rows.partial, runs: [] } : b.partial;
     });
     this.changed();
   }

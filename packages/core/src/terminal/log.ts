@@ -17,6 +17,8 @@ export interface TermLine {
   len?: number;
   /** Which port the line came from, in views that merge several. */
   src?: number;
+  /** An rx row cut at the view width rather than at a line ending, so it has no terminator. */
+  cut?: boolean;
   /** Exact bytes of a sent line (terminator included), for showing control characters. */
   bytes?: Uint8Array;
   /** A sent line typed key by key in terminal mode, or sent by an auto-reply. */

@@ -71,7 +71,11 @@ export class PipelineClient {
     this.send({ type: 'mode', mode });
   }
 
-  /** Row length for line ending none. */
+  /** Rows for Control characters: the screen shows the stream cut at the width. */
+  setRows(on: boolean): void {
+    this.send({ type: 'rows', on });
+  }
+
   setWidth(width: number): void {
     this.send({ type: 'width', width });
   }

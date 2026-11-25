@@ -1,3 +1,5 @@
+import { ctrlWidth } from '../format/ctrl';
+
 export type NewlineMode = 'cr' | 'lf' | 'crlf' | 'auto' | 'none';
 
 export interface Line {
@@ -18,8 +20,9 @@ const LF = 0x0a;
  * CRLF, so a lone CR is content (a terminal's return to the start of the line, used for
  * progress counters) instead of a line end. A sender that only ever uses CR keeps
  * getting a line per CR. `crlf` ends a line only on the two-byte sequence, so a lone
- * CR or LF is content. `none` has no terminator: every byte is content and a row ends
- * every `width` bytes, so the stream fills the view like a fixed-width screen.
+ * CR or LF is content. `none` has no terminator: every byte is content, and a row ends
+ * once it fills `width` characters with every byte shown (`[CR]` takes four), so the
+ * stream fills the view like a fixed-width screen.
  */
 export class LineSplitter {
   private pending: number[] = [];
@@ -30,6 +33,8 @@ export class LineSplitter {
   /** Auto mode: an LF has been seen, so a CR waits to see whether LF follows. */
   private seenLf = false;
   private crHeld = false;
+  /** Mode none: characters the pending row takes. */
+  private used = 0;
 
   /** `startOffset` is the stream offset of the next byte, so offsets stay absolute across a reset. */
   constructor(private readonly mode: NewlineMode = 'auto', startOffset = 0, public width = 80) {
@@ -65,8 +70,10 @@ export class LineSplitter {
 
   private step(b: number, t: number, out: Line[]): void {
     if (this.mode === 'none') {
+      const w = ctrlWidth(b);
+      if (this.used + w > this.width && this.pending.length) this.emit(out, t, this.offset);
       this.append(b, this.offset, t);
-      if (this.pending.length >= this.width) this.emit(out, t);
+      this.used += w;
       return;
     }
     if (this.mode === 'auto') {
@@ -108,11 +115,13 @@ export class LineSplitter {
     this.pending.push(b);
   }
 
-  private emit(out: Line[], t: number): void {
+  /** `next` is the offset of the next line's first byte: after the terminator, or the byte that did not fit. */
+  private emit(out: Line[], t: number, next = this.offset + 1): void {
     // An empty line has no first byte of its own; it happened when its terminator arrived.
     const time = this.pending.length ? this.pendingTime : t;
     out.push({ bytes: Uint8Array.from(this.pending), offset: this.pendingOffset, timestamp: time });
     this.pending = [];
-    this.pendingOffset = this.offset + 1;
+    this.pendingOffset = next;
+    this.used = 0;
   }
 }

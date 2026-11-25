@@ -11,6 +11,11 @@ function token(b: number): string {
   return `[${NAMES[b] ?? b.toString(16).toUpperCase().padStart(2, '0')}]`;
 }
 
+/** Characters a byte takes when every byte is shown. */
+export function ctrlWidth(b: number): number {
+  return b >= 0x20 && b < 0x7f ? 1 : (NAMES[b]?.length ?? 2) + 2;
+}
+
 /** Every byte visible: printable ASCII as itself, everything else as a token. */
 export function expandBytes(bytes: Uint8Array): Expanded {
   let text = '';

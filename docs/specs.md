@@ -59,7 +59,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 | Hex, hex+ASCII, binary, decimal | Configurable bytes per row | done |
 | int8/16/32, uint, float32/64, endian | | done (plus byte alignment) |
 | Rx/Tx interleaved vs split views | Tx echo shown in distinct color | done |
-| Newline handling: CR, LF, CRLF, auto, none (rows cut at the view width) | | done |
+| Newline handling: CR, LF, CRLF, auto; with control characters shown, rows fill the view width instead | | done |
 | ANSI/VT100 escape handling | Colors, cursor, clear | done: SGR colour/styles; cursor and erase sequences removed (line-oriented by design) |
 | Timestamps (absolute, delta) per line/chunk | | done |
 | Scrollback limit, pause/freeze, auto-scroll | Freeze must not drop data | done: Pause holds every view, up to the ring size |

@@ -9,8 +9,7 @@
   import { formatBytes } from '../lib/format';
   import { ansiColor } from '../lib/ansi-colors';
   import { rules, ruleText, ruleTint } from '../lib/rules.svelte';
-  import { applyRules, RGB_FLAG, type RuleRun, type TermLine } from '@someterm/core';
-  import { expandBytes, expandPictures, type Expanded } from '../lib/ctrl';
+  import { applyRules, expandBytes, expandPictures, RGB_FLAG, type Expanded, type RuleRun, type TermLine } from '@someterm/core';
   import type { TermSource } from '../lib/source';
 
   /** `onshow` brings forward the panel tab that owns something: colour rules and auto-replies live under Automation. */
@@ -273,12 +272,11 @@
 
   /** Screen width in characters, from the view; wrapping needs it. */
   let cols = $state(0);
-  /** Line ending none fills rows to the width, so anything wider (UTF-8, tokens) wraps rather than hides. */
-  const wrapping = $derived((disp.wrap || source.newline === 'none') && disp.format === 'ascii' && cols > 0);
+  const wrapping = $derived(disp.wrap && disp.format === 'ascii' && cols > 0);
   const wrap = new WrapMap();
   const STAMP_LEN = 13;
   $effect(() => {
-    if (source.newline === 'none' && cols > 0) source.setRowWidth?.(cols - (disp.stamps ? STAMP_LEN : 0));
+    if (disp.ctrl && cols > 0) source.setRowWidth?.(cols - (disp.stamps ? STAMP_LEN : 0));
   });
 
   /** Characters a logical row draws, without building its spans; must match `logicalRow`. */
@@ -362,7 +360,7 @@
   }
 
   /** The text a line is drawn with, which is also what rules and find match against. */
-  function shownText(l: Pick<TermLine, 'dir' | 'text' | 'raw' | 'offset' | 'bytes' | 'len'>): string {
+  function shownText(l: Pick<TermLine, 'dir' | 'text' | 'raw' | 'offset' | 'bytes' | 'len' | 'cut'>): string {
     if (disp.ctrl && l.dir !== 'sys') return expanded(l).text;
     return l.dir === 'tx' || disp.ansi ? l.text : (l.raw ?? l.text);
   }
@@ -372,7 +370,7 @@
    * ring with their terminator, so non-ASCII bytes show as hex rather than '.';
    * once evicted, or for sent lines, the stored control pictures are used.
    */
-  function expanded(l: Pick<TermLine, 'dir' | 'text' | 'raw' | 'offset' | 'bytes' | 'len'>): Expanded {
+  function expanded(l: Pick<TermLine, 'dir' | 'text' | 'raw' | 'offset' | 'bytes' | 'len' | 'cut'>): Expanded {
     if (l.bytes) return expandBytes(l.bytes);
     const shown = l.raw ?? l.text;
     const ring = source.ring;
@@ -380,7 +378,7 @@
       const n = l.len ?? shown.length;
       const bytes = ring.slice(l.offset, Math.min(ring.end, l.offset + n + 2));
       let end = Math.min(n, bytes.length);
-      while (end < bytes.length && (bytes[end] === 0x0d || bytes[end] === 0x0a)) end++;
+      if (!l.cut) while (end < bytes.length && (bytes[end] === 0x0d || bytes[end] === 0x0a)) end++;
       return expandBytes(bytes.subarray(0, end));
     }
     return expandPictures(shown);
