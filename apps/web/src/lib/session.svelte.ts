@@ -904,6 +904,8 @@ export class Session implements TermSource {
     this.series.clear();
     this.hexStart = this.ring.end;
     this.partialLine = null;
+    // Reset the pipeline to discard any pending data in the splitter (e.g. in 'none' mode).
+    this.pipeline.reset(this.newline, this.ring.end);
     this.clearErrors();
     this.t0 = this.replay ? this.replay.timeOrigin : now();
     this.changed();
