@@ -18,7 +18,9 @@
 {/if}
 <label class="check"><input type="checkbox" bind:checked={disp.stamps} /> Timestamps</label>
 <label class="check" title="Long lines continue on the next row instead of scrolling sideways"><input type="checkbox" bind:checked={disp.wrap} /> Wrap long lines</label>
-<label class="check" title="Off: show escape codes as ␛[…"><input type="checkbox" bind:checked={disp.ansi} /> ANSI colours</label>
+<fieldset class="one" disabled={disp.ctrl} title={disp.ctrl ? 'Not available with Control characters on, which shows escape codes as [ESC]' : undefined}>
+  <label class="check" title={disp.ctrl ? undefined : 'Off: show escape codes as ␛[…'}><input type="checkbox" bind:checked={disp.ansi} /> ANSI colours</label>
+</fieldset>
 <label class="check" title="Show every byte: CR, LF, TAB, NUL and other non-printing bytes as [CR] [LF] [TAB] [NUL], Backspace not applied. Rows fill the width instead of ending at line endings"><input type="checkbox" bind:checked={disp.ctrl} /> Control characters</label>
 {#if source.typeKeys}
   <label class="check" title="Keys pressed in the terminal go to the device, like a terminal emulator. Ctrl+Shift keeps app shortcuts"><input type="checkbox" checked={source.typeToDevice} onchange={(e) => (source.typeToDevice = e.currentTarget.checked)} /> Keyboard to device</label>
@@ -26,6 +28,7 @@
 {/if}
 
 <style>
+  .one { display: contents; }
   .ending { border: 0; padding: 0; margin: 0; min-width: 0; grid-column: 1 / -1; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .check { display: flex; align-items: center; gap: 6px; cursor: pointer; }
