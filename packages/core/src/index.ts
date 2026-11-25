@@ -13,7 +13,7 @@ export { decimateMinMax, type Decimated } from './plot/decimate';
 export { Capture, formatStamp, type CaptureOptions, type CaptureSink, type CaptureSource, type CaptureFormat, type CaptureState } from './capture/capture';
 export { checksumBytes, frame, CHECKSUMS, type ChecksumKind } from './send/checksum';
 export { planWrites, sendPaced, repeatSend, type PaceOptions, type CancelToken } from './send/pacing';
-export { RxPipeline, type RxLine, type RxBatch, type RxCommand } from './pipeline/rx';
+export { RxPipeline, type RxLine, type RxRow, type RxBatch, type RxCommand, type RecutCommand } from './pipeline/rx';
 export { renderLine, type LineEdit } from './pipeline/render';
 export { ctrlWidth, expandBytes, expandPictures, type Expanded } from './format/ctrl';
 export { xmodemSend, crc16Xmodem, ByteQueue, XmodemError, XMODEM_MODES, type XmodemMode, type XmodemIo } from './send/xmodem';

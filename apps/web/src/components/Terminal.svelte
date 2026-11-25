@@ -122,6 +122,7 @@
   let findInput: HTMLInputElement | undefined = $state();
   const index = new FindIndex();
 
+  let scannedGen = 0;
   /** The query the index was last built for; Enter applies a newer one at once rather than waiting out the debounce. */
   let appliedKey = '';
   const searchKey = () => `${query}\u0000${caseSensitive}${regex}${disp.ansi}${disp.ctrl}`;
@@ -143,6 +144,8 @@
     void source.version;
     untrack(() => {
       if (!index.active) return;
+      // A re-cut rewrites lines already scanned, so the search starts over.
+      if (source.log.generation !== scannedGen) { scannedGen = source.log.generation; applySearch(); return; }
       index.scan(source.log);
       if (cur && cur.abs < source.log.dropped) cur = null;
       findRev++;
@@ -276,7 +279,7 @@
   const wrap = new WrapMap();
   const STAMP_LEN = 13;
   $effect(() => {
-    if (disp.ctrl && cols > 0) source.setRowWidth?.(cols - (disp.stamps ? STAMP_LEN : 0));
+    if (cols > 0) source.setRowWidth?.(cols - (disp.stamps ? STAMP_LEN : 0));
   });
 
   /** Characters a logical row draws, without building its spans; must match `logicalRow`. */
@@ -299,7 +302,7 @@
     if (!wrapping) return n;
     void source.echoed;
     const settled = filtering ? n : Math.min(n, source.log.length);
-    const key = `${cols}|${disp.stamps}|${disp.ctrl}|${disp.ansi}|${filtering ? findRev : 'all'}`;
+    const key = `${cols}|${disp.stamps}|${disp.ctrl}|${disp.ansi}|${source.log.generation}|${filtering ? findRev : 'all'}`;
     wrap.update(key, source.log.dropped, settled, n, cols, logicalLen);
     return wrap.rows;
   });

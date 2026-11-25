@@ -65,4 +65,12 @@ describe('TerminalLog limit', () => {
     expect(log.dropped).toBe(86);
     expect(log.get(19)!.text).toBe('x');
   });
+
+  it('replaces lines from an index on, keeping the limit and bumping the generation', () => {
+    const log = new TerminalLog(4);
+    for (let i = 0; i < 3; i++) log.push({ dir: 'rx', text: String(i), time: i, offset: i });
+    log.replaceFrom(1, ['a', 'b', 'c', 'd', 'e'].map((t, i) => ({ dir: 'rx', text: t, time: i, offset: 10 + i })));
+    expect(Array.from({ length: log.length }, (_, i) => log.get(i)!.text)).toEqual(['b', 'c', 'd', 'e']);
+    expect([log.dropped, log.generation]).toEqual([2, 1]);
+  });
 });

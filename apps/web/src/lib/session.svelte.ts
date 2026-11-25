@@ -251,7 +251,7 @@ export class Session implements TermSource {
   t0 = 0;
 
   private transport: SerialTransport | null = null;
-  private pipeline = new PipelineClient((b) => this.onBatch(b));
+  private pipeline = new PipelineClient((b) => this.onBatch(b), (id, b) => this.onRecut(id, b));
   private offs: (() => void)[] = [];
   private timers: ReturnType<typeof setInterval>[] = [];
   private scheduled = false;
@@ -786,7 +786,7 @@ export class Session implements TermSource {
   seek(ms: number): void {
     if (!this.replay || !this.player) return;
     this.clear();
-    this.pipeline.reset(this.newline, this.ring.end, true);
+    this.pipeline.reset(this.pipeMode, this.ring.end, true);
     this.partialLine = null;
     this.t0 = this.replay.timeOrigin;
     this.replay.rewind();
@@ -827,18 +827,94 @@ export class Session implements TermSource {
 
   setNewline(mode: NewlineMode): void {
     this.newline = mode;
-    this.pipeline.setMode(mode);
+    this.recut();
   }
 
-  /** Whether the pipeline cuts rows for Control characters. */
+  setControlChars(on: boolean): void {
+    this.display.ctrl = on;
+    this.recut();
+  }
+
+  /** What the pipeline was last set to: the line ending, and rows for Control characters. */
+  private pipeMode: NewlineMode = 'auto';
   private rowsOn = false;
   private rowWidth = 80;
+  private widthTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Stream offset of the next received byte; the ring lags it while paused. */
+  private streamEnd = 0;
+  private recutId = 0;
+  private recutFrom = 0;
+  private recutWhenResumed = false;
+
   /** With Control characters on, rows are cut at the terminal's width; the terminal reports it. */
   setRowWidth(cols: number): void {
     const w = Math.max(8, Math.floor(cols));
     if (w === this.rowWidth) return;
     this.rowWidth = w;
     this.pipeline.setWidth(w);
+    if (!this.rowsOn) return;
+    // Rows already shown are cut again once resizing stops.
+    clearTimeout(this.widthTimer);
+    this.widthTimer = setTimeout(() => this.recut(true), 250);
+  }
+
+  /**
+   * Parses what is still in the ring again with the current line ending and Control
+   * characters setting, so lines already shown follow them too. Older lines, sent
+   * lines and markers stay; the plot is rebuilt for the same span.
+   */
+  private recut(force = false): void {
+    if (!force && this.pipeMode === this.newline && this.rowsOn === this.display.ctrl) return;
+    // A paused view stays as it is; it is cut again on resume.
+    if (this.paused) { this.recutWhenResumed = true; return; }
+    this.pipeMode = this.newline;
+    this.rowsOn = this.display.ctrl;
+    const start = Math.max(this.hexStart, this.ring.start);
+    let from = this.partialLine && this.partialLine.offset >= start ? this.partialLine.offset : this.ring.end;
+    for (let i = 0; i < this.log.length; i++) {
+      const l = this.log.get(i)!;
+      if (l.dir === 'rx' && l.offset >= start) { from = l.offset; break; }
+    }
+    const end = this.ring.end;
+    const cuts: number[] = [];
+    const times: number[] = [];
+    let k = this.chunkAt.length;
+    while (k > 0 && this.chunkAt[k - 1]! > from) k--;
+    for (k = Math.max(0, k - 1); k < this.chunkAt.length && this.chunkAt[k]! < end; k++) {
+      cuts.push(Math.max(0, this.chunkAt[k]! - from));
+      times.push(this.chunkTs[k]!);
+    }
+    if (!cuts.length) { cuts.push(0); times.push(now()); }
+    this.recutFrom = from;
+    this.pipeline.recut({ type: 'recut', id: ++this.recutId, mode: this.pipeMode, rows: this.rowsOn, width: this.rowWidth, from, bytes: this.ring.slice(from, end), cuts, times });
+  }
+
+  private onRecut(id: number, b: RxBatch): void {
+    // A later re-cut or a Clear supersedes this one.
+    if (id !== this.recutId) return;
+    const from = this.recutFrom;
+    this.hold(() => {
+      let i = 0;
+      while (i < this.log.length && !(this.log.get(i)!.dir === 'rx' && this.log.get(i)!.offset >= from)) i++;
+      const kept: TermLine[] = [];
+      for (let j = i; j < this.log.length; j++) if (this.log.get(j)!.dir !== 'rx') kept.push(this.log.get(j)!);
+      const rx: TermLine[] = b.rows
+        ? b.rows.done.map((r) => ({ dir: 'rx', ...r, cut: true }))
+        : b.lines.map((l) => ({ dir: 'rx', text: l.text, runs: l.runs, raw: l.raw, time: l.time, offset: l.offset, len: l.len }));
+      // As when lines arrive live: a received line goes before a sent line or marker if its first byte came first.
+      const merged: TermLine[] = [];
+      let j = 0;
+      for (const l of rx) {
+        while (j < kept.length && (kept[j]!.at ?? Infinity) <= l.offset) merged.push(kept[j++]!);
+        merged.push(l);
+      }
+      merged.push(...kept.slice(j));
+      this.log.replaceFrom(i, merged);
+      this.partialLine = b.rows ? b.rows.partial && { ...b.rows.partial, runs: [] } : b.partial;
+      this.series.dropFromOffset(from);
+      for (const l of b.lines) if (l.samples) this.series.push((l.time - this.t0) / 1000, l.offset, l.samples);
+    });
+    this.changed();
   }
 
   clearErrors(): void {
@@ -889,6 +965,7 @@ export class Session implements TermSource {
     this.held = [];
     this.heldBytes = 0;
     for (const f of held) f();
+    if (this.recutWhenResumed) { this.recutWhenResumed = false; this.recut(true); }
     this.changed();
   }
 
@@ -898,6 +975,7 @@ export class Session implements TermSource {
   }
 
   private show(line: TermLine): void {
+    line.at = this.streamEnd;
     this.hold(() => this.log.push(line));
   }
 
@@ -909,7 +987,8 @@ export class Session implements TermSource {
     this.hexStart = this.ring.end;
     this.partialLine = null;
     // The unfinished line goes too, or it would come back with the next byte.
-    this.pipeline.reset(this.newline, this.ring.end);
+    this.pipeline.reset(this.pipeMode, this.ring.end);
+    this.recutId++;
     this.clearErrors();
     this.t0 = this.replay ? this.replay.timeOrigin : now();
     this.changed();
@@ -922,6 +1001,9 @@ export class Session implements TermSource {
 
   private receive(chunk: Uint8Array, ts: number): void {
     this.rx += chunk.length;
+    // Settings changed without a setter (a profile, a restore) take effect here, before this chunk is parsed.
+    this.recut();
+    this.streamEnd += chunk.length;
     this.hold(() => {
       this.chunkAt.push(this.ring.end);
       this.chunkTs.push(ts);
@@ -942,8 +1024,6 @@ export class Session implements TermSource {
     }
     this.capture.rx(chunk, performance.timeOrigin + ts);
     if (this.protocolTap) { this.protocolTap(chunk, ts); return; }
-    // Followed when data arrives rather than when ticked, so profiles and restore need no hook.
-    if (this.display.ctrl !== this.rowsOn) { this.rowsOn = this.display.ctrl; this.pipeline.setRows(this.rowsOn); }
     this.pipeline.data(chunk, ts);
     this.echoes.feed(chunk);
     const to = this.forwardTo;

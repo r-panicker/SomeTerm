@@ -25,4 +25,14 @@ describe('SeriesStore', () => {
     expect(s.columns[0]![0]).toBe(4);
     expect(s.offsets[0]).toBe(2);
   });
+  it('drops rows from an offset on, with any series left empty', () => {
+    const s = new SeriesStore();
+    s.push(1, 10, [{ name: 'a', value: 1 }]);
+    s.push(2, 20, [{ name: 'a', value: 2 }, { name: 'b', value: 9 }]);
+    s.push(3, 30, [{ name: 'a', value: 3 }]);
+    s.dropFromOffset(20);
+    expect([s.times, s.names, s.columns]).toEqual([[1], ['a'], [[1]]]);
+    s.push(4, 40, [{ name: 'c', value: 5 }]);
+    expect([s.names, s.columns]).toEqual([['a', 'c'], [[1, null], [null, 5]]]);
+  });
 });

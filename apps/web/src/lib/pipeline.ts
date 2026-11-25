@@ -1,6 +1,8 @@
-import { RxPipeline, type NewlineMode, type RxBatch, type RxCommand } from '@someterm/core';
+import { RxPipeline, type NewlineMode, type RecutCommand, type RxBatch, type RxCommand } from '@someterm/core';
 
 const FLUSH_MS = 8;
+
+type Command = RxCommand | RecutCommand;
 
 /**
  * Runs the receive pipeline in a worker, batching results back every few ms.
@@ -11,16 +13,19 @@ export class PipelineClient {
   mode: 'starting' | 'worker' | 'inline' = 'starting';
   private worker: Worker | null = null;
   private inline: RxPipeline | null = null;
-  private queue: RxCommand[] = [];
+  private queue: Command[] = [];
   private timer: ReturnType<typeof setTimeout> | undefined;
   private resets = 0;
   /** Results are dropped until the worker acknowledges this reset. */
   private awaiting: number | null = null;
 
-  constructor(private readonly onBatch: (b: RxBatch) => void) {
+  constructor(
+    private readonly onBatch: (b: RxBatch) => void,
+    private readonly onRecut: (id: number, b: RxBatch) => void,
+  ) {
     try {
       const w = new Worker(new URL('./rx.worker.ts', import.meta.url), { type: 'module' });
-      w.onmessage = (e: MessageEvent<RxBatch | 'ready' | { ack: number }>) => {
+      w.onmessage = (e: MessageEvent<RxBatch | 'ready' | { ack: number } | { recut: number; batch: RxBatch }>) => {
         const d = e.data;
         if (d === 'ready') {
           this.mode = 'worker';
@@ -28,7 +33,9 @@ export class PipelineClient {
           this.queue = [];
         } else if ('ack' in d) {
           if (d.ack === this.awaiting) this.awaiting = null;
-        } else if (this.awaiting === null) this.onBatch(d);
+        } else if (this.awaiting !== null) return;
+        else if ('recut' in d) this.onRecut(d.recut, d.batch);
+        else this.onBatch(d);
       };
       w.onerror = () => {
         if (this.mode === 'starting') this.fallBack();
@@ -66,14 +73,9 @@ export class PipelineClient {
     this.send({ type: 'reset', mode, offset, ack } as RxCommand);
   }
 
-  /** A new line ending, applied from the unfinished line on. */
-  setMode(mode: NewlineMode): void {
-    this.send({ type: 'mode', mode });
-  }
-
-  /** Rows for Control characters: the screen shows the stream cut at the width. */
-  setRows(on: boolean): void {
-    this.send({ type: 'rows', on });
+  /** Parses received bytes again with new settings; the result comes to `onRecut`. */
+  recut(cmd: RecutCommand): void {
+    this.send(cmd, [cmd.bytes.buffer]);
   }
 
   setWidth(width: number): void {
@@ -85,10 +87,18 @@ export class PipelineClient {
     clearTimeout(this.timer);
   }
 
-  private send(cmd: RxCommand, transfer: Transferable[] = []): void {
+  private send(cmd: Command, transfer: Transferable[] = []): void {
     if (this.mode === 'worker') this.worker!.postMessage(cmd, transfer);
     else if (this.mode === 'starting') this.queue.push(cmd);
-    else {
+    else if (cmd.type === 'recut') {
+      clearTimeout(this.timer);
+      this.timer = undefined;
+      const b = this.inline!.drain();
+      if (b) this.onBatch(b);
+      const r = RxPipeline.recut(cmd);
+      this.inline = r.pipeline;
+      this.onRecut(cmd.id, r.batch);
+    } else {
       this.inline!.apply(cmd);
       this.timer ??= setTimeout(() => {
         this.timer = undefined;

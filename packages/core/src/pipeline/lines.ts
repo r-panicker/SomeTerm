@@ -57,17 +57,6 @@ export class LineSplitter {
     return { bytes: Uint8Array.from(this.pending), offset: this.pendingOffset, timestamp: this.pendingTime };
   }
 
-  /**
-   * Everything not yet emitted, a CR still waiting for its LF included, so a new
-   * splitter can take over mid-line without losing or repeating bytes.
-   */
-  unfinished(): Line {
-    const held = this.sawCr && (this.mode === 'crlf' || this.crHeld);
-    const bytes = held ? [...this.pending, CR] : this.pending;
-    const offset = this.pending.length ? this.pendingOffset : this.offset - (held ? 1 : 0);
-    return { bytes: Uint8Array.from(bytes), offset, timestamp: this.pendingTime };
-  }
-
   private step(b: number, t: number, out: Line[]): void {
     if (this.mode === 'none') {
       const w = ctrlWidth(b);

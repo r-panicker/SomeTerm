@@ -103,9 +103,9 @@ export function applySettings(s: Session, p: ProfileSettings): void {
   Object.assign(s.options, p.options);
   s.dtr = p.dtr;
   s.rts = p.rts;
-  if (p.newline !== s.newline) s.setNewline(p.newline);
   s.localEcho = p.localEcho;
   Object.assign(s.display, p.display);
+  s.setNewline(p.newline);
   Object.assign(s.sendOptions, p.send);
   s.chooseView(p.view);
   s.plotWindow = p.plotWindow;

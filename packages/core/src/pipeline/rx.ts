@@ -37,12 +37,25 @@ export interface RxBatch {
 export type RxCommand =
   | { type: 'data'; chunk: Uint8Array; time: number }
   | { type: 'reset'; mode: NewlineMode; offset: number }
-  /** A new line ending from the current, unfinished line on; completed lines stay as they are. */
-  | { type: 'mode'; mode: NewlineMode }
-  /** Rows on: the screen shows the stream cut at the width, starting with the unfinished line. */
-  | { type: 'rows'; on: boolean }
   /** Row width in characters, every byte shown. */
   | { type: 'width'; width: number };
+
+/**
+ * Parse again, with new settings, bytes already received: `bytes` start at stream
+ * offset `from`, and chunk k starts at `cuts[k]` and arrived at `times[k]`. The new
+ * pipeline then carries on with the live stream, so there is no seam between the two.
+ */
+export interface RecutCommand {
+  type: 'recut';
+  id: number;
+  mode: NewlineMode;
+  rows: boolean;
+  width: number;
+  from: number;
+  bytes: Uint8Array;
+  cuts: number[];
+  times: number[];
+}
 
 /**
  * Receive-side parsing: split into lines, render for display, extract plot
@@ -65,6 +78,19 @@ export class RxPipeline {
     this.splitter = new LineSplitter(mode, offset);
   }
 
+  /** A pipeline that has parsed `c`'s bytes, and the batch of everything it found. */
+  static recut(c: RecutCommand): { pipeline: RxPipeline; batch: RxBatch } {
+    const p = new RxPipeline(c.mode, c.from);
+    p.width = c.width;
+    if (c.rows) p.rows = new LineSplitter('none', c.from, c.width);
+    c.cuts.forEach((at, k) => {
+      const end = c.cuts[k + 1] ?? c.bytes.length;
+      if (end > at) p.apply({ type: 'data', chunk: c.bytes.subarray(at, end), time: c.times[k]! });
+    });
+    p.dirty = true;
+    return { pipeline: p, batch: p.drain()! };
+  }
+
   apply(cmd: RxCommand): void {
     if (cmd.type === 'reset') {
       this.mode = cmd.mode;
@@ -73,23 +99,6 @@ export class RxPipeline {
       this.ansi.reset();
       this.lines = [];
       this.done = [];
-      this.dirty = true;
-      return;
-    }
-    if (cmd.type === 'mode') {
-      const u = this.splitter.unfinished();
-      this.mode = cmd.mode;
-      this.splitter = new LineSplitter(cmd.mode, u.offset);
-      this.split(u.bytes, u.timestamp);
-      return;
-    }
-    if (cmd.type === 'rows') {
-      if (cmd.on === !!this.rows) return;
-      if (cmd.on) {
-        const u = this.splitter.unfinished();
-        this.rows = new LineSplitter('none', u.offset, this.width);
-        this.cut(u.bytes, u.timestamp);
-      } else this.rows = null;
       this.dirty = true;
       return;
     }

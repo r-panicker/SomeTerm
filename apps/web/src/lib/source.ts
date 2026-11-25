@@ -49,6 +49,7 @@ export interface TermSource {
   readonly newline?: NewlineMode;
   setNewline?(mode: NewlineMode): void;
   setRowWidth?(cols: number): void;
+  setControlChars?(on: boolean): void;
   /** Terminal mode: send keystrokes straight to the port. Absent where nothing can be sent. */
   typeKeys?(bytes: Uint8Array, key: 'text' | 'enter' | 'backspace' | 'other', text?: string): void;
   /** Pasted text, sent paced as one job when it has several lines. */

@@ -17,6 +17,8 @@ export interface TermLine {
   len?: number;
   /** Which port the line came from, in views that merge several. */
   src?: number;
+  /** Sent lines and markers: the receive stream's offset when added, so a re-cut can put them back in place. */
+  at?: number;
   /** An rx row cut at the view width rather than at a line ending, so it has no terminator. */
   cut?: boolean;
   /** Exact bytes of a sent line (terminator included), for showing control characters. */
@@ -30,6 +32,8 @@ export class TerminalLog {
   private lines: TermLine[] = [];
   /** Lines ever trimmed from the front; index i is absolute line `dropped + i`. */
   dropped = 0;
+  /** Bumped when held lines are replaced rather than appended, so caches of them start over. */
+  generation = 0;
 
   /** `limit` may be a function, so a scrollback preference can change while lines arrive. */
   constructor(private readonly limit: number | (() => number) = 100_000) {}
@@ -84,6 +88,13 @@ export class TerminalLog {
   clear(): void {
     this.dropped += this.lines.length;
     this.lines = [];
+  }
+
+  /** Replaces lines from index `i` on. */
+  replaceFrom(i: number, lines: TermLine[]): void {
+    this.lines.length = i;
+    for (const l of lines) this.push(l);
+    this.generation++;
   }
 
   /** Index of the rx line containing `offset`, or -1 if it is no longer held. */

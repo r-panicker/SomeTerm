@@ -21,7 +21,7 @@
 <fieldset class="one" disabled={disp.ctrl} title={disp.ctrl ? 'Not available with Control characters on, which shows escape codes as [ESC]' : undefined}>
   <label class="check" title={disp.ctrl ? undefined : 'Off: show escape codes as ␛[…'}><input type="checkbox" bind:checked={disp.ansi} /> ANSI colours</label>
 </fieldset>
-<label class="check" title="Show every byte: CR, LF, TAB, NUL and other non-printing bytes as [CR] [LF] [TAB] [NUL], Backspace not applied. Rows fill the width instead of ending at line endings"><input type="checkbox" bind:checked={disp.ctrl} /> Control characters</label>
+<label class="check" title="Show every byte: CR, LF, TAB, NUL and other non-printing bytes as [CR] [LF] [TAB] [NUL], Backspace not applied. Rows fill the width instead of ending at line endings"><input type="checkbox" checked={disp.ctrl} onchange={(e) => (source.setControlChars ? source.setControlChars(e.currentTarget.checked) : (disp.ctrl = e.currentTarget.checked))} /> Control characters</label>
 {#if source.typeKeys}
   <label class="check" title="Keys pressed in the terminal go to the device, like a terminal emulator. Ctrl+Shift keeps app shortcuts"><input type="checkbox" checked={source.typeToDevice} onchange={(e) => (source.typeToDevice = e.currentTarget.checked)} /> Keyboard to device</label>
   <label class="check" title="Show what you type and send; leave off for devices that echo"><input type="checkbox" checked={source.localEcho} onchange={(e) => (source.localEcho = e.currentTarget.checked)} /> Local echo</label>

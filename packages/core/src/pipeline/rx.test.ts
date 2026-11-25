@@ -39,38 +39,25 @@ describe('RxPipeline', () => {
     expect(lf.drain()!.lines.map((l) => l.text)).toEqual(['10%␍55%', 'ac']);
   });
 
-  it('a new line ending applies from the unfinished line on, keeping it on screen', () => {
-    const p = new RxPipeline('lf');
-    p.apply({ type: 'data', chunk: enc('one\ntwo\rthr'), time: 0 });
-    expect(p.drain()).toMatchObject({ lines: [{ text: 'one' }], partial: { text: 'two␍thr', offset: 4 } });
-    p.apply({ type: 'mode', mode: 'cr' });
-    expect(p.drain()).toMatchObject({ lines: [{ text: 'two', offset: 4 }], partial: { text: 'thr', offset: 8 } });
-    p.apply({ type: 'data', chunk: enc('ee\r'), time: 1 });
-    expect(p.drain()!.lines.map((l) => [l.text, l.offset])).toEqual([['three', 8]]);
+  it('a re-cut parses received bytes again with the new line ending, keeping arrival times, then carries on live', () => {
+    const bytes = enc('one\ntwo\rthr');
+    const { pipeline, batch } = RxPipeline.recut({ type: 'recut', id: 1, mode: 'cr', rows: false, width: 80, from: 100, bytes, cuts: [0, 4], times: [5, 9] });
+    expect(batch.lines.map((l) => [l.text, l.offset, l.time])).toEqual([['one␊two', 100, 5]]);
+    expect(batch.partial).toMatchObject({ text: 'thr', offset: 108, time: 9 });
+    pipeline.apply({ type: 'data', chunk: enc('ee\r'), time: 12 });
+    expect(pipeline.drain()!.lines.map((l) => [l.text, l.offset])).toEqual([['three', 108]]);
   });
 
-  it('CR+LF split by a change of line ending is not lost', () => {
-    const p = new RxPipeline('crlf');
-    p.apply({ type: 'data', chunk: enc('ab\r'), time: 0 });
-    p.apply({ type: 'mode', mode: 'auto' });
-    p.apply({ type: 'data', chunk: enc('\ncd\n'), time: 1 });
-    expect(p.drain()!.lines.map((l) => l.text)).toEqual(['ab', 'cd']);
-  });
-
-  it('rows show every byte cut at the width, while lines keep plotting by the line ending', () => {
-    const p = new RxPipeline('lf');
-    p.apply({ type: 'width', width: 8 });
-    p.apply({ type: 'data', chunk: enc('1,2\r\n3,'), time: 0 });
-    expect(p.drain()).toMatchObject({ lines: [{ text: '1,2␍' }], partial: { text: '3,' } });
-    // The unfinished line starts the rows; [CR] and [LF] take four characters each.
-    p.apply({ type: 'rows', on: true });
-    p.apply({ type: 'data', chunk: enc('4\r\nab\bcdefgh'), time: 1 });
-    const b = p.drain()!;
-    expect(b.lines.map((l) => [l.text, l.samples])).toEqual([['3,4␍', [{ name: '1', value: 3 }, { name: '2', value: 4 }]]]);
-    expect(b.rows!.done.map((r) => [r.text, r.offset, r.len])).toEqual([['3,4␍', 5, 4], ['␊ab', 9, 3], ['␈cdef', 12, 5]]);
-    expect(b.rows!.partial).toMatchObject({ text: 'gh', offset: 17 });
-    p.apply({ type: 'rows', on: false });
-    expect(p.drain()!.rows).toBeUndefined();
+  it('a re-cut with rows on cuts every byte at the width, while lines still plot by the line ending', () => {
+    const bytes = enc('1,2\r\n3,4\r\nab\bcdefgh');
+    const { pipeline, batch } = RxPipeline.recut({ type: 'recut', id: 1, mode: 'lf', rows: true, width: 8, from: 0, bytes, cuts: [0], times: [0] });
+    expect(batch.lines.map((l) => [l.text, l.samples?.length])).toEqual([['1,2␍', 2], ['3,4␍', 2]]);
+    // [CR] and [LF] take four characters each.
+    expect(batch.rows!.done.map((r) => [r.text, r.offset, r.len])).toEqual([['1,2␍', 0, 4], ['␊3,4', 4, 4], ['␍␊', 8, 2], ['ab␈cd', 10, 5]]);
+    expect(batch.rows!.partial).toMatchObject({ text: 'efgh', offset: 15 });
+    pipeline.apply({ type: 'width', width: 4 });
+    pipeline.apply({ type: 'data', chunk: enc('ij'), time: 1 });
+    expect(pipeline.drain()!.rows).toMatchObject({ done: [{ text: 'efgh' }], partial: { text: 'ij' } });
   });
 
   it('coloured numeric output still plots; raw kept only for lines with escapes', () => {

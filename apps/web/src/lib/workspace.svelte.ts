@@ -181,7 +181,7 @@ export class Workspace {
       if (net) s.lastNet = net;
       if (t.dtr !== undefined) s.dtr = t.dtr;
       if (t.rts !== undefined) s.rts = t.rts;
-      if (t.newline !== s.newline) s.setNewline(t.newline);
+      s.setNewline(t.newline);
       if (t.view !== 'terminal') s.chooseView(t.view);
       s.profileId = t.profileId ?? null;
     }

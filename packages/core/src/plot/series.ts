@@ -51,6 +51,20 @@ export class SeriesStore {
     return [this.times.slice(from), ...this.columns.map((c) => c.slice(from))];
   }
 
+  /** Drops rows from stream offset `offset` on, and any series left with no values. */
+  dropFromOffset(offset: number): void {
+    let i = this.offsets.length;
+    while (i > 0 && this.offsets[i - 1]! >= offset) i--;
+    if (i === this.offsets.length) return;
+    this.times.length = i;
+    this.offsets.length = i;
+    for (const c of this.columns) c.length = i;
+    const keep = this.columns.map((c) => c.some((v) => v !== null));
+    this.names = this.names.filter((_, k) => keep[k]);
+    this.columns = this.columns.filter((_, k) => keep[k]);
+    this.index = new Map(this.names.map((n, k) => [n, k]));
+  }
+
   clear(): void {
     this.names = [];
     this.times = [];
