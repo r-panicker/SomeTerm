@@ -16,6 +16,18 @@ export interface LogDirectory {
 }
 export const nativeFiles = isTauri();
 
+export async function pickNativeRecording(): Promise<{ name: string; bytes: Uint8Array } | null> {
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const path = await open({
+    multiple: false,
+    filters: [{ name: 'SomeTerm recording', extensions: ['strec'] }],
+  });
+  if (!path) return null;
+  const { basename } = await import('@tauri-apps/api/path');
+  const { readFile } = await import('@tauri-apps/plugin-fs');
+  return { name: await basename(path), bytes: await readFile(path) };
+}
+
 async function handle(path: string): Promise<LogHandle> {
   const { basename } = await import('@tauri-apps/api/path');
   return {

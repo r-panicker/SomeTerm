@@ -4,6 +4,7 @@ const mock = vi.hoisted(() => ({
   choose: vi.fn(),
   open: vi.fn(),
   stat: vi.fn(),
+  readFile: vi.fn(),
   seek: vi.fn(),
   write: vi.fn(),
   close: vi.fn(),
@@ -20,9 +21,10 @@ vi.mock('@tauri-apps/api/path', () => ({
 vi.mock('@tauri-apps/plugin-fs', () => ({
   open: mock.open,
   stat: mock.stat,
+  readFile: mock.readFile,
   SeekMode: { Start: 0 },
 }));
-import { pickNativeLog, pickNativeFolder, saveBlob } from './files';
+import { pickNativeLog, pickNativeFolder, pickNativeRecording, saveBlob } from './files';
 beforeEach(() => {
   vi.clearAllMocks();
   mock.save.mockResolvedValue('/logs/test.bin');
@@ -38,6 +40,22 @@ beforeEach(() => {
   );
 });
 describe('native file adapters', () => {
+  it('reads the selected recording without changing its bytes', async () => {
+    mock.choose.mockResolvedValueOnce('/recordings/session.strec');
+    const bytes = Uint8Array.of(0, 128, 255, 13, 10);
+    mock.readFile.mockResolvedValueOnce(bytes);
+    expect(await pickNativeRecording()).toEqual({ name: 'session.strec', bytes });
+    expect(mock.readFile).toHaveBeenCalledWith('/recordings/session.strec');
+  });
+  it('does not read a recording when the picker is cancelled', async () => {
+    mock.choose.mockResolvedValueOnce(null);
+    expect(await pickNativeRecording()).toBeNull();
+    expect(mock.readFile).not.toHaveBeenCalled();
+  });
+  it('reports recording read failures to the caller', async () => {
+    mock.readFile.mockRejectedValueOnce(new Error('Permission denied'));
+    await expect(pickNativeRecording()).rejects.toThrow('Permission denied');
+  });
   it('writes all bytes when the OS performs short writes and closes the file', async () => {
     await saveBlob(new Blob([Uint8Array.of(0, 128, 255, 13, 10)]), 'test.bin');
     expect(mock.open).toHaveBeenCalledWith('/logs/test.bin', {

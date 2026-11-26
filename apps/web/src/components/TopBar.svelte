@@ -2,6 +2,7 @@
   import { fullscreen } from '../lib/fullscreen.svelte';
   import { parseRecording, unsupportedOptions, type SerialOptions } from '@someterm/core';
   import { isWebSerialAvailable } from '@someterm/transport-webserial';
+  import { nativeFiles, pickNativeRecording } from '@someterm/transport-tauri/files';
   import { native, type PortChoice, type Session, type View } from '../lib/session.svelte';
   import type { Workspace } from '../lib/workspace.svelte';
   import { portPanel, type PortTab } from '../lib/panel.svelte';
@@ -45,6 +46,20 @@
   let kindSelect: HTMLSelectElement;
   let recInput: HTMLInputElement;
 
+  async function requestRecording() {
+    if (!nativeFiles) {
+      recInput.click();
+      return;
+    }
+    try {
+      const file = await pickNativeRecording();
+      if (file) session.loadRecording(file.name, parseRecording(file.bytes));
+    } catch (e) {
+      session.errors++;
+      session.lastError = `Open recording: ${e instanceof Error ? e.message : String(e)}`;
+    }
+  }
+
   async function openRecording() {
     const f = recInput.files?.[0];
     recInput.value = '';
@@ -80,7 +95,7 @@
     if (k === 'recording') {
       // The type changes once a recording has loaded.
       kindSelect.value = kind;
-      recInput.click();
+      void requestRecording();
       return;
     }
     if (k === 'network') session.choosePort({ kind: 'net', spec: session.lastNet });
@@ -150,7 +165,7 @@
       {#if !choices.length && !native}<option value="" disabled>No serial ports</option>{/if}
     </select>
   {:else if kind === 'network' || kind === 'recording'}
-    <button class="target" onclick={() => (kind === 'recording' && !locked ? recInput.click() : onshow('port'))} title={kind === 'recording' ? 'Open another recording' : 'Set on the Port tab'}>{session.portLabel()}</button>
+    <button class="target" onclick={() => (kind === 'recording' && !locked ? requestRecording() : onshow('port'))} title={kind === 'recording' ? 'Open another recording' : 'Set on the Port tab'}>{session.portLabel()}</button>
   {/if}
   {#if session.waiting && !session.open}
     <button class="primary waiting" onclick={() => session.cancelWaiting()} title="The device was unplugged or reset; it reconnects when it comes back. Click to stop waiting.">Waiting…</button>
@@ -195,7 +210,7 @@
   .waiting { animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: .55; } }
   @media (prefers-reduced-motion: reduce) { .waiting { animation: none; } }
-  .speed { width: 4.2em; }
+  .speed { width: 4.5em; }
   select[title='Port'], .target { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   @media (max-width: 700px) { select[title='Port'], .target { max-width: 120px; } }
   .target { font: 12px var(--mono); }

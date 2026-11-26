@@ -32,6 +32,7 @@ docs/
 Notes:
 - `transport.ts` exposes `capabilities` (xonxoff, markSpace parity, vidPid, break, customBaud, ...). The UI reads these to disable unsupported controls with a reason.
 - The shared UI talks to `transport-tauri` through a typed bridge that mirrors `SerialTransport`; Tauri commands and channels reach `transport-native` in Rust. The browser uses Web Serial. The desktop app does not run Node.
+- Recording selection uses the system file picker on desktop and a file input in the browser; both feed the same recording parser and replay transport. Desktop file reads are scoped to the selected file.
 - The pipeline runs in a worker. `core` exports it as a worker-safe module; each app wires the worker.
 - Changing the line ending or Control characters re-cuts what is still in the ring: the worker parses those bytes again with their original chunk times, and the new pipeline then takes over the live stream, so there is no seam. Sent lines and markers carry the stream offset at which they were added and are merged back by it. The plot is rebuilt for the same span; the Monitor, auto-replies and logs keep what they already got.
 - Tooling: TypeScript strict, Vite, Vitest, svelte-check, Playwright for live UI checks.
