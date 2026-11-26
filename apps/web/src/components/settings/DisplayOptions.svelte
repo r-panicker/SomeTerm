@@ -5,6 +5,8 @@
   /** Terminal view options (Display tab, for connections and the Monitor). */
   let { source }: { source: TermSource } = $props();
   const disp = $derived(source.display);
+  /** A connection cuts rows at the width while every byte is shown; the Monitor keeps its lines. */
+  const cut = $derived(disp.ctrl && !!source.setControlChars);
 </script>
 
 {#if source.setNewline}
@@ -17,7 +19,9 @@
   </fieldset>
 {/if}
 <label class="check"><input type="checkbox" bind:checked={disp.stamps} /> Timestamps</label>
-<label class="check" title="Long lines continue on the next row instead of scrolling sideways"><input type="checkbox" bind:checked={disp.wrap} /> Wrap long lines</label>
+<fieldset class="one" disabled={cut} title={cut ? 'Always on with Control characters, where rows fill the width' : undefined}>
+  <label class="check" title={cut ? undefined : 'Long lines continue on the next row, marked ↪, instead of scrolling sideways'}><input type="checkbox" checked={disp.wrap || cut} onchange={(e) => (disp.wrap = e.currentTarget.checked)} /> Wrap long lines</label>
+</fieldset>
 <fieldset class="one" disabled={disp.ctrl} title={disp.ctrl ? 'Not available with Control characters on, which shows escape codes as [ESC]' : undefined}>
   <label class="check" title={disp.ctrl ? undefined : 'Off: show escape codes as ␛[…'}><input type="checkbox" bind:checked={disp.ansi} /> ANSI colours</label>
 </fieldset>

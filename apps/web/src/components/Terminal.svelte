@@ -275,7 +275,8 @@
 
   /** Screen width in characters, from the view; wrapping needs it. */
   let cols = $state(0);
-  const wrapping = $derived(disp.wrap && disp.format === 'ascii' && cols > 0);
+  /** Control characters cuts rows at the width, so lines from before it was ticked wrap too. */
+  const wrapping = $derived((disp.wrap || (disp.ctrl && !!source.setControlChars)) && disp.format === 'ascii' && cols > 0);
   const wrap = new WrapMap();
   const STAMP_LEN = 13;
   $effect(() => {

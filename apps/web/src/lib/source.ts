@@ -25,7 +25,7 @@ export interface DisplaySettings {
   frameSync: string;
 }
 
-export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16, wrap: false, crNewline: false, frame: 'none', frameGapMs: 5, frameSync: '' });
+export const defaultDisplay = (): DisplaySettings => ({ format: 'ascii', numType: 'int16', littleEndian: true, align: 0, stamps: false, ansi: true, ctrl: false, perRow: 16, wrap: true, crNewline: false, frame: 'none', frameGapMs: 5, frameSync: '' });
 
 /** What the terminal view needs from whatever feeds it: one port, or several merged. */
 export interface TermSource {

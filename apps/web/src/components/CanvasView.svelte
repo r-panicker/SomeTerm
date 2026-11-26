@@ -47,6 +47,8 @@
   let { count, version, row, rowText, rowBg, onkey, onpaste, ontext, typing = false, follow = $bindable(true), continues, cols = $bindable(0), wrapped = false }: Props = $props();
 
   const PAD = 8;
+  /** Wrapped views keep a wider left margin for the continuation mark. */
+  const padLeft = $derived(wrapped ? PAD + Math.round(prefs.textSize * 0.9) : PAD);
   /**
    * Phones open their keyboard only for a focused text field, so a touch tap while
    * typing focuses this hidden one. It always holds one placeholder character, so a
@@ -120,7 +122,7 @@
   });
 
   $effect(() => {
-    const n = width && charW ? Math.max(10, Math.floor((width - PAD * 2) / charW)) : 0;
+    const n = width && charW ? Math.max(10, Math.floor((width - padLeft - PAD) / charW)) : 0;
     if (n !== cols) cols = n;
   });
 
@@ -143,7 +145,7 @@
     const first = Math.max(0, Math.floor(top / LINE));
     const last = Math.min(count, Math.ceil((top + height) / LINE));
     if (wrapped && scroller.scrollLeft) scroller.scrollLeft = 0;
-    const x0 = PAD - scroller.scrollLeft;
+    const x0 = padLeft - scroller.scrollLeft;
     const lo = sel ? Math.min(sel.a, sel.b) : -1;
     const hi = sel ? Math.max(sel.a, sel.b) : -2;
     let widest = wrapped ? 0 : maxChars;
@@ -153,6 +155,15 @@
       if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, y, width, LINE); }
       if (i >= lo && i <= hi) { ctx.fillStyle = colors.sel; ctx.fillRect(0, y, width, LINE); }
       if (i === flash) { ctx.fillStyle = colors.flash; ctx.fillRect(0, y, width, LINE); }
+      // A row that continues a wrapped line is marked in the left margin, outside the text columns.
+      if (wrapped && continues?.(i)) {
+        ctx.font = `${Math.round(prefs.textSize * 0.8)}px sans-serif`;
+        ctx.fillStyle = colors.muted;
+        ctx.textAlign = 'center';
+        ctx.fillText('↪', padLeft / 2 + 1, y + LINE / 2);
+        ctx.textAlign = 'left';
+        ctx.font = FONT;
+      }
       let x = x0;
       let chars = 0;
       for (const s of row(i)) {
@@ -289,7 +300,7 @@
     role="log"
     aria-label="Received data"
   >
-    <div style:height="{count * LINE + PAD * 2}px" style:width="{maxChars * charW + PAD * 2}px"></div>
+    <div style:height="{count * LINE + PAD * 2}px" style:width="{maxChars * charW + padLeft + PAD}px"></div>
   </div>
   {#if ontext}
     <textarea
