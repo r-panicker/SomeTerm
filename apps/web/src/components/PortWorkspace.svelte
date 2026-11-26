@@ -53,7 +53,7 @@
       portPanel.click(PORT_TABS[Number(e.code.slice(5)) - 1]!);
     } else if (ctrlShift && e.code === 'Space') {
       e.preventDefault();
-      const views: View[] = ['terminal', 'split', 'plot'];
+      const views: View[] = ['terminal', 'plot', 'split'];
       session.chooseView(views[(views.indexOf(session.view) + 1) % views.length]!);
     } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
       e.preventDefault();

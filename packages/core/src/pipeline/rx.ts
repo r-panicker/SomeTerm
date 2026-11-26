@@ -29,7 +29,7 @@ export interface RxRow {
 
 export interface RxBatch {
   lines: RxLine[];
-  partial: { text: string; runs: StyleRun[]; raw?: string; time: number; offset: number; len: number } | null;
+  partial: { text: string; runs: StyleRun[]; cursor: number; raw?: string; time: number; offset: number; len: number } | null;
   /** Present while rows are on; the screen shows these instead of the lines. */
   rows?: { done: RxRow[]; partial: RxRow | null };
 }
@@ -145,13 +145,13 @@ export class RxPipeline {
     return batch;
   }
 
-  private render(bytes: Uint8Array, commit: boolean): { text: string; runs: StyleRun[]; raw?: string } {
+  private render(bytes: Uint8Array, commit: boolean): { text: string; runs: StyleRun[]; cursor: number; raw?: string } {
     const r = this.ansi.parse(bytes, () => '', commit);
     // Only auto treats a CR inside a line as a return to its start; with a line ending
     // chosen by hand, a CR that does not end the line is shown, as a stray LF is.
-    const { text, runs } = renderLine(r.kept, r.runs, this.mode === 'auto' ? 'screen' : 'bs');
+    const { text, runs, cursor } = renderLine(r.kept, r.runs, this.mode === 'auto' ? 'screen' : 'bs');
     // The escapes-visible form is the raw stream, so BS and CR stay as ␈ and ␍ there.
-    return r.hadEscape ? { text, runs, raw: renderLine(bytes, [], 'none').text } : { text, runs };
+    return r.hadEscape ? { text, runs, cursor, raw: renderLine(bytes, [], 'none').text } : { text, runs, cursor };
   }
 }
 

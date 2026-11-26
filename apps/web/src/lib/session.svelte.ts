@@ -97,6 +97,13 @@ export interface QuickSend {
   numbers: boolean;
 }
 
+export interface SendField {
+  text: string;
+  eol: string;
+}
+
+export const defaultSendField = (): SendField => ({ text: '', eol: '\\r\\n' });
+
 export interface SendOptions {
   checksum: ChecksumKind;
   byteDelayMs: number;
@@ -106,7 +113,7 @@ export interface SendOptions {
   intervalMs: number;
   /** Raise RTS for the duration of each send (RS-485 style direction control). */
   rtsWhileSending: boolean;
-  /** Appended to text sends, as escape text (`\\r\\n`). */
+  /** Main send box, text quick sends and direct Terminal input, as escape text (`\\r\\n`). */
   eol: string;
   /** Above 0: send byte by byte, waiting up to this long for each byte's echo (half-duplex handshake). */
   echoWaitMs: number;
@@ -194,7 +201,7 @@ export class Session implements TermSource {
   autoReplies = $state<AutoReply[]>([]);
   quickSends = $state<QuickSend[]>([]);
   /** The Send tab's lines, each sent as ASCII or as numbers. */
-  sendFields = $state<string[]>(['', '']);
+  sendFields = $state<SendField[]>([defaultSendField(), defaultSendField()]);
   /** Chosen on the Send tab and sent by a separate click, so choosing a file never sends it. */
   fileToSend = $state.raw<File | null>(null);
   /** The last network settings used, so switching back to TCP/Telnet keeps them. */
@@ -265,7 +272,7 @@ export class Session implements TermSource {
   }
 
   get partial(): RxBatch['partial'] {
-    return this.partialLine && (this.partialLine.raw ?? this.partialLine.text) ? this.partialLine : null;
+    return this.partialLine && ((this.partialLine.raw ?? this.partialLine.text) || this.partialLine.cursor > 0) ? this.partialLine : null;
   }
 
   portLabel(c: PortChoice = this.choice): string {
@@ -472,8 +479,7 @@ export class Session implements TermSource {
    */
   typeKeys(bytes: Uint8Array, key: 'text' | 'enter' | 'backspace' | 'other', text = ''): void {
     if (!this.open || this.player) return;
-    // Enter sends the send-bar line ending; CR when none is set, as most terminals do.
-    if (key === 'enter' && !bytes.length) bytes = parseEscapes(this.sendOptions.eol || '\\r');
+    if (key === 'enter' && !bytes.length) bytes = parseEscapes(this.sendOptions.eol);
     if (key === 'backspace') bytes = Uint8Array.of(this.sendOptions.backspace === 'del' ? 0x7f : 0x08);
     void this.sendRaw(bytes);
     const drop = (t: string) => [...t].slice(0, -1).join('');
@@ -498,7 +504,7 @@ export class Session implements TermSource {
     if (!this.open || this.player || this.job || !this.transport) return;
     const lines = text.split(/\r?\n|\r/);
     if (lines.length === 1) { this.typeKeys(new TextEncoder().encode(text), 'text', text); return; }
-    const eol = lineEnd !== undefined ? new TextEncoder().encode(lineEnd) : parseEscapes(this.sendOptions.eol || '\\r');
+    const eol = lineEnd !== undefined ? new TextEncoder().encode(lineEnd) : parseEscapes(this.sendOptions.eol);
     const enc = new TextEncoder();
     // A trailing newline ends the last line rather than adding an empty one.
     const ended = lines.at(-1) === '';
@@ -616,16 +622,17 @@ export class Session implements TermSource {
 
   /** A Send tab line: as ASCII (escapes, then the line ending) or as numbers (exact bytes). */
   async sendField(i: number, as: 'ascii' | 'numbers'): Promise<void> {
-    const text = this.sendFields[i] ?? '';
+    const field = this.sendFields[i];
+    if (!field) return;
     let payload: Uint8Array;
     try {
-      payload = as === 'numbers' ? parseNumbers(text) : parseEscapes(text);
+      payload = as === 'numbers' ? parseNumbers(field.text) : parseEscapes(field.text);
     } catch (e) {
       this.errors++;
       this.lastError = `Send line ${i + 1}: ${(e as Error).message}`;
       return;
     }
-    await this.sendMessage(payload, as === 'ascii' ? parseEscapes(this.sendOptions.eol) : new Uint8Array(0));
+    await this.sendMessage(payload, as === 'ascii' ? parseEscapes(field.eol) : new Uint8Array(0));
   }
 
   async sendFile(file: File): Promise<void> {
@@ -909,7 +916,7 @@ export class Session implements TermSource {
       }
       merged.push(...kept.slice(j));
       this.log.replaceFrom(i, merged);
-      this.partialLine = b.rows ? b.rows.partial && { ...b.rows.partial, runs: [] } : b.partial;
+      this.partialLine = b.rows ? b.rows.partial && { ...b.rows.partial, runs: [], cursor: b.rows.partial.text.length } : b.partial;
       this.series.dropFromOffset(from);
       for (const l of b.lines) if (l.samples) this.series.push((l.time - this.t0) / 1000, l.offset, l.samples);
     });
@@ -1080,7 +1087,7 @@ export class Session implements TermSource {
         }
       });
       if (rows) for (const r of rows.done) this.log.pushRx({ dir: 'rx', ...r, cut: true });
-      this.partialLine = rows ? rows.partial && { ...rows.partial, runs: [] } : b.partial;
+      this.partialLine = rows ? rows.partial && { ...rows.partial, runs: [], cursor: rows.partial.text.length } : b.partial;
     });
     this.changed();
   }

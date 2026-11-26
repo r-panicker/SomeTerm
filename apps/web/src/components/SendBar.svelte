@@ -2,8 +2,8 @@
   import { CHECKSUMS, parseEscapes, parseNumbers, toHex } from '@someterm/core';
   import type { Session } from '../lib/session.svelte';
   import { formatBytes } from '../lib/format';
+  import LineEnding from './LineEnding.svelte';
 
-  /** The send options themselves are on the Send tab; this bar shows what they add. */
   let { session }: { session: Session } = $props();
 
   const HISTORY_MAX = 100;
@@ -28,7 +28,6 @@
   /** Only options that change what gets sent are worth a label. */
   const summary = $derived(
     [
-      mode === 'text' && (o.eol ? `+${o.eol.replaceAll('\\r', 'CR ').replaceAll('\\n', 'LF ').trim()}` : 'no line ending'),
       o.checksum !== 'none' && CHECKSUMS.find((c) => c.kind === o.checksum)!.label,
       (o.byteDelayMs || o.lineDelayMs) && 'paced',
       o.rtsWhileSending && 'RTS',
@@ -115,6 +114,7 @@
       autocomplete="off"
     />
   {/if}
+  {#if !job}<LineEnding bind:eol={o.eol} label="Main send line ending" disabled={mode === 'numbers'} />{/if}
   {#if summary && !job}<span class="adds" title="Set on the Send tab">{summary}</span>{/if}
   {#if !job}
     <button type="button" class="star" onclick={saveQuick} disabled={!input.trim()} title="Save as a quick-send button (Alt+1…9 send them)" aria-label="Save as a quick-send button">☆</button>
@@ -127,6 +127,7 @@
   form { display: flex; gap: 6px; align-items: center; padding: 6px 8px; background: var(--panel); border-top: 1px solid var(--line); }
   input:not([type]) { flex: 1; min-width: 8em; font-family: var(--mono); }
   @media (max-width: 520px) { form { gap: 4px; padding: 6px; } input:not([type]) { min-width: 3em; } }
+  @media (max-width: 360px) { form { flex-wrap: wrap; } input:not([type]) { flex-basis: calc(100% - 130px); } }
   input.bad { border-color: var(--err); }
   .preview { font: 12px var(--mono); color: var(--muted); }
   .err { font-size: 12px; color: var(--err); }

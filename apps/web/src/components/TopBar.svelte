@@ -121,10 +121,10 @@
   /** xterm is the terminal pane showing a terminal emulator rather than lines. */
   type ViewButton = View | 'xterm';
   const VIEWS: [ViewButton, string, string][] = [
-    ['xterm', 'xterm', 'Terminal emulator (VT100/xterm) for boot menus, top and editors: the device draws the screen and keys go straight to it'],
     ['terminal', 'Terminal', 'Received data as lines, hex, decimal, binary or numbers (set on the Display tab)'],
     ['plot', 'Plot', 'Plot only'],
     ['split', 'Split', 'Terminal and plot side by side'],
+    ['xterm', 'xterm', 'Terminal emulator (VT100/xterm) for boot menus, top and editors: the device draws the screen and keys go straight to it'],
   ];
   const xterm = $derived(session.display.format === 'screen');
   const viewOn = (v: ViewButton) => (v === 'xterm' ? session.view === 'terminal' && xterm : v === 'terminal' ? session.view === 'terminal' && !xterm : session.view === v);

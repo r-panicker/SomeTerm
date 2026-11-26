@@ -43,8 +43,9 @@ export type LineEdit = 'screen' | 'bs' | 'none';
  * UTF-8 is decoded; bytes that are not part of a valid sequence show as '.', and
  * control bytes as control pictures (␀ ␉ …). `runs` are positions in `bytes` and
  * come back as positions in the text.
+ * `cursor` is a UTF-16 text offset, including any trimmed trailing spaces.
  */
-export function renderLine(bytes: Uint8Array, runs: StyleRun[], edit: LineEdit = 'screen'): { text: string; runs: StyleRun[] } {
+export function renderLine(bytes: Uint8Array, runs: StyleRun[], edit: LineEdit = 'screen'): { text: string; runs: StyleRun[]; cursor: number } {
   const editBs = edit !== 'none';
   const editCr = edit === 'screen';
   let simple = true;
@@ -54,7 +55,7 @@ export function renderLine(bytes: Uint8Array, runs: StyleRun[], edit: LineEdit =
   if (simple) {
     let text = '';
     for (const b of bytes) text += asciiChar(b);
-    return { text, runs };
+    return { text, runs, cursor: text.length };
   }
 
   const styleOf = new Int32Array(bytes.length).fill(-1);
@@ -92,5 +93,5 @@ export function renderLine(bytes: Uint8Array, runs: StyleRun[], edit: LineEdit =
     else if (k >= 0) out.push({ ...runs[k]!, from, to: text.length });
     lastStyle = k;
   }
-  return { text, runs: out };
+  return { text, runs: out, cursor: cells.slice(0, col).join('').length };
 }

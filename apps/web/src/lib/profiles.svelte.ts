@@ -15,7 +15,7 @@ import {
 import { defaultDisplay, type DisplaySettings } from './source';
 import { rules } from './rules.svelte';
 import { prefs, SCROLLBACK, TEXT_SIZES } from './prefs.svelte';
-import { defaultSendOptions, defaultSerialOptions, type PlotTransform, type QuickSend, type SendOptions, type Session, type View } from './session.svelte';
+import { defaultSendOptions, defaultSendField, defaultSerialOptions, type PlotTransform, type QuickSend, type SendField, type SendOptions, type Session, type View } from './session.svelte';
 
 /** What a profile carries. Repeat count and interval are left out: they describe one job, not a device. */
 export interface ProfileSettings {
@@ -34,7 +34,7 @@ export interface ProfileSettings {
   plotFs: number | null;
   autoReplies: AutoReply[];
   quickSends: QuickSend[];
-  sendFields: string[];
+  sendFields: SendField[];
   /** The network connection, for a profile saved on TCP/Telnet; applying it switches to that connection. */
   net?: NetSpec;
 }
@@ -86,7 +86,7 @@ export function resetSettings(s: Session, everything = false): void {
     plotFs: null,
     autoReplies: everything ? [] : s.autoReplies,
     quickSends: everything ? [] : s.quickSends,
-    sendFields: everything ? ['', ''] : s.sendFields,
+    sendFields: everything ? [defaultSendField(), defaultSendField()] : s.sendFields,
   });
   if (everything) {
     rules.clear();
@@ -115,7 +115,7 @@ export function applySettings(s: Session, p: ProfileSettings): void {
   s.plotFs = p.plotFs;
   s.autoReplies = p.autoReplies.map((r) => ({ ...r }));
   s.quickSends = p.quickSends.map((q) => ({ ...q }));
-  s.sendFields = [...p.sendFields];
+  s.sendFields = p.sendFields.map((field) => ({ ...field }));
   if (p.net) {
     s.choice = { kind: 'net', spec: { ...p.net } };
     s.lastNet = { ...p.net };
@@ -156,10 +156,13 @@ export function sanitizeQuickSends(raw: unknown): QuickSend[] {
   });
 }
 
-/** Send-tab lines: always four or more strings, each bounded. */
-export function sanitizeFields(raw: unknown): string[] {
-  const list = Array.isArray(raw) ? raw.slice(0, 16).map((x) => (typeof x === 'string' ? x.slice(0, 2000) : '')) : [];
-  while (list.length < 2) list.push('');
+/** Send-tab lines: two to sixteen commands with independent CR/LF endings. */
+export function sanitizeFields(raw: unknown): SendField[] {
+  const list = Array.isArray(raw) ? raw.slice(0, 16).map((field) => ({
+    text: typeof field?.text === 'string' ? field.text.slice(0, 2000) : '',
+    eol: ['', '\\r', '\\n', '\\r\\n'].includes(field?.eol) ? field.eol : '\\r\\n',
+  })) : [];
+  while (list.length < 2) list.push(defaultSendField());
   return list;
 }
 

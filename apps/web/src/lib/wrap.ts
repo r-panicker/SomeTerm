@@ -72,10 +72,13 @@ export function sliceSpans(spans: Span[], from: number, to: number): Span[] {
   const out: Span[] = [];
   let at = 0;
   for (const s of spans) {
+    if (s.column !== undefined) {
+      if (s.column >= from && s.column < to) out.push({ ...s, column: s.column - from });
+      continue;
+    }
     const end = at + s.text.length;
     if (end > from && at < to) out.push({ ...s, text: s.text.slice(Math.max(0, from - at), Math.min(s.text.length, to - at)) });
     at = end;
-    if (at >= to) break;
   }
   return out;
 }

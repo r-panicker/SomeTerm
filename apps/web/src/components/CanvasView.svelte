@@ -9,6 +9,8 @@
     color?: string;
     /** Drawn but not part of the text (the typing caret): left out of copies. */
     decor?: boolean;
+    /** Overlay at this text column without advancing the row's text. */
+    column?: number;
     bg?: string;
     bold?: boolean;
     italic?: boolean;
@@ -166,26 +168,46 @@
       }
       let x = x0;
       let chars = 0;
-      for (const s of row(i)) {
+      const spans = row(i);
+      const columnX = (column: number) => {
+        let left = x0;
+        for (const part of spans) {
+          if (part.column !== undefined) continue;
+          if (column <= part.text.length) {
+            ctx.font = `${part.italic ? 'italic ' : ''}${part.bold ? 'bold ' : ''}${FONT}`;
+            left += ctx.measureText(part.text.slice(0, column)).width;
+            ctx.font = FONT;
+            return left;
+          }
+          left += part.text.length * charW;
+          column -= part.text.length;
+        }
+        return left + column * charW;
+      };
+      for (const s of spans) {
         const w = s.text.length * charW;
+        const left = s.column === undefined ? x : columnX(s.column);
         if (s.bg) {
           ctx.fillStyle = s.bg;
-          ctx.fillRect(x, y, w, LINE);
+          ctx.fillRect(left, y, w, LINE);
         }
         if (s.mark) {
           ctx.fillStyle = colors[s.mark];
-          ctx.fillRect(x, y + 1, w, LINE - 2);
+          ctx.fillRect(left, y + 1, w, LINE - 2);
         }
         const styled = s.bold || s.italic;
         if (styled) ctx.font = `${s.italic ? 'italic ' : ''}${s.bold ? 'bold ' : ''}${FONT}`;
         if (s.dim) ctx.globalAlpha = 0.6;
         ctx.fillStyle = s.color ?? colors[s.tone];
-        if (s.underline) ctx.fillRect(x, y + LINE - 3, w, 1);
-        ctx.fillText(s.text, x, y + LINE / 2);
+        if (s.underline) ctx.fillRect(left, y + LINE - 3, w, 1);
+        ctx.fillText(s.text, left, y + LINE / 2);
         if (styled) ctx.font = FONT;
         if (s.dim) ctx.globalAlpha = 1;
-        x += w;
-        chars += s.text.length;
+        widest = Math.max(widest, (s.column ?? chars) + s.text.length);
+        if (s.column === undefined) {
+          x += w;
+          chars += s.text.length;
+        }
       }
       if (chars > widest) widest = chars;
     }

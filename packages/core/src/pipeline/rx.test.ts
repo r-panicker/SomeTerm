@@ -12,8 +12,22 @@ describe('RxPipeline', () => {
         { text: 'boot', runs: [], time: 5, offset: 0, len: 4, samples: null },
         { text: 't:1,h:2', runs: [], time: 5, offset: 6, len: 7, samples: [{ name: 't', value: 1 }, { name: 'h', value: 2 }] },
       ],
-      partial: { text: '␁x', runs: [], time: 5, offset: 15, len: 2 },
+      partial: { text: '␁x', runs: [], cursor: 2, time: 5, offset: 15, len: 2 },
     });
+  });
+
+  it('keeps the partial cursor position across chunks, separately from visible text', () => {
+    const p = new RxPipeline('auto');
+    const push = (text: string) => {
+      p.apply({ type: 'data', chunk: enc(text), time: 0 });
+      return p.drain()!.partial;
+    };
+    expect(push('abc')).toMatchObject({ text: 'abc', cursor: 3 });
+    expect(push('\b')).toMatchObject({ text: 'abc', cursor: 2 });
+    expect(push('\b')).toMatchObject({ text: 'abc', cursor: 1 });
+    expect(push('X')).toMatchObject({ text: 'aXc', cursor: 2 });
+    expect(push('\b \b')).toMatchObject({ text: 'a c', cursor: 1 });
+    expect(push('\n')).toBeNull();
   });
 
   it('LF mode shows the CR of a CRLF sender, as CR mode shows its LF, and both still plot', () => {

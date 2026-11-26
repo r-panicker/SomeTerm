@@ -29,6 +29,15 @@ describe('renderLine', () => {
     expect(renderLine(enc('abc\bX'), []).text).toBe('abX');
   });
 
+  it('reports the cursor after BS, CR and Unicode without erasing untouched characters', () => {
+    expect(renderLine(enc('abc\b\b'), [])).toMatchObject({ text: 'abc', cursor: 1 });
+    expect(renderLine(enc('abc\r'), [])).toMatchObject({ text: 'abc', cursor: 0 });
+    expect(renderLine(enc('abc\b '), [])).toMatchObject({ text: 'ab', cursor: 3 });
+    expect(renderLine(enc('°🙂z\b'), [])).toMatchObject({ text: '°🙂z', cursor: 3 });
+    expect(renderLine(enc('\b\ba'), [])).toMatchObject({ text: 'a', cursor: 1 });
+    expect(renderLine(enc('ab\b'), [], 'none')).toMatchObject({ text: 'ab␈', cursor: 3 });
+  });
+
   it('CR returns to the start and overwrites, keeping what is longer', () => {
     expect(renderLine(enc('Flashing 10%\rFlashing 55%\rFlashing 100%'), []).text).toBe('Flashing 100%');
     expect(renderLine(enc('Flashing 100%\rDone'), []).text).toBe('Donehing 100%');

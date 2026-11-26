@@ -277,6 +277,12 @@
   let cols = $state(0);
   /** Control characters cuts rows at the width, so lines from before it was ticked wrap too. */
   const wrapping = $derived((disp.wrap || (disp.ctrl && !!source.setControlChars)) && disp.format === 'ascii' && cols > 0);
+
+  function caretColumn(l: ReturnType<typeof asciiLine>): number {
+    const text = shownText(l);
+    const at = !disp.ctrl && (disp.ansi || source.partial?.raw === undefined) ? (source.partial?.cursor ?? text.length) : text.length;
+    return at + (source.echoed?.length ?? 0);
+  }
   const wrap = new WrapMap();
   const STAMP_LEN = 13;
   $effect(() => {
@@ -294,13 +300,14 @@
     else if (disp.ctrl) n += (l.dir === 'tx' ? pre : 0) + expanded(l).text.length;
     else if (l.dir === 'tx') n += pre + l.text.length;
     else n += (disp.ansi ? l.text : (l.raw ?? l.text)).length;
-    if (typing && li === source.log.length) n += (source.echoed?.length ?? 0) + 1;
+    if (typing && li === source.log.length) n += Math.max((source.echoed?.length ?? 0), caretColumn(l) - shownText(l).length + 1);
     return n;
   }
 
   const count = $derived.by(() => {
     const n = logicalCount;
     if (!wrapping) return n;
+    void source.version;
     void source.echoed;
     const settled = filtering ? n : Math.min(n, source.log.length);
     const key = `${cols}|${disp.stamps}|${disp.ctrl}|${disp.ansi}|${source.log.generation}|${filtering ? findRev : 'all'}`;
@@ -344,8 +351,9 @@
       else if (disp.ansi) spans.push(...segments(l.text, 'fg', abs, 0, l.runs ?? [], ruled));
       else spans.push(...segments(l.raw ?? l.text, 'fg', abs, 0, [], ruled));
       if (typing && li === source.log.length) {
+        const prefix = (tag ? tag.label.length + 2 : 0) + (disp.stamps && source.partial ? STAMP_LEN : 0);
         if (source.echoed) spans.push({ text: source.echoed, tone: 'tx' });
-        spans.push({ text: '▏', tone: 'accent', decor: true });
+        spans.push({ text: '▏', tone: 'accent', decor: true, column: prefix + caretColumn(l) });
       }
       return spans;
     }

@@ -23,7 +23,7 @@ interface SavedTab {
   plotFs?: number | null;
   autoReplies?: Session['autoReplies'];
   quickSends?: Session['quickSends'];
-  sendFields?: string[];
+  sendFields?: Session['sendFields'];
   lastNet?: NetSpec;
   dtr?: boolean;
   rts?: boolean;

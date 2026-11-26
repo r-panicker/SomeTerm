@@ -75,7 +75,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 |---|---|---|
 | Text with escapes (`\r \n \xNN`) | | done |
 | Hex/byte entry | | done: numbers in any base, as on the Send tab |
-| Append CR/LF/custom, checksum/CRC | Common CRCs | done |
+| Append CR/LF per send box, checksum/CRC | Common CRCs; the main box's ending also applies to Terminal typing | done |
 | Send file, with inter-byte and inter-line delay | Progress, cancel | done |
 | Repeat N / forever, interval | | done |
 | Quick-send buttons / history | Buttons above the send bar | done |
@@ -108,7 +108,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 Checked live over Loopback where possible. Ordered by value to the lab audience.
 | Feature | Seen in | Today | Status |
 |---|---|---|---|
-| Backspace edits the current line (shell echo `x\b \b`); in Auto a lone CR returns to its start (`10%\r55%` progress), with a chosen ending it shows as ␍ | TeraTerm | | done |
+| Received BS moves the cursor left without erasing (shell echo `x\b \b` erases); in Auto a lone CR returns to its start (`10%\r55%` progress), with a chosen ending it shows as ␍ | TeraTerm | | done |
 | UTF-8 text (`°C`, `µA`) | TeraTerm | | done |
 | Quick-send buttons / macros | RealTerm, TeraTerm (TTL) | buttons; no scripting | done |
 | Text zoom (Ctrl+= / Ctrl+-), for projectors | TeraTerm | | done |
@@ -125,7 +125,7 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 | Region | Contents |
 |---|---|
 | Connection strip | Lettered connections A, B, …, then the Monitor once there are two, then **+** for another |
-| Top bar | Connection type (Serial, Network, Loopback, Open recording…), port, Connect, DTR/RTS; views xterm / Terminal / Plot / Split; full screen |
+| Top bar | Connection type (Serial, Network, Loopback, Open recording…), port, Connect, DTR/RTS; views Terminal / Plot / Split / xterm; full screen |
 | Main | Terminal and plot over the same stream; split is resizable; clicking a plot point scrolls the terminal to its line |
 | Pane toolbars | One thin row per pane: format, pause, find, text size, clear; plot pause, statistics, cursors, PNG, CSV |
 | Send bar | Text/Numbers, input with history, what will be added, Send; quick-send strip above it once buttons exist |
