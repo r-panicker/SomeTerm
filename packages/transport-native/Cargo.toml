@@ -15,6 +15,7 @@ windows-sys = { version = "0.61", features = ["Win32_Devices_Communication", "Wi
 
 [dev-dependencies]
 serde_json = "1"
+tempfile = "3"
 
 [target.'cfg(unix)'.dev-dependencies]
 nix = { version = "0.26", features = ["term", "fs"] }

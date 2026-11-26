@@ -186,7 +186,10 @@ async fn serial_native_pty_exact_bytes_and_reopen() {
     let mut master = tokio::fs::File::from_std(master);
     let backend = Backend::default();
     let (tx, mut rx) = sink();
-    for _ in 0..2 {
+    let directory = tempfile::tempdir().unwrap();
+    let alias = directory.path().join("serial-port");
+    std::os::unix::fs::symlink(&path, &alias).unwrap();
+    for path in [path, alias.to_string_lossy().into_owned()] {
         backend
             .open(path.clone(), options(), tx.clone())
             .await

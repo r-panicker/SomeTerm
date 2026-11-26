@@ -42,7 +42,11 @@ pub fn open(path: &str, o: &Options) -> Result<SerialStream> {
         "xonxoff" => FlowControl::Software,
         _ => return Err("Unsupported flow control".into()),
     };
-    let port = tokio_serial::new(path, o.baud_rate)
+    let baud_rate = o.baud_rate;
+    // macOS PTYs have no baud clock and reject the serial-only IOSSIOSPEED ioctl.
+    #[cfg(target_os = "macos")]
+    let baud_rate = if is_macos_pty(path) { 0 } else { baud_rate };
+    let port = tokio_serial::new(path, baud_rate)
         .data_bits(bits)
         .parity(parity)
         .stop_bits(stops)
@@ -52,6 +56,21 @@ pub fn open(path: &str, o: &Options) -> Result<SerialStream> {
     #[cfg(windows)]
     configure_windows(&port, o)?;
     Ok(port)
+}
+
+#[cfg(target_os = "macos")]
+fn is_macos_pty(path: &str) -> bool {
+    use std::{os::unix::fs::FileTypeExt, path::Path};
+    let Ok(device) = std::fs::canonicalize(path) else {
+        return false;
+    };
+    device.parent() == Some(Path::new("/dev"))
+        && device
+            .file_name()
+            .and_then(|name| name.to_str())
+            .and_then(|name| name.strip_prefix("ttys"))
+            .is_some_and(|number| number.len() >= 3 && number.bytes().all(|b| b.is_ascii_digit()))
+        && std::fs::metadata(device).is_ok_and(|meta| meta.file_type().is_char_device())
 }
 
 #[cfg(windows)]

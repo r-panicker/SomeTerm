@@ -3523,6 +3523,7 @@ dependencies = [
  "nix 0.26.4",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "tokio-serial",
  "url",
