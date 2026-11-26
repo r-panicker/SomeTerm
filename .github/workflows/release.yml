@@ -25,9 +25,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
-            bundles: appimage
+            bundles: appimage,deb
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             bundles: nsis
@@ -64,11 +64,15 @@ jobs:
             echo '{}' > apps/tauri/src-tauri/release-config.json
           fi
       - run: pnpm --filter @someterm/desktop dist --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config src-tauri/release-config.json
+      - name: Verify Ubuntu package installation
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y ./target/${{ matrix.target }}/release/bundle/deb/*.deb
       - uses: actions/upload-artifact@v7
         with:
           name: someterm-${{ matrix.target }}
           path: |
             target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
+            target/${{ matrix.target }}/release/bundle/deb/*.deb
             target/${{ matrix.target }}/release/bundle/nsis/*.exe
             target/${{ matrix.target }}/release/bundle/dmg/*.dmg
           if-no-files-found: error
@@ -120,7 +124,7 @@ jobs:
             pre=; [[ "$TAG" == *-* ]] && pre=--prerelease
             gh release create "$TAG" --target "$GITHUB_SHA" --title "SomeTerm ${TAG#v}" --generate-notes $pre
           fi
-          mapfile -d '' assets < <(find files -type f \( -name '*.AppImage' -o -name '*.exe' -o -name '*.dmg' -o -name '*.zip' \) -print0)
+          mapfile -d '' assets < <(find files -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.exe' -o -name '*.dmg' -o -name '*.zip' \) -print0)
           [[ ${#assets[@]} -gt 0 ]] || { echo "No release assets found"; exit 1; }
           gh release upload "$TAG" "${assets[@]}" --clobber
 

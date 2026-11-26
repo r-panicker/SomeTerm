@@ -36,6 +36,7 @@ Notes:
 - The pipeline runs in a worker. `core` exports it as a worker-safe module; each app wires the worker.
 - Changing the line ending or Control characters re-cuts what is still in the ring: the worker parses those bytes again with their original chunk times, and the new pipeline then takes over the live stream, so there is no seam. Sent lines and markers carry the stream offset at which they were added and are merged back by it. The plot is rebuilt for the same span; the Monitor, auto-replies and logs keep what they already got.
 - Tooling: TypeScript strict, Vite, Vitest, svelte-check, Playwright for live UI checks.
+- Linux x64 releases include AppImage and Debian packages, built on Ubuntu 24.04 for compatibility with Ubuntu 24.04 and newer.
 
 ## RealTerm parity checklist
 

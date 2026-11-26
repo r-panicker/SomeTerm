@@ -5,7 +5,7 @@
 | Version | How |
 |---|---|
 | Browser | Open https://r-panicker.github.io/SomeTerm/ in Chrome or Edge. Other browsers have no Web Serial, so they offer only Loopback |
-| Desktop (Windows, Linux, Apple Silicon Macs) | Download the installer from [Releases](https://github.com/r-panicker/SomeTerm/releases/latest); the [README](../README.md#desktop-app) says how to get past SmartScreen and Gatekeeper on first launch |
+| Desktop (Windows, Linux, Apple Silicon Macs) | Download the installer from [Releases](https://github.com/r-panicker/SomeTerm/releases/latest); the [README](../README.md#desktop-app) covers installation and first launch |
 
 Both run the same app. The desktop app talks to the OS serial driver directly, so it can do more:
 

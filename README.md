@@ -98,7 +98,8 @@ Download the installer for your OS from [Releases](https://github.com/r-panicker
 |---|---|
 | Windows | `SomeTerm_<version>_x64-setup.exe` |
 | macOS (Apple Silicon) | `SomeTerm_<version>_aarch64.dmg` |
-| Linux | `SomeTerm_<version>_amd64.AppImage` |
+| Ubuntu 24.04+ (x64) | `SomeTerm_<version>_amd64.deb` |
+| Linux (x64, portable) | `SomeTerm_<version>_amd64.AppImage` |
 
 The builds are not code-signed yet, so the first launch needs one extra step:
 
@@ -106,7 +107,8 @@ The builds are not code-signed yet, so the first launch needs one extra step:
 |---|---|
 | Windows | On the SmartScreen warning, click **More info → Run anyway**. If there is no **Run anyway**, right-click the downloaded `.exe` → **Properties**, tick **Unblock** at the bottom of the General tab, click OK, then run it again. |
 | macOS | Open the `.dmg` and drag SomeTerm to Applications. Open it once and dismiss the warning, then go to **System Settings → Privacy & Security** and click **Open Anyway**. Alternatively, run `xattr -dr com.apple.quarantine /Applications/SomeTerm.app` in Terminal. |
-| Linux | `chmod +x SomeTerm-*.AppImage`, then run it. |
+| Ubuntu (.deb) | Run `sudo apt install ./SomeTerm_*_amd64.deb` to install the app and its dependencies, then launch SomeTerm from the applications menu. |
+| Linux (AppImage) | `chmod +x SomeTerm_*.AppImage`, then run it. |
 
 ### Browser
 Nothing to install. Open this link in Chrome or Edge:
