@@ -30,11 +30,11 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
@@ -49,7 +49,7 @@ jobs:
         env:
           # Unsigned builds; signing needs certificates added as secrets later.
           CSC_IDENTITY_AUTO_DISCOVERY: false
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: someterm-${{ matrix.os }}
           path: |
@@ -61,11 +61,11 @@ jobs:
   web:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: echo "VITE_APP_VERSION=${VITE_APP_VERSION:-$(git rev-parse --short HEAD)}" >> "$GITHUB_ENV"
@@ -76,7 +76,7 @@ jobs:
           [[ -n "$TAG" ]] || version=$(git rev-parse --short HEAD)
           mkdir -p out
           (cd apps/web/dist && zip -qr "$GITHUB_WORKSPACE/out/SomeTerm-web-$version.zip" .)
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: someterm-web
           path: out/*.zip
@@ -92,7 +92,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: files
           merge-multiple: true

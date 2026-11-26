@@ -136,7 +136,7 @@ Both run the same app. The desktop version talks to the OS serial driver directl
 
 ## Build from source
 
-Needs Node 22 and pnpm.
+Needs Node 22 or later and pnpm.
 
 ```bash
 pnpm install

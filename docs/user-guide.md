@@ -21,7 +21,7 @@ Both run the same app. The desktop app talks to the OS serial driver directly, s
 
 ### Building and releasing
 
-Needs Node 22 and pnpm.
+Needs Node 22 or later and pnpm.
 
 ```bash
 pnpm install
