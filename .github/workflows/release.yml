@@ -120,5 +120,7 @@ jobs:
             pre=; [[ "$TAG" == *-* ]] && pre=--prerelease
             gh release create "$TAG" --target "$GITHUB_SHA" --title "SomeTerm ${TAG#v}" --generate-notes $pre
           fi
-          gh release upload "$TAG" files/* --clobber
+          mapfile -d '' assets < <(find files -type f \( -name '*.AppImage' -o -name '*.exe' -o -name '*.dmg' -o -name '*.zip' \) -print0)
+          [[ ${#assets[@]} -gt 0 ]] || { echo "No release assets found"; exit 1; }
+          gh release upload "$TAG" "${assets[@]}" --clobber
 
