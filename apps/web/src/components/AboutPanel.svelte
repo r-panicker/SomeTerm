@@ -10,7 +10,7 @@
   <p class="name"><strong>SomeTerm</strong> <span>{version}</span> · by <strong>Rajesh Panicker</strong></p>
   <p>
     <a href={REPO} target="_blank" rel="noopener">Source and user guide</a> ·
-    <a href="{REPO}/releases/latest" target="_blank" rel="noopener" title={native ? undefined : 'For Windows, macOS and Linux; adds TCP and Telnet'}>{native ? 'Updates' : 'Desktop app'}</a>
+    <a href="{REPO}/releases/latest" target="_blank" rel="noopener" title={native ? undefined : 'For Windows, Apple Silicon Macs and Linux; adds TCP and Telnet'}>{native ? 'Updates' : 'Desktop app'}</a>
   </p>
   <p>
     Inspired by <a href="https://realterm.sourceforge.io/" target="_blank" rel="noopener">RealTerm</a>,

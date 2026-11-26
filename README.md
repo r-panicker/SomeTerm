@@ -6,7 +6,7 @@
 
 **A serial terminal with live plotting, for learning and working with low-level serial communication.**
 In the tradition of RealTerm and Tera Term, with an Arduino-style plotter built in, and TCP and Telnet to reach and bridge devices.
-Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, macOS and Linux.
+Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, macOS (Apple Silicon) and Linux.
 
 [![Build and release](https://github.com/r-panicker/SomeTerm/actions/workflows/release.yml/badge.svg)](https://github.com/r-panicker/SomeTerm/actions/workflows/release.yml)
 [![Latest release](https://img.shields.io/github/v/release/r-panicker/SomeTerm?include_prereleases&sort=semver)](https://github.com/r-panicker/SomeTerm/releases)
@@ -97,7 +97,7 @@ Download the installer for your OS from [Releases](https://github.com/r-panicker
 | OS | File |
 |---|---|
 | Windows | `SomeTerm_<version>_x64-setup.exe` |
-| macOS | `SomeTerm_<version>_aarch64.dmg` (Apple Silicon) or `SomeTerm_<version>_x64.dmg` (Intel) |
+| macOS (Apple Silicon) | `SomeTerm_<version>_aarch64.dmg` |
 | Linux | `SomeTerm_<version>_amd64.AppImage` |
 
 The builds are not code-signed yet, so the first launch needs one extra step:

@@ -16,7 +16,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Incoming data path: transport, ring buffer, Web Worker (timestamp, split, parse), views. The main thread never parses or formats bulk data. Design for sustained 921600 baud and up.
 - Terminal and hex views are virtualized/canvas-based; no DOM node per line.
 - Plotting uses a canvas/WebGL library (uPlot or equivalent), fed from the same stream as the terminal.
-- UI framework: Svelte 5 + Vite. Tauri is packaged with `Tauri bundler`; the Build and release workflow builds every OS.
+- UI framework: Svelte 5 + Vite. Tauri is packaged with `Tauri bundler`. Desktop releases target Windows x64, Linux x86_64 and macOS Apple Silicon.
 - Out of scope: protocol decoders and masters (Modbus, SLIP, COBS), ZMODEM, Kermit, XMODEM/YMODEM receive, bit invert/7-bit mask, I2C and other non-serial RealTerm features, mobile/Android. Dedicated tools do these well.
 
 ## Testing
