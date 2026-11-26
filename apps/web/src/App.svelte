@@ -31,7 +31,7 @@
     const refresh = () => workspace.current?.refreshPorts();
     serial?.addEventListener('connect', refresh);
     serial?.addEventListener('disconnect', refresh);
-    // Node has no hot-plug event, so poll the port list while idle in the desktop app.
+    // The native bridge exposes port discovery through polling.
     const poll = native ? setInterval(() => { if (workspace.current && !workspace.current.open) refresh(); }, 2000) : undefined;
     const mq = matchMedia('(max-width: 700px)');
     const onMq = () => (narrow = mq.matches);

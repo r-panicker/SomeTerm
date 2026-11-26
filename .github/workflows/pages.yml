@@ -12,8 +12,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Upload and deploy are separate jobs, as in GitHub's Pages template: deploying in the
-  # same job as the upload intermittently found no artifact yet.
   build:
     runs-on: ubuntu-latest
     permissions:

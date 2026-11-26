@@ -31,9 +31,8 @@ const FLUSH_BYTES = 64 * 1024;
 const FLUSH_MS = 500;
 
 /**
- * Streams to a user-chosen file. Small writes are batched because each
- * FileSystemWritableFileStream.write is a round trip to the browser process.
- * Data reaches disk on flush, and the file is only replaced or extended on close.
+ * Batches small capture writes to reduce calls across the file adapter.
+ * Browser file streams commit on close; native file streams write directly.
  */
 export class FileSink implements CaptureSink {
   private buf: Uint8Array[] = [];

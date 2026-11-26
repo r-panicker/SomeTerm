@@ -13,7 +13,7 @@ function flush() {
 self.onmessage = (e: MessageEvent<(RxCommand & { ack?: number }) | RecutCommand>) => {
   const d = e.data;
   if (d.type === 'recut') {
-    // What the old pipeline found goes out first, so results stay in stream order.
+    // Flush pending results before changing parser settings to preserve stream order.
     clearTimeout(timer);
     flush();
     const r = RxPipeline.recut(d);

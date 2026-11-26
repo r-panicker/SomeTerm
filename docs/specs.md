@@ -22,7 +22,6 @@ packages/
   transport-webserial/   Web Serial driver
   transport-tauri/       typed frontend bridge to Tauri commands/channels
   transport-native/      Rust serial driver and TCP/Telnet transports
-  transport-node/        standalone Node transports and reference tests
 apps/
   web/                   Svelte 5 + Vite app; the same build runs in Tauri
   tauri/                 Rust desktop shell and packaging

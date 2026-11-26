@@ -11,7 +11,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Learn from corrections automatically. When the user corrects or suggests the same kind of thing more than once, or states a durable, generalizable preference, add it to this file (or the relevant memory file) without being asked, so it survives past the conversation. Keep it lean: a general principle plus why, not a growing pile of every incident. A one-off instruction is not a preference.
 
 ## Architecture (decided)
-- Monorepo, strict boundaries: `packages/core` (pure TS, no DOM, no Node APIs), `packages/transport-webserial`, `packages/transport-tauri` (frontend bridge), `packages/transport-native` (Rust serial/TCP/Telnet), `apps/web` (the shared Svelte UI), `apps/tauri` (desktop shell). `transport-node` remains a standalone Node library and reference test suite.
+- Monorepo, strict boundaries: `packages/core` (pure TS, no DOM, no Node APIs), `packages/transport-webserial`, `packages/transport-tauri` (frontend bridge), `packages/transport-native` (Rust serial/TCP/Telnet), `apps/web` (the shared Svelte UI), `apps/tauri` (desktop shell).
 - All I/O, serial ports and TCP/Telnet connections alike (desktop only; browsers have no sockets), goes through a `SerialTransport` interface. The core never knows which driver is underneath. Features a transport can't support (Web Serial has no XON/XOFF, mark/space parity, or VID/PID metadata) are shown as unavailable on that transport, never silently ignored.
 - Incoming data path: transport, ring buffer, Web Worker (timestamp, split, parse), views. The main thread never parses or formats bulk data. Design for sustained 921600 baud and up.
 - Terminal and hex views are virtualized/canvas-based; no DOM node per line.
@@ -34,7 +34,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - A label never costs a row. Fit it into a line that already exists, shrinking type or dropping secondary detail before letting a header wrap.
 - Keep the thing being studied next to what identifies it. Explanatory text is secondary; keep it short, and put it after the data, never above it.
 - The settings panel should not need vertical scrolling on a laptop-width window: lay groups side by side, merge small groups, and keep labels in the normal text colour (muted reads as disabled).
-- Settings live in RealTerm-style tabs under the terminal, always visible and one click away. Each setting has exactly one home; nothing opens settings somewhere else (no popovers, drawers or ⋯ menus for settings). Toolbars hold actions and read-only state. The user found the alternatives (inline popovers plus a drawer, then a single drawer) confusing.
+- Settings live in RealTerm-style tabs under the terminal, always visible and one click away. Each setting has exactly one home; nothing opens settings somewhere else (no popovers, drawers or ⋯ menus for settings). Toolbars hold actions and read-only state.
 - On/off switches look different from buttons that act or choose (they carry a light); labels say what a thing is in plain words (Int/Float, not Num).
 - Reuse the closest existing pattern for a new control instead of inventing a bespoke widget.
 - Before adding a setting, check whether an existing one already does it or could absorb it; two toggles that overlap (Show sent data vs Local echo, Backspace-as-symbol vs Control characters) confuse more than one that does a little more.
@@ -45,7 +45,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Debuggability is a feature: surfacing what the link is actually doing (line signals, byte/error counters, rates, timestamps, raw bytes behind a plotted point) is wanted, not clutter.
 
 ## Writing (code comments, docs, commit messages)
-- Comments explain non-obvious *current* behavior: a hidden constraint, why the less-obvious approach was chosen. They are never a changelog; that history belongs in the commit message.
+- Comments explain non-obvious *current* behavior: a hidden constraint, why the less-obvious approach was chosen. Write for a reader seeing the current code for the first time; leave migration notes, fix narratives and other history in commit messages.
 - Don't add comments to justify a change that's simple enough to read on its own.
 - `docs/user-guide.md` is written for a reasonably competent user, e.g. a 3rd-year engineering student: what to do, not a description of the UI or a log of what changed. Don't explain things that are obvious once seen, and don't re-explain the same fact in more than one place. State a cross-cutting fact once and point back to it.
 - Avoid AI-tell prose in user-facing writing: keep em-dashes rare, vary sentence rhythm, use plain punctuation over uniform dash constructions.

@@ -165,7 +165,6 @@ packages/
   transport-webserial/  Web Serial driver
   transport-tauri/      desktop command/channel adapter for the shared UI
   transport-native/     Rust serial, TCP and Telnet backend
-  transport-node/       standalone Node transports and reference tests
 apps/
   web/                  Svelte 5 + Vite user interface
   tauri/                Rust desktop shell and packaging

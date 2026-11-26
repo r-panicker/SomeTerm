@@ -6,8 +6,8 @@ type Command = RxCommand | RecutCommand;
 
 /**
  * Runs the receive pipeline in a worker, batching results back every few ms.
- * If the worker cannot start (some file:// setups refuse module workers), the
- * same pipeline runs inline; commands sent before that is known are replayed.
+ * If the worker cannot start, the same pipeline runs inline and replays
+ * queued commands in order.
  */
 export class PipelineClient {
   mode: 'starting' | 'worker' | 'inline' = 'starting';

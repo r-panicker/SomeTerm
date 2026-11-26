@@ -387,7 +387,6 @@ export class Session implements TermSource {
       }
       this.transport = t;
       this.open = true;
-      // Failed attempts before this one are no longer news.
       if (this.connectErrors) {
         this.errors = Math.max(0, this.errors - this.connectErrors);
         if (this.errors === 0) this.lastError = '';

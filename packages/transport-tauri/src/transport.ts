@@ -16,7 +16,7 @@ export function ipcError(e: unknown): Error {
   return e instanceof Error ? e : new Error(String(e));
 }
 
-/** Renderer-side transport that drives a native port in the main process. */
+/** Frontend transport for Rust serial and network connections. */
 export class IpcSerialTransport implements SerialTransport {
   readonly capabilities: TransportCapabilities;
   private current: TransportState = 'closed';
