@@ -20,17 +20,19 @@ packages/
     reconnect.ts           device re-identification after unplug
     mock/                  loopback and replay transports for tests
   transport-webserial/   Web Serial driver
-  transport-node/        serialport driver, TCP/Telnet transport, Electron IPC bridge
+  transport-tauri/       typed frontend bridge to Tauri commands/channels
+  transport-native/      Rust serial driver and TCP/Telnet transports
+  transport-node/        standalone Node transports and reference tests
 apps/
-  web/                   Svelte 5 + Vite app; the same build runs in Electron
-  electron/              main process and preload
+  web/                   Svelte 5 + Vite app; the same build runs in Tauri
+  tauri/                 Rust desktop shell and packaging
 docs/
   specs.md  user-guide.md
 ```
 
 Notes:
 - `transport.ts` exposes `capabilities` (xonxoff, markSpace parity, vidPid, break, customBaud, ...). The UI reads these to disable unsupported controls with a reason.
-- Electron renderer talks to `transport-node` through a typed IPC channel that mirrors `SerialTransport`; the UI never imports Node.
+- The shared UI talks to `transport-tauri` through a typed bridge that mirrors `SerialTransport`; Tauri commands and channels reach `transport-native` in Rust. The browser uses Web Serial. The desktop app does not run Node.
 - The pipeline runs in a worker. `core` exports it as a worker-safe module; each app wires the worker.
 - Changing the line ending or Control characters re-cuts what is still in the ring: the worker parses those bytes again with their original chunk times, and the new pipeline then takes over the live stream, so there is no seam. Sent lines and markers carry the stream offset at which they were added and are merged back by it. The plot is rebuilt for the same span; the Monitor, auto-replies and logs keep what they already got.
 - Tooling: TypeScript strict, Vite, Vitest, svelte-check, Playwright for live UI checks.
@@ -44,8 +46,8 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 |---|---|---|
 | Enumerate/select port | Friendly names where the transport allows; hot-plug refresh | done |
 | Baud, incl. custom | Presets plus free entry | done |
-| Data bits 5-8, stop 1/1.5/2, parity N/E/O/M/S | Mark/space Node-only | done: desktop all except M/S and 1.5 off Windows (binding limit); browser 7/8 N/E/O |
-| Flow control: none, RTS/CTS, DTR/DSR, XON/XOFF | XON/XOFF Node-only | done except DSR/DTR (no binding supports it); XON/XOFF desktop only |
+| Data bits 5-8, stop 1/1.5/2, parity N/E/O/M/S | Mark/space desktop-only | done: desktop all except M/S and 1.5 off Windows (OS limit); browser 7/8 N/E/O |
+| Flow control: none, RTS/CTS, DTR/DSR, XON/XOFF | XON/XOFF desktop-only | done except DSR/DTR (no binding supports it); XON/XOFF desktop only |
 | DTR, RTS set/clear/toggle | One-click toggles | done |
 | Line indicators CTS, DSR, DCD, RI | Live, with change timestamps | done |
 | Send break (timed) | | done |
@@ -83,7 +85,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 ### Logging
 | Feature | Notes | Status |
 |---|---|---|
-| Log to file: append / overwrite | File System Access API streams to disk; otherwise in-memory with View/Download | done |
+| Log to file: append / overwrite | Native dialogs or browser File System Access API stream to disk; otherwise in-memory with View/Download | done |
 | Start/stop/pause, start after N bytes, auto-stop | | done (start after N bytes or on text) |
 | Raw vs formatted vs timestamped output | | done |
 | Rx only, Tx only, or both | | done |
@@ -135,5 +137,5 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 
 ## Decisions
 - Half-duplex: local echo of Tx plus optional RTS direction control.
-- Logging without the File System Access API: data is held in memory. View and Download become available when it stops; nothing downloads automatically. Chromium with the API streams straight to the chosen file.
+- Logging in browsers without the File System Access API: data is held in memory. View and Download become available when it stops; nothing downloads automatically. The desktop uses native save/folder dialogs; Chromium with the API streams straight to the chosen file. Both versions use the same capture and rotation logic.
 - Package manager: pnpm.

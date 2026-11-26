@@ -5,10 +5,13 @@
   "packageManager": "pnpm@10.28.0",
   "scripts": {
     "dev": "pnpm --filter @someterm/web dev",
-    "dev:electron": "pnpm --filter @someterm/electron dev",
-    "dist:electron": "pnpm --filter @someterm/electron dist",
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "dev:desktop": "pnpm --filter @someterm/desktop dev",
+    "build:desktop": "pnpm --filter @someterm/desktop build",
+    "dist:desktop": "pnpm --filter @someterm/desktop dist",
+    "test:native": "cargo test -p someterm-native",
+    "check:native": "cargo clippy --workspace --all-targets -- -D warnings"
   },
   "devDependencies": {
     "typescript": "^5.6.0",
@@ -16,7 +19,6 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "electron",
       "esbuild"
     ]
   }

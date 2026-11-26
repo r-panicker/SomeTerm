@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {saveBlob} from '@someterm/transport-tauri/files';
   import type { Session } from '../lib/session.svelte';
   import { profiles } from '../lib/profiles.svelte';
 
@@ -10,11 +11,7 @@
   const hex4 = (n: number) => n.toString(16).toUpperCase().padStart(4, '0');
 
   function download(text: string, name: string) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    void saveBlob(new Blob([text], {type:'application/json'}), name).catch(error => {failed=true;message=String(error);});
   }
 
   const fileName = (name: string) => `${name.replace(/[^\w.-]+/g, '-').replace(/^-|-$/g, '') || 'profile'}.someterm.json`;

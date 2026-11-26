@@ -11,11 +11,11 @@
   },
   "dependencies": {
     "@someterm/core": "workspace:*",
-    "@someterm/transport-node": "workspace:*",
     "@someterm/transport-webserial": "workspace:*",
     "@xterm/addon-fit": "0.10.0",
     "@xterm/xterm": "5.5.0",
-    "uplot": "1.6.31"
+    "uplot": "1.6.31",
+    "@someterm/transport-tauri": "workspace:*"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.1.1",

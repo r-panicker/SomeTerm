@@ -68,7 +68,7 @@ export class CaptureController {
         sink = new MemorySink(this.name);
       }
     } catch (e) {
-      this.report(`Capture: ${(e as Error).message}`);
+      this.report(`Capture: ${e instanceof Error ? e.message : String(e)}`);
       return false;
     }
     this.sink = sink;

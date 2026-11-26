@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {saveBlob} from '@someterm/transport-tauri/files';
   import type { CaptureFormat, CaptureOptions, CaptureSource, NewlineMode } from '@someterm/core';
   import type { CaptureController } from '../lib/capture.svelte';
   import { canPickFolder, canSaveToFile } from '../lib/sinks';
@@ -23,6 +24,7 @@
   const splitting = $derived(dest === 'file' && folderOk && !recording && !!(positive(splitMb) || positive(splitMin)));
   let now = $state(Date.now());
 
+  let preview = $state<string | null>(null);
   const c = $derived(ctl.info);
   const active = $derived(!!c && c.state !== 'stopped');
 
@@ -32,6 +34,11 @@
     const t = setInterval(() => (now = Date.now()), 500);
     return () => clearInterval(t);
   });
+
+  function showPreview(dialog: HTMLDialogElement) {
+    dialog.showModal();
+    return {destroy: () => dialog.close()};
+  }
 
   function positive(s: string): number | undefined {
     const n = Number(s);
@@ -53,18 +60,15 @@
     ctl.start({ ...o, ...trigger, maxBytes: positive(maxBytes), maxSeconds: positive(maxSeconds) }, dest, append, rotate).then((ok) => ok && onstart?.());
   }
 
-  function open(download: boolean) {
+  async function open(download: boolean) {
     const blob = ctl.blob();
     if (!blob || !c) return;
-    const url = URL.createObjectURL(blob);
-    if (download) {
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = c.name;
-      a.click();
-    } else window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    try {
+      if (download) await saveBlob(blob, c.name);
+      else preview = await blob.text();
+    } catch (error) { alert(String(error)); }
   }
+
 </script>
 
 <div class="groups">
@@ -168,3 +172,10 @@
   .status.rec .name::before { content: '● '; color: var(--err); }
   .status .actions { margin-top: 6px; }
 </style>
+
+{#if preview !== null}
+  <dialog use:showPreview onclose={() => (preview=null)} aria-label="Capture preview" style="position:fixed;inset:5%;width:90%;height:90%;z-index:20;background:var(--panel);color:var(--fg)">
+    <button onclick={() => (preview=null)}>Close</button>
+    <pre style="overflow:auto;height:calc(100% - 40px);white-space:pre-wrap">{preview}</pre>
+  </dialog>
+{/if}

@@ -2,5 +2,5 @@ Prompts/
 node_modules/
 dist/
 *.tsbuildinfo
-apps/electron/release/
-apps/electron/web/
+target/
+apps/tauri/src-tauri/gen/

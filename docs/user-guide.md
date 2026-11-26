@@ -21,13 +21,13 @@ Both run the same app. The desktop app talks to the OS serial driver directly, s
 
 ### Building and releasing
 
-Needs Node 22 or later and pnpm.
+Needs Node 24 and pnpm 10.28.0. For desktop builds, also install the pinned Rust toolchain and the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/).
 
 ```bash
 pnpm install
 pnpm dev            # browser: open the printed URL in Chrome or Edge
-pnpm dev:electron   # desktop app
-pnpm dist:electron  # installer for this OS, in apps/electron/release/
+pnpm dev:desktop    # desktop app
+pnpm dist:desktop   # installer for this OS, in target/release/bundle/
 ```
 
 To publish a release, push a version tag, or start **Build and release** from the Actions tab with the tag typed into **Release tag**. It builds the installers for all three OSes and `SomeTerm-web-<version>.zip`, and attaches them to a GitHub release named after the tag. A tag with a hyphen (`v1.0.0-rc.1`) is marked as a pre-release.
@@ -211,7 +211,7 @@ Logging is on the Logging tab and records sent data as well as received. It is i
 
 **Split every** N MB and/or N min writes a numbered series (`…-001.txt`, `…-002.txt`) into a folder you choose, for long unattended logs. A line or hex chunk is never split across two files, and an idle link does not create empty files.
 
-**Data** picks what is logged: **Received**, **Sent**, or **Both**, which tags each record `RX` or `TX`. While logging, the status bar shows ● REC and its size. **File** streams to disk as data arrives (Chrome and Edge); **Memory** keeps it until you View, Download or Discard. Leave a limit empty for no limit.
+**Data** picks what is logged: **Received**, **Sent**, or **Both**, which tags each record `RX` or `TX`. While logging, the status bar shows ● REC and its size. **File** streams to disk as data arrives (desktop, Chrome and Edge); **Memory** keeps it until you View, Download or Discard. Leave a limit empty for no limit.
 
 ## Shortcuts
 

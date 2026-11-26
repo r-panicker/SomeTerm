@@ -96,9 +96,9 @@ Download the installer for your OS from [Releases](https://github.com/r-panicker
 
 | OS | File |
 |---|---|
-| Windows | `SomeTerm-<version>-win-x64.exe` |
-| macOS | `SomeTerm-<version>-mac-arm64.dmg` (Apple Silicon) or `SomeTerm-<version>-mac-x64.dmg` (Intel) |
-| Linux | `SomeTerm-<version>-linux-x86_64.AppImage` |
+| Windows | `SomeTerm_<version>_x64-setup.exe` |
+| macOS | `SomeTerm_<version>_aarch64.dmg` (Apple Silicon) or `SomeTerm_<version>_x64.dmg` (Intel) |
+| Linux | `SomeTerm_<version>_amd64.AppImage` |
 
 The builds are not code-signed yet, so the first launch needs one extra step:
 
@@ -136,7 +136,7 @@ Both run the same app. The desktop version talks to the OS serial driver directl
 
 ## Build from source
 
-Needs Node 22 or later and pnpm.
+Needs Node 24 and pnpm 10.28.0. Desktop development also needs the pinned Rust toolchain in `rust-toolchain.toml` and [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/). On Debian/Ubuntu, install `libwebkit2gtk-4.1-dev libudev-dev libayatana-appindicator3-dev librsvg2-dev patchelf`.
 
 ```bash
 pnpm install
@@ -147,14 +147,15 @@ pnpm dev            # browser, open the printed URL in Chrome or Edge
 ```
 
 ```bash
-pnpm dev:electron   # desktop app
+pnpm dev:desktop    # desktop app
 ```
 
 ```bash
-pnpm test           # unit tests, no hardware needed
+pnpm test           # TypeScript tests, no hardware needed
+pnpm test:native    # Rust serial PTY, TCP and Telnet tests
 ```
 
-`pnpm dist:electron` builds an installer for the OS you're on. Pushing a `v*` tag, or running the **Build and release** workflow with a tag filled in, builds all of them on GitHub Actions and publishes a release.
+`pnpm build:desktop` builds the desktop executable. `pnpm dist:desktop` builds an installer for the OS you're on. Pushing a `v*` tag, or running the **Build and release** workflow with a tag filled in, builds all of them on GitHub Actions and publishes a release.
 
 ## Project layout
 
@@ -162,11 +163,15 @@ pnpm test           # unit tests, no hardware needed
 packages/
   core/                 transport interface, parsing, plotting maths, capture, send logic (pure TypeScript)
   transport-webserial/  Web Serial driver
-  transport-node/       Node serialport driver, TCP/Telnet transport and Electron IPC bridge
+  transport-tauri/      desktop command/channel adapter for the shared UI
+  transport-native/     Rust serial, TCP and Telnet backend
+  transport-node/       standalone Node transports and reference tests
 apps/
   web/                  Svelte 5 + Vite user interface
-  electron/             desktop shell
+  tauri/                Rust desktop shell and packaging
 ```
+
+The browser and desktop use the same Svelte app, settings, plotting, automation, capture and replay code. Differences come from transport or platform capabilities: Web Serial instead of OS serial access, no browser TCP/Telnet, and browser file-picker support instead of native dialogs.
 
 All I/O, serial and network alike, goes through one `SerialTransport` interface, so the core never knows which driver is underneath. A loopback and a replay transport make every feature testable without hardware.
 

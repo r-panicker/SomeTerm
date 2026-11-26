@@ -24,7 +24,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            bundles: dmg
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -36,26 +48,32 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libudev-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - run: rustup target add ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
-      # A release build carries the tag's version in the app and file names.
-      - if: env.TAG != ''
+      - run: pnpm typecheck
+      - run: cargo test --locked -p someterm-native
+      - name: Set release version
         run: |
-          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "::error::Tag must look like v1.2.3 or v1.2.3-rc.1, got '$TAG'"; exit 1; }
-          echo "EB_ARGS=-c.extraMetadata.version=${TAG#v}" >> "$GITHUB_ENV"
-      - run: pnpm --filter @someterm/electron run build
-      - run: pnpm exec electron-builder $EB_ARGS
-        working-directory: apps/electron
-        env:
-          # Unsigned builds; signing needs certificates added as secrets later.
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          if [[ -n "$TAG" ]]; then
+            [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "Invalid release tag"; exit 1; }
+            node -e 'require("fs").writeFileSync("apps/tauri/src-tauri/release-config.json", JSON.stringify({version: process.env.TAG.slice(1)}))'
+          else
+            echo '{}' > apps/tauri/src-tauri/release-config.json
+          fi
+      - run: pnpm --filter @someterm/desktop dist --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config src-tauri/release-config.json
       - uses: actions/upload-artifact@v7
         with:
-          name: someterm-${{ matrix.os }}
+          name: someterm-${{ matrix.target }}
           path: |
-            apps/electron/release/*.AppImage
-            apps/electron/release/*.exe
-            apps/electron/release/*.dmg
+            target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
+            target/${{ matrix.target }}/release/bundle/nsis/*.exe
+            target/${{ matrix.target }}/release/bundle/dmg/*.dmg
           if-no-files-found: error
 
   web:

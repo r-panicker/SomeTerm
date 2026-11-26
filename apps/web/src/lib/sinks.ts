@@ -1,3 +1,4 @@
+import {nativeFiles, pickNativeLog, pickNativeFolder, type LogHandle, type LogDirectory, type WritableLog} from '@someterm/transport-tauri/files';
 import type { CaptureSink } from '@someterm/core';
 
 type SaveFilePicker = (opts: {
@@ -8,11 +9,12 @@ type SaveFilePicker = (opts: {
 type DirectoryPicker = (opts: { mode: 'readwrite' }) => Promise<FileSystemDirectoryHandle>;
 
 export function canPickFolder(): boolean {
-  return typeof (window as unknown as { showDirectoryPicker?: unknown }).showDirectoryPicker === 'function';
+  return nativeFiles || typeof (window as unknown as { showDirectoryPicker?: unknown }).showDirectoryPicker === 'function';
 }
 
 /** Opens the folder picker; must run from a user gesture. Resolves null if the user cancels. */
-export async function pickFolder(): Promise<FileSystemDirectoryHandle | null> {
+export async function pickFolder(): Promise<LogDirectory | null> {
+  if (nativeFiles) return pickNativeFolder();
   try {
     return await (window as unknown as { showDirectoryPicker: DirectoryPicker }).showDirectoryPicker({ mode: 'readwrite' });
   } catch (e) {
@@ -22,7 +24,7 @@ export async function pickFolder(): Promise<FileSystemDirectoryHandle | null> {
 }
 
 export function canSaveToFile(): boolean {
-  return typeof (window as unknown as { showSaveFilePicker?: unknown }).showSaveFilePicker === 'function';
+  return nativeFiles || typeof (window as unknown as { showSaveFilePicker?: unknown }).showSaveFilePicker === 'function';
 }
 
 const FLUSH_BYTES = 64 * 1024;
@@ -39,10 +41,14 @@ export class FileSink implements CaptureSink {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private pending: Promise<void> = Promise.resolve();
 
-  private constructor(private readonly stream: FileSystemWritableFileStream, readonly name: string) {}
+  private constructor(private readonly stream: WritableLog, readonly name: string) {}
 
   /** Opens the save dialog; must run from a user gesture. Resolves null if the user cancels. */
   static async pick(suggestedName: string, append: boolean): Promise<FileSink | null> {
+    if (nativeFiles) {
+      const handle=await pickNativeLog(suggestedName);
+      return handle ? FileSink.open(handle, append) : null;
+    }
     const picker = (window as unknown as { showSaveFilePicker: SaveFilePicker }).showSaveFilePicker;
     let handle: FileSystemFileHandle;
     try {
@@ -54,9 +60,9 @@ export class FileSink implements CaptureSink {
     return FileSink.open(handle, append);
   }
 
-  static async open(handle: FileSystemFileHandle, append: boolean): Promise<FileSink> {
+  static async open(handle: LogHandle, append: boolean): Promise<FileSink> {
     const stream = await handle.createWritable({ keepExistingData: append });
-    if (append) await stream.seek((await handle.getFile()).size);
+    if (append) { try { await stream.seek((await handle.getFile()).size); } catch (error) {await stream.close(); throw error;} }
     return new FileSink(stream, handle.name);
   }
 

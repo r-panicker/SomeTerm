@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {saveBlob} from '@someterm/transport-tauri/files';
   import { prefs } from '../lib/prefs.svelte';
   import { onMount, untrack } from 'svelte';
   import uPlot from 'uplot';
@@ -413,11 +414,7 @@
     }
     out.toBlob((blob) => {
       if (!blob) return;
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'someterm-plot.png';
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      void saveBlob(blob, 'someterm-plot.png').catch(error => alert(String(error)));
     }, 'image/png');
   }
 
@@ -429,11 +426,7 @@
     for (let i = 0; i < s.length; i++) {
       rows.push([Number(s.times[i]!.toFixed(6)), ...s.columns.map((c, k) => { const v = c[i]; return v == null ? '' : fns[k] ? fns[k]!(v) : v; })].join(','));
     }
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([rows.join('\n') + '\n'], { type: 'text/csv' }));
-    a.download = 'someterm-plot.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    void saveBlob(new Blob([rows.join('\n') + '\n'], {type:'text/csv'}), 'someterm-plot.csv').catch(error => alert(String(error)));
   }
 </script>
 

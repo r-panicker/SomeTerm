@@ -1,6 +1,6 @@
 # Working in this repo
 
-SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity, Arduino-style plotting, and a noticeably better UI/UX. TypeScript throughout. Runs in a browser (Web Serial) and as an Electron desktop app (Node `serialport`). Audience is academic: students and lab users, not industrial protocol work. Implemented from scratch; never copy or translate RealTerm source.
+SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity, Arduino-style plotting, and a noticeably better UI/UX. TypeScript UI and core, with a Rust desktop backend. Runs in a browser (Web Serial) and as a Tauri desktop app (native Rust serial/TCP). Audience is academic: students and lab users, not industrial protocol work. Implemented from scratch; never copy or translate RealTerm source.
 
 ## Workflow
 - Sole contributor, single branch. Commit straight to `main`: no feature branches, no PRs.
@@ -11,12 +11,12 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - Learn from corrections automatically. When the user corrects or suggests the same kind of thing more than once, or states a durable, generalizable preference, add it to this file (or the relevant memory file) without being asked, so it survives past the conversation. Keep it lean: a general principle plus why, not a growing pile of every incident. A one-off instruction is not a preference.
 
 ## Architecture (decided)
-- Monorepo, strict boundaries: `packages/core` (pure TS, no DOM, no Node APIs), `packages/transport-webserial`, `packages/transport-node`, `apps/web` (the Svelte UI, also loaded by Electron), `apps/electron`.
+- Monorepo, strict boundaries: `packages/core` (pure TS, no DOM, no Node APIs), `packages/transport-webserial`, `packages/transport-tauri` (frontend bridge), `packages/transport-native` (Rust serial/TCP/Telnet), `apps/web` (the shared Svelte UI), `apps/tauri` (desktop shell). `transport-node` remains a standalone Node library and reference test suite.
 - All I/O, serial ports and TCP/Telnet connections alike (desktop only; browsers have no sockets), goes through a `SerialTransport` interface. The core never knows which driver is underneath. Features a transport can't support (Web Serial has no XON/XOFF, mark/space parity, or VID/PID metadata) are shown as unavailable on that transport, never silently ignored.
 - Incoming data path: transport, ring buffer, Web Worker (timestamp, split, parse), views. The main thread never parses or formats bulk data. Design for sustained 921600 baud and up.
 - Terminal and hex views are virtualized/canvas-based; no DOM node per line.
 - Plotting uses a canvas/WebGL library (uPlot or equivalent), fed from the same stream as the terminal.
-- UI framework: Svelte 5 + Vite. Electron is packaged with `electron-builder`; the Build and release workflow builds every OS.
+- UI framework: Svelte 5 + Vite. Tauri is packaged with `Tauri bundler`; the Build and release workflow builds every OS.
 - Out of scope: protocol decoders and masters (Modbus, SLIP, COBS), ZMODEM, Kermit, XMODEM/YMODEM receive, bit invert/7-bit mask, I2C and other non-serial RealTerm features, mobile/Android. Dedicated tools do these well.
 
 ## Testing
@@ -28,6 +28,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - For UI changes, actually drive the page (a live browser check, not just unit tests) before calling it done. Include throughput: a UI change that looks fine at 9600 baud can fall over at 1 Mbaud.
 
 ## UI
+- Browser and desktop share the same app and behavior. Only transport/platform limitations (such as Web Serial and browser TCP/Telnet restrictions) justify differences; do not fork the UI by runtime.
 - The bar: RealTerm's serial depth with a modern, uncluttered, keyboard-friendly UI, dark and light themes, sensible defaults, cross-platform and runnable from a browser.
 - Don't spend screen space on what a user knows by common sense or after one try: idle status, usage hints. Show state only when it carries information.
 - A label never costs a row. Fit it into a line that already exists, shrinking type or dropping secondary detail before letting a header wrap.

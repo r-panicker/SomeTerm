@@ -52,15 +52,15 @@ import {
   isWebSerialAvailable,
   requestWebSerialPort,
 } from '@someterm/transport-webserial';
-import type { NativePortSummary, NativeSerialBridge } from '@someterm/transport-node/bridge';
-import { IpcSerialTransport } from '@someterm/transport-node/ipc-client';
+import type { NativePortSummary, NativeSerialBridge } from '@someterm/transport-tauri/bridge';
+import { IpcSerialTransport } from '@someterm/transport-tauri';
 import { CaptureController } from './capture.svelte';
 import { applySettings, profiles } from './profiles.svelte';
 import { defaultDisplay, type DisplaySettings, type TermSource } from './source';
 import { PipelineClient } from './pipeline';
 import { prefs } from './prefs.svelte';
 
-/** Present when running inside the Electron app; serial I/O then goes through Node, not Web Serial. */
+/** Present inside Tauri; native serial and network I/O then goes through Rust. */
 export const native = (globalThis as { sometermNative?: NativeSerialBridge }).sometermNative;
 
 export type PortChoice =

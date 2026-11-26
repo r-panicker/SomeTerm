@@ -1,0 +1,17 @@
+{
+  "identifier": "main",
+  "description": "SomeTerm main window: native transports and external HTTPS links",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "dialog:allow-save",
+    "dialog:allow-open",
+    "fs:allow-open",
+    "fs:allow-write",
+    "fs:allow-seek",
+    "fs:allow-stat"
+  ]
+}
