@@ -4,10 +4,9 @@
   import { formatBytes } from '../lib/format';
   import LineEnding from './LineEnding.svelte';
 
-  let { session }: { session: Session } = $props();
+  let { session, mode = $bindable('text') }: { session: Session; mode?: 'text' | 'numbers' } = $props();
 
   const HISTORY_MAX = 100;
-  let mode = $state<'text' | 'numbers'>('text');
   let input = $state('');
   let error = $state('');
   let history: string[] = [];
@@ -93,8 +92,9 @@
 <form onsubmit={send}>
   <div class="seg" role="group" aria-label="Send as">
     <button type="button" class:on={mode === 'text'} onclick={() => (mode = 'text')}>ASCII</button>
-    <button type="button" class:on={mode === 'numbers'} onclick={() => (mode = 'numbers')} title="Bytes as numbers: 65 0x41 $41 41h 0b1000001 'A' are all 0x41; no line ending">Numbers</button>
+    <button type="button" class:on={mode === 'numbers'} onclick={() => (mode = 'numbers')} title="Bytes as numbers: 65 0x41 $41 41h 0b1000001 'A' are all 0x41; no line ending. Direct Terminal typing is unavailable in Numbers mode">Numbers</button>
   </div>
+  <LineEnding bind:eol={o.eol} label="Main send line ending" disabled={mode === 'numbers' || !!job} description={mode === 'numbers' ? 'Unavailable in Numbers mode. Select ASCII to enable line endings and direct Terminal typing.' : 'Also applies to Enter and pasted lines in the main Terminal window.'} />
   {#if job}
     <div class="progress" role="status">
       {#if job.kind !== 'repeat' || job.total}<div class="bar" style:width="{job.total ? (100 * job.done) / job.total : 0}%"></div>{/if}
@@ -114,7 +114,6 @@
       autocomplete="off"
     />
   {/if}
-  {#if !job}<LineEnding bind:eol={o.eol} label="Main send line ending" disabled={mode === 'numbers'} />{/if}
   {#if summary && !job}<span class="adds" title="Set on the Send tab">{summary}</span>{/if}
   {#if !job}
     <button type="button" class="star" onclick={saveQuick} disabled={!input.trim()} title="Save as a quick-send button (Alt+1…9 send them)" aria-label="Save as a quick-send button">☆</button>

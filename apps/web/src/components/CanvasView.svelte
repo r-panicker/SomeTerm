@@ -34,10 +34,12 @@
     /** Gets keys first (terminal mode); returning true means handled. */
     onkey?: (e: KeyboardEvent) => boolean;
     onpaste?: (text: string) => void;
+    onfocus?: () => void;
     /** Text from an on-screen keyboard (touch devices), which does not report keys reliably. */
     ontext?: (input: { kind: 'text'; text: string } | { kind: 'backspace' } | { kind: 'enter' }) => void;
     /** Outline the view while it is capturing keys. */
     typing?: boolean;
+    title?: string;
     follow?: boolean;
     /** Row `i` continues row `i - 1` (a wrapped line): copies join them without a line break. */
     continues?: (i: number) => boolean;
@@ -46,7 +48,7 @@
     /** Rows never exceed `cols`, so there is nothing to scroll sideways. */
     wrapped?: boolean;
   }
-  let { count, version, row, rowText, rowBg, onkey, onpaste, ontext, typing = false, follow = $bindable(true), continues, cols = $bindable(0), wrapped = false }: Props = $props();
+  let { count, version, row, rowText, rowBg, onkey, onpaste, onfocus, ontext, typing = false, title, follow = $bindable(true), continues, cols = $bindable(0), wrapped = false }: Props = $props();
 
   const PAD = 8;
   /** Wrapped views keep a wider left margin for the continuation mark. */
@@ -317,10 +319,12 @@
     class:typing
     class:ime-on={typing && imeFocused}
     onkeydown={onKey}
+    {onfocus}
     onwheel={zoomWheel}
     tabindex="0"
     role="log"
     aria-label="Received data"
+    {title}
   >
     <div style:height="{count * LINE + PAD * 2}px" style:width="{maxChars * charW + padLeft + PAD}px"></div>
   </div>

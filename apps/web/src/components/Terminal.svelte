@@ -1,6 +1,6 @@
 <script lang="ts">
   import { FindIndex, type StyleRun, decodeNumbers, formatNumber, numInfo, toAscii, toBinary, toHex } from '@someterm/core';
-  import { untrack } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import CanvasView, { type Span } from './CanvasView.svelte';
   import Screen from './Screen.svelte';
   import { WrapMap, sliceSpans } from '../lib/wrap';
@@ -13,7 +13,7 @@
   import type { TermSource } from '../lib/source';
 
   /** `onshow` brings forward the panel tab that owns something: colour rules and auto-replies live under Automation. */
-  let { source, onshow }: { source: TermSource; onshow?: (tab: 'terminal' | 'automation') => void } = $props();
+  let { source, onshow, sendMode = 'text' }: { source: TermSource; onshow?: (tab: 'terminal' | 'automation') => void; sendMode?: 'text' | 'numbers' } = $props();
   const utf8 = new TextEncoder();
   const CSI = (s: string) => utf8.encode(`\x1b[${s}`);
   const KEYS: Record<string, Uint8Array> = {
@@ -27,8 +27,13 @@
 
   /** Terminal-mode key mapping. Ctrl+Shift stays with the app; Ctrl+C copies when lines are selected. */
   function typeKey(e: KeyboardEvent): boolean {
-    if (!typing || !source.typeKeys || e.isComposing || e.altKey || e.metaKey) return false;
+    if ((!typing && !typingBlocked) || !source.typeKeys || e.isComposing || e.altKey || e.metaKey) return false;
     if (e.ctrlKey && e.shiftKey) return false;
+    if (typingBlocked) {
+      if (e.ctrlKey && ['a', 'c', 'f', 'l', 'v'].includes(e.key.toLowerCase())) return false;
+      if ([...e.key].length === 1 || e.key === 'Enter' || e.key === 'Backspace') { showTypingNotice(); return true; }
+      return false;
+    }
     if (e.key === 'Escape' && view?.hasSelection()) return false;
     if (e.ctrlKey) {
       const k = e.key.toLowerCase();
@@ -66,7 +71,18 @@
   const disp = $derived(source.display);
   const FORMAT_NAMES: Record<string, string> = { ascii: 'ASCII', hex: 'Hex', dec: 'Dec', bin: 'Bin', num: 'Int/Float', screen: 'xterm' };
   /** Terminal mode: keys pressed in the focused ASCII view go straight to the device. */
-  const typing = $derived(!!source.typeKeys && !!source.typeToDevice && !!source.open && disp.format === 'ascii');
+  const canType = $derived(!!source.typeKeys && !!source.typeToDevice && !!source.open && disp.format === 'ascii');
+  const typingBlocked = $derived(canType && sendMode === 'numbers');
+  const typing = $derived(canType && !typingBlocked);
+  const typingReason = 'Direct typing is unavailable in Numbers mode. Select ASCII in the send bar to type in the main Terminal window.';
+  let typingNotice = $state(false);
+  let typingNoticeTimer: ReturnType<typeof setTimeout> | undefined;
+  function showTypingNotice() {
+    typingNotice = true;
+    clearTimeout(typingNoticeTimer);
+    typingNoticeTimer = setTimeout(() => (typingNotice = false), 3000);
+  }
+  onDestroy(() => clearTimeout(typingNoticeTimer));
   /** Auto-replies send on their own, so while any is on the toolbar says so. */
   const replyCount = $derived(source.autoReplies?.filter((r) => r.enabled).length ?? 0);
   interface Dump { per: number; skip: number; fmt: (b: Uint8Array) => string; width: number; side: (b: Uint8Array) => string }
@@ -430,7 +446,7 @@
       if (e) screen.type(e);
       return true;
     }
-    if (!typing) return false;
+    if (!typing && !typingBlocked) return false;
     view?.focus();
     if (e && typeKey(e)) e.preventDefault();
     return true;
@@ -511,10 +527,11 @@
   {#if disp.format === 'screen' && screenSource}
     <Screen bind:this={screen} session={screenSource} />
   {:else}
-    <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} {continues} bind:cols wrapped={wrapping} onkey={typeKey} onpaste={typing ? typePaste : undefined} ontext={typing ? imeText : undefined} {typing} bind:follow />
+    <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} {continues} bind:cols wrapped={wrapping} onkey={typeKey} onpaste={typingBlocked ? showTypingNotice : typing ? typePaste : undefined} onfocus={typingBlocked ? showTypingNotice : undefined} ontext={typing ? imeText : undefined} {typing} title={typingBlocked ? typingReason : undefined} bind:follow />
     {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
   {/if}
-  {#if hint}<span class="typehint" aria-hidden="true">Click here to type to the device</span>{/if}
+  {#if typingBlocked && typingNotice}<span class="typehint" role="tooltip" aria-live="polite">{typingReason}</span>
+  {:else if hint}<span class="typehint" aria-hidden="true">Click here to type to the device</span>{/if}
 </section>
 
 <style>

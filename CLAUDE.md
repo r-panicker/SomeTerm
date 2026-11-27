@@ -28,7 +28,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 - For UI changes, actually drive the page (a live browser check, not just unit tests) before calling it done. Include throughput: a UI change that looks fine at 9600 baud can fall over at 1 Mbaud.
 
 ## UI
-- Browser and desktop share the same app and behavior. Only transport/platform limitations (such as Web Serial and browser TCP/Telnet restrictions) justify differences; do not fork the UI by runtime.
+- Browser and desktop share the same app and behavior. Only transport/platform limitations (such as Web Serial and browser TCP/Telnet restrictions) justify differences; do not fork the UI by runtime. Keep form controls visually consistent across runtimes, including open dropdown menus.
 - The bar: RealTerm's serial depth with a modern, uncluttered, keyboard-friendly UI, dark and light themes, sensible defaults, cross-platform and runnable from a browser.
 - Don't spend screen space on what a user knows by common sense or after one try: idle status, usage hints. Show state only when it carries information.
 - A label never costs a row. Fit it into a line that already exists, shrinking type or dropping secondary detail before letting a header wrap.

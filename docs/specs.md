@@ -128,7 +128,7 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 | Top bar | Connection type (Serial, Network, Loopback, Open recording…), port, Connect, DTR/RTS; views Terminal / Plot / Split / xterm; full screen |
 | Main | Terminal and plot over the same stream; split is resizable; clicking a plot point scrolls the terminal to its line |
 | Pane toolbars | One thin row per pane: format, pause, find, text size, clear; plot pause, statistics, cursors, PNG, CSV |
-| Send bar | Text/Numbers, input with history, what will be added, Send; quick-send strip above it once buttons exist |
+| Send bar | ASCII/Numbers and main +CR/+LF controls on the left, input with history, what will be added, Send; Numbers disables direct Terminal typing with a tooltip; quick-send strip above it once buttons exist |
 | Settings panel | RealTerm-style tabs: Send, Display, Plot, Automation, Logging, Port, Profiles, App; folds away |
 | Status bar | Profile and framing (opens the Port tab), CTS/DSR/DCD/RI, logging indicator, errors, byte counts and rate; each shown only when it carries information |
 

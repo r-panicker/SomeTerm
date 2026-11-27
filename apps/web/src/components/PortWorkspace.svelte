@@ -15,6 +15,7 @@
   let { session, workspace, narrow, active }: { session: Session; workspace: Workspace; narrow: boolean; active: boolean } = $props();
   let terminal: Terminal | undefined = $state();
   let sendBar: SendBar | undefined = $state();
+  let sendMode = $state<'text' | 'numbers'>('text');
   let main: HTMLElement;
   let split = $state(0.5);
   /** Shortcuts elsewhere on screen (the status-bar summary, REC, ✎, + Rule) bring their tab of the panel forward. */
@@ -94,7 +95,7 @@
 <TopBar {session} {workspace} onshow={show} />
 <main bind:this={main} class:narrow>
   {#if showTerm}
-    <div class="slot" style:flex={showPlot ? `${split} 1 0` : '1 1 0'}><Terminal bind:this={terminal} source={session} onshow={(t) => show(t === 'terminal' ? 'display' : 'automation')} /></div>
+    <div class="slot" style:flex={showPlot ? `${split} 1 0` : '1 1 0'}><Terminal bind:this={terminal} source={session} {sendMode} onshow={(t) => show(t === 'terminal' ? 'display' : 'automation')} /></div>
   {/if}
   {#if showTerm && showPlot}
     <div class="handle" role="separator" aria-orientation={narrow ? 'horizontal' : 'vertical'} onpointerdown={drag}></div>
@@ -108,7 +109,7 @@
 <!-- In xterm keys go straight to the device, so the send bar and quick sends step aside. -->
 {#if !xtermShown}
   {#if session.quickSends.length}<QuickSendStrip {session} onedit={() => show('automation')} />{/if}
-  <SendBar bind:this={sendBar} {session} />
+  <SendBar bind:this={sendBar} {session} bind:mode={sendMode} />
 {/if}
 <ControlPanel {session} {workspace} />
 <StatusBar {session} onCapture={() => show('capture')} onport={() => show('port')} />
