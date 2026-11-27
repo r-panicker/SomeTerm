@@ -50,16 +50,18 @@ To have ports the OS does not list appear in the desktop app's list from the sta
 
 The first list on the top bar picks the type of connection: **Serial**, **Network** (TCP or Telnet, desktop app), **Loopback** or **Open recording…**. Changing it opens the Port tab, where that type is set up. For Serial, pick the port in the list beside it, check its settings on the Port tab (the status bar shows them as `115200 8N1`), then Connect. The baud list has the common rates; **Other…** takes any rate the adapter supports, such as 31250 for MIDI. In the browser, **Add port…** opens the browser's port picker straight away, and ports you have granted before are listed by vendor and USB ID. A browser does not reveal port names, so ports without a USB ID (built-in, Bluetooth, virtual) and identical adapters are numbered in the order you added them: `Serial port #1`, `Serial port #2`. The desktop app lists every port the OS reports, refreshed whenever you open the list; **Enter path…** takes one it doesn't list, such as a socat pty (`/dev/pts/5`, `COM7`). **Loopback** echoes whatever you send, which is handy for trying settings without hardware.
 
+A failed connection shows its error beside **Connect**. Changing the connection type, port or any setting on the Port tab clears that message; retrying replaces it with the current result.
+
 Settings a port cannot do, or that do nothing in the current view (the Plot tab in Terminal view, say), are greyed out; hover for the reason.
 
 Settings live in the tabs under the terminal, the way RealTerm lays them out:
 
 | Tab | Holds |
 |---|---|
-| Send | Send lines (ASCII or numbers), +CR/+LF, checksum, repeat, delays, file |
+| Send | Quick-send buttons, send lines (ASCII or numbers), +CR/+LF, checksum, repeat, delays, file |
 | Display | Display as (ASCII, Hex, Dec, Bin, Int/Float), line ending, timestamps, wrap, typing |
 | Plot | Window, horizontal axis (time, XY, spectrum), conversions |
-| Automation | Auto-replies, quick-send buttons, colour rules |
+| Automation | Auto-replies, colour rules |
 | Logging | Log received and/or sent data to a file or memory |
 | Port | Baud and framing, or the TCP/Telnet connection; profile; Break; forwarding and bridging to another connection |
 | Profiles | Saved profiles: rename, export, import |
@@ -145,7 +147,7 @@ The send bar also shows framing and timing options such as `CRC-16/MODBUS` or `p
 
 **Choose file…** (Send tab) picks a file without sending anything; **Send file** then sends its bytes as-is, paced by the delay settings, and **Stop** cancels between writes. To upload firmware to a bootloader, pick **XMODEM**, **XMODEM-1K** or **YMODEM** first, matching what the receiver expects (U-Boot: `loadx` for XMODEM, `loady` for YMODEM). Start the receiver before or after choosing the file: the transfer waits up to a minute for it to ask, and the device's messages stay visible until the first block goes out. Its result is marked in the terminal; **Stop** cancels and tells the receiver.
 
-**☆** in the send bar saves what you've typed as a quick-send button. The buttons sit above the send bar; click one, or press Alt+1…9 for the first nine. A text button gets the line ending and checksum like a normal send; a numbers one is sent as given. Each sends once, whatever **Repeat** says. **✎** at the end of the row edits them (Automation tab): rename, reorder, switch between text and numbers, or delete. They are saved with the tab and in profiles.
+**☆** in the send bar saves what you've typed as a quick-send button. The buttons sit above the send bar; click one, or press Alt+1…9 for the first nine. A text button gets the line ending and checksum like a normal send; a numbers one is sent as given. Each sends once, whatever **Repeat** says. **✎** at the end of the row opens their editor at the top of the Send tab, above Send lines: rename, reorder, switch between text and numbers, or delete. They are saved with the tab and in profiles.
 
 ## Auto-replies
 

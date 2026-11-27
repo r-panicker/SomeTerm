@@ -31,7 +31,7 @@
   }
 </script>
 
-<div class="groups">
+<div class="groups" onchange={() => session.clearConnectionError()} oninput={() => session.clearConnectionError()}>
   <fieldset>
     <legend>{isNet ? 'Network' : 'Serial port'}</legend>
     <div class="form">

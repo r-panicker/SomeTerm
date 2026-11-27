@@ -108,7 +108,7 @@
 </main>
 <!-- In xterm keys go straight to the device, so the send bar and quick sends step aside. -->
 {#if !xtermShown}
-  {#if session.quickSends.length}<QuickSendStrip {session} onedit={() => show('automation')} />{/if}
+  {#if session.quickSends.length}<QuickSendStrip {session} onedit={() => show('send')} />{/if}
   <SendBar bind:this={sendBar} {session} bind:mode={sendMode} />
 {/if}
 <ControlPanel {session} {workspace} />

@@ -530,12 +530,13 @@
     <CanvasView bind:this={view} {count} version={revision} {row} {rowText} {rowBg} {continues} bind:cols wrapped={wrapping} onkey={typeKey} onpaste={typingBlocked ? showTypingNotice : typing ? typePaste : undefined} onfocus={typingBlocked ? showTypingNotice : undefined} ontext={typing ? imeText : undefined} {typing} title={typingBlocked ? typingReason : undefined} bind:follow />
     {#if !source.open && count === 0 && !filtering}<p class="idle">Not connected</p>{/if}
   {/if}
-  {#if typingBlocked && typingNotice}<span class="typehint" role="tooltip" aria-live="polite">{typingReason}</span>
+  {#if typingBlocked && typingNotice}<span class="typehint blocked" role="tooltip" aria-live="polite">{typingReason}</span>
   {:else if hint}<span class="typehint" aria-hidden="true">Click here to type to the device</span>{/if}
 </section>
 
 <style>
   .typehint { position: absolute; right: 22px; bottom: 8px; font-size: 11.5px; color: var(--muted); opacity: .8; pointer-events: none; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+  .typehint.blocked { left: 8px; right: auto; max-width: calc(100% - 24px); }
   .find { flex: 1; min-width: 6em; font-family: var(--mono); height: 23px; font-size: 12px; }
   .find.bad { border-color: var(--err); }
   .fmt { font-size: 12px; color: var(--muted); padding: 0 4px; }

@@ -4,7 +4,7 @@ SomeTerm: a cross-platform serial terminal with RealTerm's serial feature parity
 
 ## Workflow
 - Sole contributor, single branch. Commit straight to `main`: no feature branches, no PRs.
-- Commit and push without asking once a coherent unit of work is done. Multiple small, honestly-scoped commits are preferred over one large one.
+- Commit and push without asking once the agreed work is substantially complete and verified. While any part of the active request awaits design direction, keep the work local; do not commit, push or release a partial result. Multiple small, honestly-scoped commits are preferred over one large one once that condition is met.
 - No backward compatibility with earlier versions (saved settings, file formats, names): pre-1.0 with no installed base to protect, so just change things.
 - Before any risky git operation, check `git status` first; investigate unexpected working-tree state (e.g. files missing without a matching commit) rather than assuming it was intentional.
 - Keep `docs/user-guide.md`, the README and `docs/specs.md` (design, layout, parity status) current as changes are made. There is no changelog: how we got here lives in commit messages, and the docs describe only what is true now. The user guide only gets a change if it affects what a user should actually do.

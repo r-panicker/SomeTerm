@@ -100,6 +100,7 @@ export function resetSettings(s: Session, everything = false): void {
 }
 
 export function applySettings(s: Session, p: ProfileSettings): void {
+  s.clearConnectionError();
   Object.assign(s.options, p.options);
   s.dtr = p.dtr;
   s.rts = p.rts;

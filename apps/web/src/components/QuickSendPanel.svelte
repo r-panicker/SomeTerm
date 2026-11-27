@@ -2,10 +2,11 @@
   import { parseEscapes, parseNumbers } from '@someterm/core';
   import type { Session } from '../lib/session.svelte';
 
-  /** Editor for a connection's quick-send buttons (Automation tab). */
+  /** Editor for a connection's quick-send buttons. */
   let { session }: { session: Session } = $props();
 
   const newId = () => `q${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  export function add() { session.quickSends.push({ id: newId(), label: '', text: '', numbers: false }); }
 
   function problem(text: string, numbers: boolean): string {
     try {
@@ -37,8 +38,6 @@
   </div>
 {/each}
 
-<button class="add" onclick={() => session.quickSends.push({ id: newId(), label: '', text: '', numbers: false })} title="Add a quick-send button">+</button>
-
 <style>
   .row { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
   .row input { height: 24px; font: 12px var(--mono); min-width: 0; }
@@ -49,5 +48,4 @@
   .row button { height: 24px; font-size: 12px; padding: 0 6px; }
   .mv, .del { border: 0; background: none; color: var(--muted); }
   .del { font-size: 15px; padding: 0 4px; }
-  .add { width: 32px; font-size: 16px; }
 </style>

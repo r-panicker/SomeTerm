@@ -9,6 +9,7 @@
   const locked = $derived(session.open ? 'Disconnect to change the connection' : '');
 
   function set(patch: Partial<NetSpec>) {
+    session.clearConnectionError();
     const next = { ...spec, ...patch };
     // A server listens on every address unless told otherwise; a client needs somewhere to go.
     if (patch.mode === 'server' && (spec.host === '127.0.0.1' || !spec.host)) next.host = '0.0.0.0';

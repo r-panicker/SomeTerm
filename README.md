@@ -26,7 +26,7 @@ Runs in Chrome or Edge with nothing to install, or as a desktop app on Windows, 
 | **Plotting built in** | Print numbers and they're plotted, next to the text they came from. Cursors, statistics, XY and spectrum views, unit conversions. |
 | **Profiles** | Save a board's settings once; they apply themselves when it's plugged in again. Share them as a file with a class. |
 | **Display your way** | ASCII, hex, decimal, binary, decoded integers and floats, an xterm screen for menus and editors, timestamps, colour rules. |
-| **Automation** | Auto-replies answer prompts, quick-send buttons hold your common commands, send lines repeat with timing and checksums. |
+| **Sending and automation** | Quick-send buttons hold your common commands, send lines repeat with timing and checksums, and auto-replies answer prompts. |
 | **Search and logging** | Regex find with a filter mode; log sent and received data to disk with triggers and rotation, or record a session and replay it later with no hardware. |
 | **Configurable, not cluttered** | RealTerm-depth settings in tabs under the terminal, one click away and folded when you don't need them. Keyboard shortcuts, dark and light themes, works on a phone. |
 | **Keeps up** | Comfortable at 921600 baud and beyond, with byte counts, rates and line signals shown when they mean something. |

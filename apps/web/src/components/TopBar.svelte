@@ -142,7 +142,7 @@
 
 </script>
 
-<header>
+<header onchange={(event) => { if (event.target instanceof HTMLSelectElement) session.clearConnectionError(); }}>
   <select bind:this={kindSelect} class="kind" class:rec={kind === 'recording'} value={kind} onchange={(e) => pickKind(e.currentTarget.value as Kind)} disabled={locked} title="Connection type">
     <option value="serial">Serial</option>
     <option value="network" disabled={!!netUnavailable} title={netUnavailable || 'Raw TCP or Telnet, as client or server'}>{netUnavailable ? 'Network (desktop app)' : 'Network'}</option>
@@ -173,6 +173,9 @@
     <button class="primary" onclick={() => (session.open ? session.disconnect() : session.connect())} disabled={session.busy || (!session.open && (!!heldBy(session.choice) || (!!native && session.choice.kind === 'add')))} title={heldBy(session.choice) && !session.open ? heldBy(session.choice) : `${session.open ? 'Disconnect' : 'Connect'} (Ctrl+Shift+Enter)`}>
       {session.open ? 'Disconnect' : 'Connect'}
     </button>
+  {/if}
+  {#if session.connectionError}
+    <span class="connect-error" role="alert" title={session.connectionError}>Connection failed: {session.connectionError}</span>
   {/if}
   <input bind:this={recInput} type="file" accept=".strec" hidden onchange={openRecording} />
   {#if session.player}
@@ -205,6 +208,7 @@
 </header>
 
 <style>
+  .connect-error { flex: 0 1 auto; max-width: min(44ch, 35vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--err) 35%, var(--line)); border-radius: 5px; background: color-mix(in srgb, var(--err) 6%, var(--panel)); color: var(--err); font-size: 12px; font-weight: 600; }
   .play { width: 30px; padding: 0; }
   .icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; padding: 0; }
   .waiting { animation: pulse 1.6s ease-in-out infinite; }

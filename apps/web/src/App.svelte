@@ -7,6 +7,7 @@
   import PortWorkspace from './components/PortWorkspace.svelte';
   import MonitorWorkspace from './components/MonitorWorkspace.svelte';
   import TabStrip from './components/TabStrip.svelte';
+  import SelectMenu from './components/SelectMenu.svelte';
 
   const workspace = new Workspace();
   if (import.meta.env.DEV) {
@@ -74,6 +75,7 @@
 </script>
 
 <svelte:window onkeydown={key} />
+<SelectMenu />
 
 {#if ready}
   <TabStrip {workspace} />

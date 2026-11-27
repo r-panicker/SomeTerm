@@ -30,8 +30,8 @@
     {/each}
   {/if}
   <span class="spacer"></span>
-  {#if session.errors}
-    <button class="errs" onclick={() => session.clearErrors()} title="{session.lastError} (click to reset)">⚠ {session.errors} {session.lastError}</button>
+  {#if session.nonConnectionErrors}
+    <button class="errs" onclick={() => session.clearErrors()} title="{session.lastError} (click to reset)">⚠ {session.nonConnectionErrors} {session.lastError}</button>
   {/if}
   {#if session.capture.info}
     {@const c = session.capture.info}

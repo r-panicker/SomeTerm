@@ -177,8 +177,10 @@ export class Session implements TermSource {
   rate = $state(0);
   errors = $state(0);
   lastError = $state('');
-  /** Errors counted from failed connection attempts, dropped once a connection succeeds. */
+  connectionError = $state('');
+  /** Failed connection attempts are cleared when the configuration changes or a retry starts. */
   private connectErrors = 0;
+  get nonConnectionErrors(): number { return Math.max(0, this.errors - this.connectErrors); }
   dtr = $state(true);
   rts = $state(true);
   /** False when the open port has no modem control lines (ptys, many virtual ports). */
@@ -311,6 +313,7 @@ export class Session implements TermSource {
 
   /** `restoring` skips profile matching: a restored tab already has the exact settings it was left with. */
   choosePort(c: PortChoice, restoring = false): void {
+    this.clearConnectionError();
     this.choice = c;
     this.portChosen = true;
     if (!restoring) this.applyMatchingProfile();
@@ -352,7 +355,9 @@ export class Session implements TermSource {
 
   /** `silent` is for reconnect attempts, which fail routinely until the device is back. */
   async connect(silent = false): Promise<void> {
+    if (!silent) this.clearConnectionError();
     this.busy = true;
+    let pickingPort = false;
     try {
       let t: SerialTransport;
       if (this.choice.kind === 'replay') t = this.startReplay(this.choice.recording);
@@ -368,7 +373,9 @@ export class Session implements TermSource {
       else if (this.choice.kind === 'webserial') t = new WebSerialTransport(this.choice.port, now);
       else {
         if (native) throw new Error('Choose a port first');
+        pickingPort = true;
         const w = await requestWebSerialPort();
+        pickingPort = false;
         await this.refreshPorts();
         this.choice = { kind: 'webserial', port: this.granted.find((p) => p === w.port) ?? w.port };
         // A newly granted port gets its profile before it is opened with these settings.
@@ -394,11 +401,7 @@ export class Session implements TermSource {
       }
       this.transport = t;
       this.open = true;
-      if (this.connectErrors) {
-        this.errors = Math.max(0, this.errors - this.connectErrors);
-        if (this.errors === 0) this.lastError = '';
-        this.connectErrors = 0;
-      }
+      this.clearConnectionError();
       if (this.replay) {
         this.t0 = this.replay.timeOrigin;
         this.clockOffset = this.replay.recording.meta.created - (performance.timeOrigin + this.replay.timeOrigin);
@@ -407,10 +410,10 @@ export class Session implements TermSource {
       this.identity = { id: this.deviceId(), ...(this.choice.kind === 'native' && { path: this.choice.path }) };
       this.startTimers();
     } catch (e) {
-      if (!silent && !(e instanceof DOMException && e.name === 'NotFoundError')) {
+      if (!silent && !(pickingPort && e instanceof DOMException && e.name === 'NotFoundError')) {
         this.errors++;
         this.connectErrors++;
-        this.lastError = (e as Error).message;
+        this.connectionError = e instanceof Error ? e.message : String(e);
       }
     } finally {
       this.busy = false;
@@ -923,10 +926,17 @@ export class Session implements TermSource {
     this.changed();
   }
 
+  clearConnectionError(): void {
+    this.errors = Math.max(0, this.errors - this.connectErrors);
+    this.connectErrors = 0;
+    this.connectionError = '';
+  }
+
   clearErrors(): void {
     this.errors = 0;
     this.lastError = '';
     this.connectErrors = 0;
+    this.connectionError = '';
   }
 
   /** Where the byte views start: after Clear, and never before the oldest byte still held. */

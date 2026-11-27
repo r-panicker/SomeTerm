@@ -36,6 +36,7 @@ Notes:
 - The pipeline runs in a worker. `core` exports it as a worker-safe module; each app wires the worker.
 - Changing the line ending or Control characters re-cuts what is still in the ring: the worker parses those bytes again with their original chunk times, and the new pipeline then takes over the live stream, so there is no seam. Sent lines and markers carry the stream offset at which they were added and are merged back by it. The plot is rebuilt for the same span; the Monitor, auto-replies and logs keep what they already got.
 - Tooling: TypeScript strict, Vite, Vitest, svelte-check, Playwright for live UI checks.
+- One shared select-menu popup renders dropdown options in the browser and desktop, using the app palette and compact styling. Native select fields retain their labels, values and bindings; the shared popup handles pointer, keyboard and type-ahead selection.
 - Linux x64 releases include AppImage and Debian packages, built on Ubuntu 24.04 for compatibility with Ubuntu 24.04 and newer.
 
 ## RealTerm parity checklist
@@ -78,7 +79,7 @@ Serial only. Notes record where SomeTerm takes a different approach. Status colu
 | Append CR/LF per send box, checksum/CRC | Common CRCs; the main box's ending also applies to Terminal typing | done |
 | Send file, with inter-byte and inter-line delay | Progress, cancel | done |
 | Repeat N / forever, interval | | done |
-| Quick-send buttons / history | Buttons above the send bar | done |
+| Quick-send buttons / history | Buttons above the send bar; editor on Send above Send lines | done |
 | Local echo | | done |
 | Half-duplex mode (Tx waits for/loops on Rx, RTS-controlled direction) | Behavior spec to confirm | done: echo wait + RTS while sending + local echo |
 | Send with char-by-char echo wait ("handshake") | | done |
@@ -125,7 +126,7 @@ Checked live over Loopback where possible. Ordered by value to the lab audience.
 | Region | Contents |
 |---|---|
 | Connection strip | Lettered connections A, B, …, then the Monitor once there are two, then **+** for another |
-| Top bar | Connection type (Serial, Network, Loopback, Open recording…), port, Connect, DTR/RTS; views Terminal / Plot / Split / xterm; full screen |
+| Top bar | Connection type (Serial, Network, Loopback, Open recording…), port, Connect and its failure message, DTR/RTS; views Terminal / Plot / Split / xterm; full screen |
 | Main | Terminal and plot over the same stream; split is resizable; clicking a plot point scrolls the terminal to its line |
 | Pane toolbars | One thin row per pane: format, pause, find, text size, clear; plot pause, statistics, cursors, PNG, CSV |
 | Send bar | ASCII/Numbers and main +CR/+LF controls on the left, input with history, what will be added, Send; Numbers disables direct Terminal typing with a tooltip; quick-send strip above it once buttons exist |
